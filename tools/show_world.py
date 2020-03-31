@@ -1,21 +1,23 @@
 """
 
-Mobile robot motion planning sample with Dynamic Window Approach
-
-author: Atsushi Sakai (@Atsushi_twi)
+Tool to show world in CSV descriptions
 
 """
 
-import math
+import os
+import sys
 import numpy as np
 	# https://docs.scipy.org/doc/numpy/user/basics.creation.html
 import matplotlib.pyplot as plt
 	# https://matplotlib.org/users/pyplot_tutorial.html
-import subprocess
 
 def main():
-    fName = "world05"
-    filePath = "./"
+    # Cargando el archivo de descripcion del mundo a recorrer
+    if(len(sys.argv) < 2):
+        print('Ingresar el mundo a recorrer. Por ejemplo world1.csv')
+        exit(-1)
+    else:
+        fname = sys.argv[1]
 
     # goal position [x, y]
     start = np.array([5, 5])
@@ -23,7 +25,7 @@ def main():
 
     # obstacles [ob1(x,y,r), ob2(x,y,r), ....]
     # x,y coord and obstacle radius
-    ob = np.loadtxt(fName + ".csv")
+    ob = np.loadtxt(fname)
     obs = 1.0
 
     plt.cla()
@@ -38,8 +40,11 @@ def main():
         tmp.add_patch(patch)
     plt.axis("equal")
     plt.grid(True)
+
     # We save to a file
-    plt.savefig(filePath + fName + ".png")
+    base=os.path.basename(fname)
+    plt.savefig(os.path.splitext(base)[0] + ".png")
+    plt.show()
 
 if __name__ == '__main__':
     main()

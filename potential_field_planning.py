@@ -2,13 +2,13 @@
 
 Potential Field based path planner
 
-author: Atsushi Sakai (@Atsushi_twi)
-
 Ref:
-https://www.cs.cmu.edu/~motionplanning/lecture/Chap4-Potential-Field_howie.pdf
+    https://www.cs.cmu.edu/~motionplanning/lecture/Chap4-Potential-Field_howie.pdf
 
 """
 
+import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -138,6 +138,13 @@ def draw_heatmap(data):
 
 
 def main():
+    # Cargando el archivo de descripcion del mundo a recorrer
+    if(len(sys.argv) < 2):
+        print('Ingresar el mundo a recorrer. Por ejemplo world1.csv')
+        exit(-1)
+    else:
+        fname = sys.argv[1]
+
     print("potential_field_planning start")
 
     sx = 5.0  # start x position [m]
@@ -147,7 +154,7 @@ def main():
     grid_size = 1  # potential grid size [m]
     robot_radius = 5.0  # robot radius [m]
 
-    ob = np.loadtxt("world01.csv")
+    ob = np.loadtxt(fname)
     ox = ob[:, 0]  # obstacle x position list [m]
     oy = ob[:, 1]  # obstacle y position list [m]
 
@@ -160,6 +167,9 @@ def main():
         sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
 
     if show_animation:
+        # We save to a file
+        base=os.path.basename(fname)
+        plt.savefig(os.path.splitext(base)[0] + "_nav.png")
         plt.show()
 
 

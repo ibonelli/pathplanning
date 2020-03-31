@@ -15,16 +15,14 @@ import matplotlib.pyplot as plt
 # Parameters
 KP = 5.0  # attractive potential gain
 ETA = 100.0  # repulsive potential gain
-AREA_WIDTH = 30.0  # potential area width [m]
 
 show_animation = True
 
-
 def calc_potential_field(gx, gy, ox, oy, reso, rr):
-    minx = min(ox) - AREA_WIDTH / 2.0
-    miny = min(oy) - AREA_WIDTH / 2.0
-    maxx = max(ox) + AREA_WIDTH / 2.0
-    maxy = max(oy) + AREA_WIDTH / 2.0
+    minx = min(ox)
+    miny = min(oy)
+    maxx = max(ox)
+    maxy = max(oy)
     xw = int(round((maxx - minx) / reso))
     yw = int(round((maxy - miny) / reso))
 
@@ -136,7 +134,7 @@ def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
 
 def draw_heatmap(data):
     data = np.array(data).T
-    plt.pcolor(data, vmax=100.0, cmap=plt.cm.Blues)
+    plt.pcolor(data, vmax=200.0, cmap=plt.cm.Blues)
 
 
 def main():
@@ -144,13 +142,14 @@ def main():
 
     sx = 5.0  # start x position [m]
     sy = 5.0  # start y positon [m]
-    gx = 30.0  # goal x position [m]
-    gy = 30.0  # goal y position [m]
-    grid_size = 0.5  # potential grid size [m]
+    gx = 55.0  # goal x position [m]
+    gy = 55.0  # goal y position [m]
+    grid_size = 1  # potential grid size [m]
     robot_radius = 5.0  # robot radius [m]
 
-    ox = [12.0, 18.0]  # obstacle x position list [m]
-    oy = [12.0, 18.0]  # obstacle y position list [m]
+    ob = np.loadtxt("world01.csv")
+    ox = ob[:, 0]  # obstacle x position list [m]
+    oy = ob[:, 1]  # obstacle y position list [m]
 
     if show_animation:
         plt.grid(True)

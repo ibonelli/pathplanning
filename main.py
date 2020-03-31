@@ -23,20 +23,6 @@ def main():
     global file_number
     print(__file__ + " start!!")
 
-    # Random1 --------
-    # initial state [x, y]
-    r1_x = np.array([40, 20])
-    # Saving trajectory
-    r1_traj = np.array(r1_x)
-    r1_ticks = 0
-
-    # Random2 --------
-    # initial state [x, y]
-    r2_x = np.array([20, 40])
-    # Saving trajectory
-    r2_traj = np.array(r2_x)
-    r2_ticks = 0
-
     # initial state [x, y, yaw(rad), v(m/s), omega(rad/s)]
     if (goal_agent == "DWA"):
         x = np.array([5, 5, math.pi / 8.0, 0.0, 0.0])

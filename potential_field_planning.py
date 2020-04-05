@@ -99,9 +99,11 @@ def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
         plt.plot(ix, iy, "*k")
         plt.plot(gix, giy, "*m")
 
-    rx, ry = [sx], [sy]
+    rx, ry, rd = [sx], [sy], [d]
     motion = get_motion_model()
-    while d >= reso:
+    scount=0
+    stuck = False
+    while d >= reso and not stuck:
         minp = float("inf")
         minix, miniy = -1, -1
         for i in range(len(motion)):
@@ -120,8 +122,33 @@ def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
         xp = ix * reso + minx
         yp = iy * reso + miny
         d = np.hypot(gx - xp, gy - yp)
+        rd.append(d)
         rx.append(xp)
         ry.append(yp)
+
+        ## Checking if we get stuck...
+        dif = rd[-2] - rd[-1]
+        if dif < 0 and scount == 0:
+            scount = 1
+            rcheck = rd[-2]
+            print("Stuck? : " + str(rcheck))
+        elif scount != 0:
+            if (rcheck - rd[-1]) <= reso and scount <= 3:
+                scount += 1
+                print("Still stuck... scount: " + str(scount))
+            elif (rcheck - rd[-1]) <= reso and scount > 3:
+                print("Now we are really stuck!!!")
+                stuck = True
+            elif (rcheck - rd[-1]) > reso:
+                print("We got out of rcheck+reso area")
+                scount = 0
+            else:
+                print("How did we get here? (scount!=0)")
+        else:
+            scount = 0
+
+        if stuck:
+            print("NEED TO TRY DIFFERENT DIRECTION HERE...")
 
         if show_animation:
             plt.plot(ix, iy, ".r")

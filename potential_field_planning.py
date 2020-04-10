@@ -82,6 +82,31 @@ def get_motion_model():
     return motion
 
 
+def decide_status(rd, stuck, scount, rcheck, reso):
+    ## Checking if we get stuck...
+    dif = rd[-2] - rd[-1]
+    if dif < 0 and scount == 0:
+        scount = 1
+        rcheck = rd[-2]
+        print("Stuck? : " + str(rcheck))
+    elif scount != 0:
+        if (rcheck - rd[-1]) <= reso and scount <= 3:
+            scount += 1
+            print("Still stuck... scount: " + str(scount))
+        elif (rcheck - rd[-1]) <= reso and scount > 3:
+            print("Now we are really stuck!!!")
+            stuck = True
+        elif (rcheck - rd[-1]) > reso:
+            print("We got out of rcheck+reso area")
+            scount = 0
+        else:
+            print("How did we get here? (scount!=0)")
+    else:
+        scount = 0
+
+    return stuck, scount, rcheck
+
+
 def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
 
     # calc potential field
@@ -101,7 +126,8 @@ def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
 
     rx, ry, rd = [sx], [sy], [d]
     motion = get_motion_model()
-    scount=0
+    scount= 0
+    rcheck= None
     stuck = False
     while d >= reso and not stuck:
         minp = float("inf")
@@ -126,26 +152,7 @@ def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
         rx.append(xp)
         ry.append(yp)
 
-        ## Checking if we get stuck...
-        dif = rd[-2] - rd[-1]
-        if dif < 0 and scount == 0:
-            scount = 1
-            rcheck = rd[-2]
-            print("Stuck? : " + str(rcheck))
-        elif scount != 0:
-            if (rcheck - rd[-1]) <= reso and scount <= 3:
-                scount += 1
-                print("Still stuck... scount: " + str(scount))
-            elif (rcheck - rd[-1]) <= reso and scount > 3:
-                print("Now we are really stuck!!!")
-                stuck = True
-            elif (rcheck - rd[-1]) > reso:
-                print("We got out of rcheck+reso area")
-                scount = 0
-            else:
-                print("How did we get here? (scount!=0)")
-        else:
-            scount = 0
+        stuck, scount, rcheck = decide_status(rd, stuck, scount, rcheck, reso)
 
         if stuck:
             print("NEED TO TRY DIFFERENT DIRECTION HERE...")

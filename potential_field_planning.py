@@ -9,6 +9,7 @@ Ref:
 
 import os
 import sys
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -17,6 +18,134 @@ KP = 5.0  # attractive potential gain
 ETA = 100.0  # repulsive potential gain
 
 show_animation = True
+
+# START Class LidarPoint -----------------------------------------------
+class LidarPoint:
+    def __init__(self):
+        self.angle = 0
+        self.r = np.zeros(2)
+        self.dist = 0
+        self.col = False
+
+    def print_values(self):
+        print "angle: " + str(self.angle)
+        print "oi: " + str(self.r)
+        print "dist: " + str(self.dist)
+        print "collision: " + str(self.col)
+# END Class LidarPoint -------------------------------------------------
+
+# START Class LidarLimits ----------------------------------------------
+class LidarLimits:
+    def __init__(self, grid_size):
+        self.grid_size = grid_size
+        self.sensor_radius = grid_size * 10
+        self.sensor_angle_steps = 36  # [rad]
+        self.angle_step = 2 * math.pi / self.sensor_angle_steps
+        self.debug_graph_fname = "limit.png"
+
+    # We get the limit for each LIDAR point
+    # We will have as many limits as self.sensor_angle_steps
+    # We store x, y and d (size of the vector)
+    def lidar(self, x, y, ox, oy):
+        limit = []
+
+        for i in xrange(self.sensor_angle_steps):
+            p = LidarPoint()
+            p.angle = self.angle_step * i
+            rx = x + self.sensor_radius * math.cos(self.angle_step * i)
+            ry = y + self.sensor_radius * math.sin(self.angle_step * i)
+            r = np.array([rx, ry])
+            p.col,p.r = self.lidar_limits(x, y, r, ox, oy)
+            p.dist = math.sqrt(math.pow(p.r[0]-x,2)+math.pow(p.r[1]-y,2))
+            limit.append(p)
+
+        return limit
+
+    # We get the limit for an specific angle.
+    def lidar_limits(self, x, y, r, ox, oy):
+        oi = []
+        for obx,oby,obs in np.nditer([ox, oy, self.grid_size]):
+            intersects, limit = self.detect_collision_point(np.array([x, y]), r, np.array([obx, oby]), obs)
+            if (intersects):
+                #print "Intersection at " + str(limit)
+                oi.append(limit)
+        if (len(oi) == 0):
+            return False, r
+        elif (len(oi) == 1):
+            return True, oi[0]
+        else:
+            min_val = float("inf")
+            val_to_return = None
+            for p in oi:
+                h = np.linalg.norm(p)
+                if (h < min_val):
+                    min_val = h
+                    val_to_return = p
+            return True, p
+
+    def detect_collision_point(self, p1, p2, q, r):
+        intersects, values = self.getSegmentCircleIntersection(p1,p2,q,r)
+        if (intersects):
+            if (len(values) == 1):
+                return intersects, values[0]
+            else:
+                m1 = np.linalg.norm(values[0])
+                m2 = np.linalg.norm(values[1])
+                if(m1>m2):
+                    return intersects, values[1]
+                else:
+                    return intersects, values[0]
+        else:
+            return intersects, None
+
+    def getSegmentCircleIntersection(self, p1, p2, q, r):
+        v = np.array([p2[0]-p1[0], p2[1]-p1[1]])
+        a = v.dot(v)
+        b = 2 * v.dot(np.array([p1[0]-q[0], p1[1]-q[1]]))
+        c = p1.dot(p1) + q.dot(q) - 2 * p1.dot(q) - r**2
+        disc = b**2 - 4 * a * c
+        if disc < 0:
+            return False, None
+        sqrt_disc = math.sqrt(disc)
+        t1 = (-b + sqrt_disc) / (2 * a)
+        t2 = (-b - sqrt_disc) / (2 * a)
+
+        if not (0 <= t1 <= 1 or 0 <= t2 <= 1):
+            return False, None
+        else:
+            i = []
+            if (0 <= t1 <= 1):
+                i1 = v.dot(t1) + p1
+                i.append(i1)
+            if (0 <= t2 <= 1):
+                i2 = v.dot(t2) + p1
+                i.append(i2)
+            return True, i
+
+    # From the LIDAR list we get best possible paths
+    def get_limits(self, limit):
+        oi_list = []
+
+        for l in limit:
+            if (l.col == False):
+                oi_list.append(l)
+
+        return oi_list
+
+    # Graph LIDAR limit
+    def graph_limits(self, limit):
+        oi_list = self.get_limits(limit)
+        plt.cla()
+        for l in limit:
+            plt.plot(l.r[0], l.r[1], "b.")
+        if (len(oi_list) >= 1):
+            for l in oi_list:
+                plt.plot(l.r[0], l.r[1], "xr")
+        plt.axis("equal")
+        plt.grid(True)
+        plt.savefig(self.debug_graph_fname)
+# END Class LidarLimits ------------------------------------------------
+
 
 def calc_potential_field(gx, gy, ox, oy, reso, rr):
     minx = min(ox)
@@ -155,6 +284,9 @@ def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
         stuck, scount, rcheck = decide_status(rd, stuck, scount, rcheck, reso)
 
         if stuck:
+            myLimits = LidarLimits(reso)
+            limits = myLimits.lidar(xp, yp, ox, oy)
+            myLimits.graph_limits(limits)
             print("NEED TO TRY DIFFERENT DIRECTION HERE...")
 
         if show_animation:

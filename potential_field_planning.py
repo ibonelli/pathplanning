@@ -39,7 +39,7 @@ class LidarLimits:
     def __init__(self, grid_size):
         self.grid_size = grid_size
         self.sensor_radius = grid_size * 10
-        self.sensor_angle_steps = 36  # [rad]
+        self.sensor_angle_steps = 8  # [rad]
         self.angle_step = 2 * math.pi / self.sensor_angle_steps
         self.debug_limit_fname = "limit.png"
         self.debug_graph_fname = "navigation.png"
@@ -132,6 +132,11 @@ class LidarLimits:
                 oi_list.append(l)
 
         return oi_list
+
+    # Change motion model according to found limits and prior path
+    def get_new_motion_model(self, limit):
+        model = None
+        return model
 
     # Graph LIDAR limit
     def graph_limits(self, limit):

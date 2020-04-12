@@ -41,7 +41,8 @@ class LidarLimits:
         self.sensor_radius = grid_size * 10
         self.sensor_angle_steps = 36  # [rad]
         self.angle_step = 2 * math.pi / self.sensor_angle_steps
-        self.debug_graph_fname = "limit.png"
+        self.debug_limit_fname = "limit.png"
+        self.debug_graph_fname = "navigation.png"
 
     # We get the limit for each LIDAR point
     # We will have as many limits as self.sensor_angle_steps
@@ -134,6 +135,7 @@ class LidarLimits:
 
     # Graph LIDAR limit
     def graph_limits(self, limit):
+        plt.savefig(self.debug_graph_fname)
         oi_list = self.get_limits(limit)
         plt.cla()
         for l in limit:
@@ -143,10 +145,11 @@ class LidarLimits:
                 plt.plot(l.r[0], l.r[1], "xr")
         plt.axis("equal")
         plt.grid(True)
-        plt.savefig(self.debug_graph_fname)
+        plt.savefig(self.debug_limit_fname)
 # END Class LidarLimits ------------------------------------------------
 
-
+# START Class ApfNavigation --------------------------------------------
+#class ApfNavigation:
 def calc_potential_field(gx, gy, ox, oy, reso, rr):
     minx = min(ox)
     miny = min(oy)
@@ -301,7 +304,7 @@ def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
 def draw_heatmap(data):
     data = np.array(data).T
     plt.pcolor(data, vmax=200.0, cmap=plt.cm.Blues)
-
+# END Class ApfNavigation ----------------------------------------------
 
 def main():
     # Cargando el archivo de descripcion del mundo a recorrer

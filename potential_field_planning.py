@@ -149,161 +149,169 @@ class LidarLimits:
 # END Class LidarLimits ------------------------------------------------
 
 # START Class ApfNavigation --------------------------------------------
-#class ApfNavigation:
-def calc_potential_field(gx, gy, ox, oy, reso, rr):
-    minx = min(ox)
-    miny = min(oy)
-    maxx = max(ox)
-    maxy = max(oy)
-    xw = int(round((maxx - minx) / reso))
-    yw = int(round((maxy - miny) / reso))
+class ApfNavigation:
+    def __init__(self, reso, rr):
+        self.reso = reso
+        self.rr = rr
+        self.motion = [[1, 0],
+                      [0, 1],
+                      [-1, 0],
+                      [0, -1],
+                      [-1, -1],
+                      [-1, 1],
+                      [1, -1],
+                      [1, 1]]
 
-    # calc each potential
-    pmap = [[0.0 for i in range(yw)] for i in range(xw)]
+    def calc_potential_field(self, gx, gy, ox, oy):
+        minx = min(ox)
+        miny = min(oy)
+        maxx = max(ox)
+        maxy = max(oy)
+        xw = int(round((maxx - minx) / self.reso))
+        yw = int(round((maxy - miny) / self.reso))
 
-    for ix in range(xw):
-        x = ix * reso + minx
+        # calc each potential
+        pmap = [[0.0 for i in range(yw)] for i in range(xw)]
 
-        for iy in range(yw):
-            y = iy * reso + miny
-            ug = calc_attractive_potential(x, y, gx, gy)
-            uo = calc_repulsive_potential(x, y, ox, oy, rr)
-            uf = ug + uo
-            pmap[ix][iy] = uf
+        for ix in range(xw):
+            x = ix * self.reso + minx
 
-    return pmap, minx, miny
+            for iy in range(yw):
+                y = iy * self.reso + miny
+                ug = self.calc_attractive_potential(x, y, gx, gy)
+                uo = self.calc_repulsive_potential(x, y, ox, oy)
+                uf = ug + uo
+                pmap[ix][iy] = uf
 
+        return pmap, minx, miny
 
-def calc_attractive_potential(x, y, gx, gy):
-    return 0.5 * KP * np.hypot(x - gx, y - gy)
+    def calc_attractive_potential(self, x, y, gx, gy):
+        return 0.5 * KP * np.hypot(x - gx, y - gy)
 
+    def calc_repulsive_potential(self, x, y, ox, oy):
+        # search nearest obstacle
+        minid = -1
+        dmin = float("inf")
+        for i in range(len(ox)):
+            d = np.hypot(x - ox[i], y - oy[i])
+            if dmin >= d:
+                dmin = d
+                minid = i
 
-def calc_repulsive_potential(x, y, ox, oy, rr):
-    # search nearest obstacle
-    minid = -1
-    dmin = float("inf")
-    for i in range(len(ox)):
-        d = np.hypot(x - ox[i], y - oy[i])
-        if dmin >= d:
-            dmin = d
-            minid = i
+        # calc repulsive potential
+        dq = np.hypot(x - ox[minid], y - oy[minid])
 
-    # calc repulsive potential
-    dq = np.hypot(x - ox[minid], y - oy[minid])
+        if dq <= self.rr:
+            if dq <= 0.1:
+                dq = 0.1
 
-    if dq <= rr:
-        if dq <= 0.1:
-            dq = 0.1
-
-        return 0.5 * ETA * (1.0 / dq - 1.0 / rr) ** 2
-    else:
-        return 0.0
-
-
-def get_motion_model():
-    # dx, dy
-    motion = [[1, 0],
-              [0, 1],
-              [-1, 0],
-              [0, -1],
-              [-1, -1],
-              [-1, 1],
-              [1, -1],
-              [1, 1]]
-
-    return motion
-
-
-def decide_status(rd, stuck, scount, rcheck, reso):
-    ## Checking if we get stuck...
-    dif = rd[-2] - rd[-1]
-    if dif < 0 and scount == 0:
-        scount = 1
-        rcheck = rd[-2]
-        print("Stuck? : " + str(rcheck))
-    elif scount != 0:
-        if (rcheck - rd[-1]) <= reso and scount <= 3:
-            scount += 1
-            print("Still stuck... scount: " + str(scount))
-        elif (rcheck - rd[-1]) <= reso and scount > 3:
-            print("Now we are really stuck!!!")
-            stuck = True
-        elif (rcheck - rd[-1]) > reso:
-            print("We got out of rcheck+reso area")
-            scount = 0
+            return 0.5 * ETA * (1.0 / dq - 1.0 / self.rr) ** 2
         else:
-            print("How did we get here? (scount!=0)")
-    else:
-        scount = 0
+            return 0.0
 
-    return stuck, scount, rcheck
+    def get_motion_model(self):
+        return self.motion
 
+    def set_motion_model(self, motion):
+        self.motion = motion
 
-def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
+    def reset_motion_model(self):
+        self.motion = [[1, 0],
+                      [0, 1],
+                      [-1, 0],
+                      [0, -1],
+                      [-1, -1],
+                      [-1, 1],
+                      [1, -1],
+                      [1, 1]]
 
-    # calc potential field
-    pmap, minx, miny = calc_potential_field(gx, gy, ox, oy, reso, rr)
-
-    # search path
-    d = np.hypot(sx - gx, sy - gy)
-    ix = round((sx - minx) / reso)
-    iy = round((sy - miny) / reso)
-    gix = round((gx - minx) / reso)
-    giy = round((gy - miny) / reso)
-
-    if show_animation:
-        draw_heatmap(pmap)
-        plt.plot(ix, iy, "*k")
-        plt.plot(gix, giy, "*m")
-
-    rx, ry, rd = [sx], [sy], [d]
-    motion = get_motion_model()
-    scount= 0
-    rcheck= None
-    stuck = False
-    while d >= reso and not stuck:
-        minp = float("inf")
-        minix, miniy = -1, -1
-        for i in range(len(motion)):
-            inx = int(ix + motion[i][0])
-            iny = int(iy + motion[i][1])
-            if inx >= len(pmap) or iny >= len(pmap[0]):
-                p = float("inf")  # outside area
+    def decide_status(self, rd, stuck, scount, rcheck):
+        ## Checking if we get stuck...
+        dif = rd[-2] - rd[-1]
+        if dif < 0 and scount == 0:
+            scount = 1
+            rcheck = rd[-2]
+            print("Stuck? : " + str(rcheck))
+        elif scount != 0:
+            if (rcheck - rd[-1]) <= self.reso and scount <= 3:
+                scount += 1
+                print("Still stuck... scount: " + str(scount))
+            elif (rcheck - rd[-1]) <= self.reso and scount > 3:
+                print("Now we are really stuck!!!")
+                stuck = True
+            elif (rcheck - rd[-1]) > self.reso:
+                print("We got out of rcheck+reso area")
+                scount = 0
             else:
-                p = pmap[inx][iny]
-            if minp > p:
-                minp = p
-                minix = inx
-                miniy = iny
-        ix = minix
-        iy = miniy
-        xp = ix * reso + minx
-        yp = iy * reso + miny
-        d = np.hypot(gx - xp, gy - yp)
-        rd.append(d)
-        rx.append(xp)
-        ry.append(yp)
+                print("How did we get here? (scount!=0)")
+        else:
+            scount = 0
 
-        stuck, scount, rcheck = decide_status(rd, stuck, scount, rcheck, reso)
+        return stuck, scount, rcheck
 
-        if stuck:
-            myLimits = LidarLimits(reso)
-            limits = myLimits.lidar(xp, yp, ox, oy)
-            myLimits.graph_limits(limits)
-            print("NEED TO TRY DIFFERENT DIRECTION HERE...")
+    def potential_field_planning(self, sx, sy, gx, gy, ox, oy):
+        # calc potential field
+        pmap, minx, miny = self.calc_potential_field(gx, gy, ox, oy)
+
+        # search path
+        d = np.hypot(sx - gx, sy - gy)
+        ix = round((sx - minx) / self.reso)
+        iy = round((sy - miny) / self.reso)
+        gix = round((gx - minx) / self.reso)
+        giy = round((gy - miny) / self.reso)
 
         if show_animation:
-            plt.plot(ix, iy, ".r")
-            plt.pause(0.01)
+            self.draw_heatmap(pmap)
+            plt.plot(ix, iy, "*k")
+            plt.plot(gix, giy, "*m")
 
-    print("Goal!!")
+        rx, ry, rd = [sx], [sy], [d]
+        motion = self.get_motion_model()
+        scount= 0
+        rcheck= None
+        stuck = False
+        while d >= self.reso and not stuck:
+            minp = float("inf")
+            minix, miniy = -1, -1
+            for i in range(len(motion)):
+                inx = int(ix + motion[i][0])
+                iny = int(iy + motion[i][1])
+                if inx >= len(pmap) or iny >= len(pmap[0]):
+                    p = float("inf")  # outside area
+                else:
+                    p = pmap[inx][iny]
+                if minp > p:
+                    minp = p
+                    minix = inx
+                    miniy = iny
+            ix = minix
+            iy = miniy
+            xp = ix * self.reso + minx
+            yp = iy * self.reso + miny
+            d = np.hypot(gx - xp, gy - yp)
+            rd.append(d)
+            rx.append(xp)
+            ry.append(yp)
 
-    return rx, ry
+            stuck, scount, rcheck = self.decide_status(rd, stuck, scount, rcheck)
 
+            if stuck:
+                myLimits = LidarLimits(self.reso)
+                limits = myLimits.lidar(xp, yp, ox, oy)
+                myLimits.graph_limits(limits)
+                print("NEED TO TRY DIFFERENT DIRECTION HERE...")
 
-def draw_heatmap(data):
-    data = np.array(data).T
-    plt.pcolor(data, vmax=200.0, cmap=plt.cm.Blues)
+            if show_animation:
+                plt.plot(ix, iy, ".r")
+                plt.pause(0.01)
+
+        print("Goal!!")
+
+        return rx, ry
+
+    def draw_heatmap(self, data):
+        data = np.array(data).T
+        plt.pcolor(data, vmax=200.0, cmap=plt.cm.Blues)
 # END Class ApfNavigation ----------------------------------------------
 
 def main():
@@ -332,8 +340,8 @@ def main():
         plt.axis("equal")
 
     # path generation
-    rx, ry = potential_field_planning(
-        sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
+    myNavigation = ApfNavigation(grid_size, robot_radius)
+    rx, ry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy)
 
     if show_animation:
         # We save to a file

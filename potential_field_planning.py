@@ -43,12 +43,16 @@ class LidarLimits:
         self.angle_step = 2 * math.pi / self.sensor_angle_steps
         self.debug_limit_fname = "limit.png"
         self.debug_graph_fname = "navigation.png"
+        self.robot_position_x = None
+        self.robot_position_y = None
 
     # We get the limit for each LIDAR point
     # We will have as many limits as self.sensor_angle_steps
     # We store x, y and d (size of the vector)
     def lidar(self, x, y, ox, oy):
         limit = []
+        self.robot_position_x = x
+        self.robot_position_y = y
 
         for i in xrange(self.sensor_angle_steps):
             p = LidarPoint()
@@ -135,6 +139,12 @@ class LidarLimits:
 
     # Change motion model according to found limits and prior path
     def get_new_motion_model(self, limit):
+        oi_list = self.get_limits(limit)
+        if (len(oi_list) >= 1):
+            for l in oi_list:
+                dx = int((l.r[0] - self.robot_position_x) / self.sensor_radius)
+                dy = int((l.r[1] - self.robot_position_y) / self.sensor_radius)
+                print("x: " + str(dx) + " | y: " + str(dy))
         model = None
         return model
 
@@ -303,6 +313,7 @@ class ApfNavigation:
             if stuck:
                 myLimits = LidarLimits(self.reso)
                 limits = myLimits.lidar(xp, yp, ox, oy)
+                myLimits.get_new_motion_model(limits)
                 myLimits.graph_limits(limits)
                 print("NEED TO TRY DIFFERENT DIRECTION HERE...")
 

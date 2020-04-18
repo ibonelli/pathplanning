@@ -163,6 +163,66 @@ class LidarLimits:
         plt.savefig(self.debug_limit_fname)
 # END Class LidarLimits ------------------------------------------------
 
+# START Class Map ------------------------------------------------
+class Map:
+    def __init__(self, reso, gx, gy, ox, oy):
+        self.reso = reso
+        self.minx = min(ox)
+        self.miny = min(oy)
+        self.maxx = max(ox)
+        self.maxy = max(oy)
+        self.xw = int(round((self.maxx - self.minx) / self.reso))
+        self.yw = int(round((self.maxy - self.miny) / self.reso))
+        self.pmap = None
+
+    def create_map(self):
+        # calc each potential
+        self.pmap = [[0.0 for i in range(self.yw)] for i in range(self.xw)]
+        return self.pmap
+
+    def get_map(self):
+        return self.pmap
+
+    def set_map(self, pmap):
+        self.pmap = pmap
+
+    def get_minx(self):
+        return self.minx
+
+    def set_minx(self, minx):
+        self.minx = minx
+
+    def get_miny(self):
+        return self.miny
+
+    def set_miny(self, miny):
+        self.miny = miny
+
+    def get_maxx(self):
+        return self.maxx
+
+    def set_maxx(self, maxx):
+        self.maxx = maxx
+
+    def get_maxy(self):
+        return self.maxy
+
+    def set_maxy(self, maxy):
+        self.maxy = maxy
+
+    def get_xw(self):
+        return self.xw
+
+    def set_xw(self, xw):
+        self.xw = xw
+
+    def get_yw(self):
+        return self.yw
+
+    def set_yw(self, yw):
+        self.yw = yw
+# END Class Map --------------------------------------------------
+
 # START Class ApfNavigation --------------------------------------------
 class ApfNavigation:
     def __init__(self, reso, rr):
@@ -178,27 +238,21 @@ class ApfNavigation:
                       [1, 1]]
 
     def calc_potential_field(self, gx, gy, ox, oy):
-        minx = min(ox)
-        miny = min(oy)
-        maxx = max(ox)
-        maxy = max(oy)
-        xw = int(round((maxx - minx) / self.reso))
-        yw = int(round((maxy - miny) / self.reso))
+        myMap = Map(self.reso, gx, gy, ox, oy)
+        pmap = myMap.create_map()
 
-        # calc each potential
-        pmap = [[0.0 for i in range(yw)] for i in range(xw)]
+        for ix in range(myMap.get_xw()):
+            x = ix * self.reso + myMap.get_minx()
 
-        for ix in range(xw):
-            x = ix * self.reso + minx
-
-            for iy in range(yw):
-                y = iy * self.reso + miny
+            for iy in range(myMap.get_yw()):
+                y = iy * self.reso + myMap.get_miny()
                 ug = self.calc_attractive_potential(x, y, gx, gy)
                 uo = self.calc_repulsive_potential(x, y, ox, oy)
                 uf = ug + uo
                 pmap[ix][iy] = uf
 
-        return pmap, minx, miny
+        myMap.set_map(pmap)
+        return pmap, myMap.get_minx(), myMap.get_miny()
 
     def calc_attractive_potential(self, x, y, gx, gy):
         return 0.5 * KP * np.hypot(x - gx, y - gy)

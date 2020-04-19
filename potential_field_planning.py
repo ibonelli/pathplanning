@@ -132,10 +132,19 @@ class LidarLimits:
         oi_list = []
 
         for l in limit:
-            if (l.col == False):
+            if (l.col <> False):
                 oi_list.append(l)
 
         return oi_list
+
+    def get_freepath(self, limit):
+        fp_list = []
+
+        for l in limit:
+            if (l.col == False):
+                fp_list.append(l)
+
+        return fp_list
 
     # Change motion model according to found limits and prior path
     def get_new_motion_model(self, limit):
@@ -152,15 +161,26 @@ class LidarLimits:
     def graph_limits(self, limit):
         plt.savefig(self.debug_graph_fname)
         oi_list = self.get_limits(limit)
+        fp_list = self.get_freepath(limit)
         plt.cla()
-        for l in limit:
-            plt.plot(l.r[0], l.r[1], "b.")
+        if (len(fp_list) >= 1):
+            for l in fp_list:
+                plt.plot(l.r[0], l.r[1], "xr")
         if (len(oi_list) >= 1):
             for l in oi_list:
-                plt.plot(l.r[0], l.r[1], "xr")
+                plt.plot(l.r[0], l.r[1], "b.")
         plt.axis("equal")
         plt.grid(True)
         plt.savefig(self.debug_limit_fname)
+
+    # Limits to map
+    def limit2map(self, omap, limit):
+        if (len(limit) >= 1):
+            for l in limit:
+                ox = int(l.r[0] / self.grid_size)
+                oy = int(l.r[1] / self.grid_size)
+                omap[ox][oy] = 1.0
+        return omap
 # END Class LidarLimits ------------------------------------------------
 
 # START Class Map ------------------------------------------------
@@ -171,20 +191,25 @@ class Map:
         self.miny = min(oy)
         self.maxx = max(ox)
         self.maxy = max(oy)
-        self.xw = int(round((self.maxx - self.minx) / self.reso))
-        self.yw = int(round((self.maxy - self.miny) / self.reso))
-        self.pmap = None
+        if gx > self.maxx:
+            self.maxx = gx
+        if gy > self.maxy:
+            self.maxy = gy
+        self.xw = int(round((self.maxx - self.minx) / self.reso)) + 1
+        self.yw = int(round((self.maxy - self.miny) / self.reso)) + 1
+        self.map = None
+        self.debug_map_fname = "map.png"
 
-    def create_map(self):
+    def create(self):
         # calc each potential
-        self.pmap = [[0.0 for i in range(self.yw)] for i in range(self.xw)]
-        return self.pmap
+        self.map = [[0.0 for i in range(self.yw)] for i in range(self.xw)]
+        return self.map
 
     def get_map(self):
-        return self.pmap
+        return self.map
 
-    def set_map(self, pmap):
-        self.pmap = pmap
+    def set_map(self, exmap):
+        self.map = exmap
 
     def get_minx(self):
         return self.minx
@@ -221,6 +246,15 @@ class Map:
 
     def set_yw(self, yw):
         self.yw = yw
+
+    def draw(self):
+        for i in range(self.yw):
+            for j in range(self.xw):
+                if self.map[i][j] == 1.0:
+                    plt.plot(j*self.reso, i*self.reso, "b.")
+        plt.axis("equal")
+        plt.grid(True)
+        plt.savefig(self.debug_map_fname)
 # END Class Map --------------------------------------------------
 
 # START Class ApfNavigation --------------------------------------------
@@ -249,7 +283,7 @@ class ApfNavigation:
 
     def calc_potential_field(self, gx, gy, ox, oy):
         myMap = Map(self.reso, gx, gy, ox, oy)
-        pmap = myMap.create_map()
+        pmap = myMap.create()
 
         for ix in range(myMap.get_xw()):
             x = ix * self.reso + myMap.get_minx()
@@ -419,15 +453,20 @@ def main():
         plt.plot(sx, sy, "*k")
         plt.plot(gx, gy, "*m")
 
+    myMap = Map(grid_size, gx, gy, ox, oy)
+    myMap.create()
+
     while d >= grid_size and not stuck:
         d, xp, yp = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
         rd.append(d)
         rx.append(xp)
         ry.append(yp)
         stuck = myNavigation.decide_status(rd)
+        myLimits = LidarLimits(grid_size)
+        limits = myLimits.lidar(xp, yp, ox, oy)
+        myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
         if stuck:
-            myLimits = LidarLimits(grid_size)
-            limits = myLimits.lidar(xp, yp, ox, oy)
+            myMap.draw()
             myLimits.get_new_motion_model(limits)
             myLimits.graph_limits(limits)
             print("NEED TO TRY DIFFERENT DIRECTION HERE...")

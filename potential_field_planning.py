@@ -46,6 +46,31 @@ class LidarLimits:
         self.robot_position_x = None
         self.robot_position_y = None
 
+    def fetch_limits(self, x, y, ox, oy):
+        #debug
+        #print "x: " + str(x) + " | y: " + str(y)
+        #print "ox: "
+        #print ox
+        #print "oy: "
+        #print oy
+        #raw_input("Limits! Press Enter to continue...")
+
+        oi = []
+        for obx,oby in np.nditer([ox, oy]):
+            d = math.sqrt(math.pow(obx-x,2)+math.pow(oby-y,2))
+            #print "Distance: " + str(d)
+            if d < self.sensor_radius:
+                oi.append([int(obx), int(oby)])
+
+        #debug
+        #print "oi: "
+        #print oi
+
+        return oi
+
+        #debug
+        #raw_input("Limits! Press Enter to continue...")
+
     # We get the limit for each LIDAR point
     # We will have as many limits as self.sensor_angle_steps
     # We store x, y and d (size of the vector)
@@ -147,13 +172,17 @@ class LidarLimits:
         return fp_list
 
     # Change motion model according to found limits and prior path
-    def get_new_motion_model(self, limit):
-        oi_list = self.get_limits(limit)
-        if (len(oi_list) >= 1):
-            for l in oi_list:
-                dx = int((l.r[0] - self.robot_position_x) / self.sensor_radius)
-                dy = int((l.r[1] - self.robot_position_y) / self.sensor_radius)
-                print("x: " + str(dx) + " | y: " + str(dy))
+    def get_new_motion_model(self, x, y, limit):
+        # Debug
+        #print("limit: ")
+        #print(limit)
+        if (len(limit) >= 1):
+            for l in limit:
+                dx = int(l[0] - x)
+                dy = int(l[1] - y)
+                # Debug
+                #print("x: " + str(dx) + " | y: " + str(dy))
+        # TODO : Build model...
         model = None
         return model
 
@@ -171,14 +200,16 @@ class LidarLimits:
                 plt.plot(l.r[0], l.r[1], "b.")
         plt.axis("equal")
         plt.grid(True)
+        plt.title("Lidar")
         plt.savefig(self.debug_limit_fname)
 
     # Limits to map
     def limit2map(self, omap, limit):
+        #limit = self.get_limits(path_limit)
         if (len(limit) >= 1):
             for l in limit:
-                ox = int(l.r[0] / self.grid_size)
-                oy = int(l.r[1] / self.grid_size)
+                ox = int(l[0])
+                oy = int(l[1])
                 omap[ox][oy] = 1.0
         return omap
 # END Class LidarLimits ------------------------------------------------
@@ -248,12 +279,15 @@ class Map:
         self.yw = yw
 
     def draw(self):
-        for i in range(self.yw):
-            for j in range(self.xw):
+        plt.cla()
+        for j in range(self.yw):
+            for i in range(self.xw):
                 if self.map[i][j] == 1.0:
-                    plt.plot(j*self.reso, i*self.reso, "b.")
+                    plt.plot(i*self.reso, j*self.reso, "b.")
         plt.axis("equal")
         plt.grid(True)
+        plt.title("Map")
+
         plt.savefig(self.debug_map_fname)
 # END Class Map --------------------------------------------------
 
@@ -444,17 +478,25 @@ def main():
     # path generation
     myNavigation = ApfNavigation(grid_size, robot_radius)
 
+    # Objects learned
+    myMap = Map(grid_size, gx, gy, ox, oy)
+    myMap.create()
+
+    # Get Limits
+    myLimits = LidarLimits(grid_size)
+    limits = myLimits.fetch_limits(sx, sy, ox, oy)
+    myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
+
     stuck = False
     d, rx, ry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
     rd, rx, ry = [d], [sx], [sy]
+    limits = myLimits.fetch_limits(rx, ry, ox, oy)
+    myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 
     if show_animation:
         myNavigation.draw_heatmap(myNavigation.get_pmap())
         plt.plot(sx, sy, "*k")
         plt.plot(gx, gy, "*m")
-
-    myMap = Map(grid_size, gx, gy, ox, oy)
-    myMap.create()
 
     while d >= grid_size and not stuck:
         d, xp, yp = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
@@ -462,13 +504,12 @@ def main():
         rx.append(xp)
         ry.append(yp)
         stuck = myNavigation.decide_status(rd)
-        myLimits = LidarLimits(grid_size)
-        limits = myLimits.lidar(xp, yp, ox, oy)
+        limits = myLimits.fetch_limits(xp, yp, ox, oy)
         myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
+
         if stuck:
             myMap.draw()
-            myLimits.get_new_motion_model(limits)
-            myLimits.graph_limits(limits)
+            myLimits.get_new_motion_model(xp, yp, limits)
             print("NEED TO TRY DIFFERENT DIRECTION HERE...")
 
     print("Goal!!")

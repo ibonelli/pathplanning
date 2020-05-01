@@ -38,7 +38,7 @@ class LidarPoint:
 class LidarLimits:
     def __init__(self, grid_size):
         self.grid_size = grid_size
-        self.sensor_radius = grid_size * 10
+        self.sensor_radius = grid_size * 15
         self.sensor_angle_steps = 8  # [rad]
         self.angle_step = 2 * math.pi / self.sensor_angle_steps
         self.debug_limit_fname = "limit.png"
@@ -460,16 +460,18 @@ def main():
 
     print("potential_field_planning start")
 
-    sx = 5.0  # start x position [m]
-    sy = 5.0  # start y positon [m]
-    gx = 55.0  # goal x position [m]
-    gy = 55.0  # goal y position [m]
     grid_size = 1  # potential grid size [m]
     robot_radius = 5.0  # robot radius [m]
 
     ob = np.loadtxt(fname)
-    ox = ob[:, 0]  # obstacle x position list [m]
-    oy = ob[:, 1]  # obstacle y position list [m]
+    flx = ob[:, 0]  # file x position list [m]
+    fly = ob[:, 1]  # file y position list [m]
+    sx = flx[0]     # start x position [m]
+    sy = fly[0]     # start y positon [m]
+    gx = flx[1]     # goal x position [m]
+    gy = fly[1]     # goal y position [m]
+    ox = flx[2:]   # obstacle x position list [m]
+    oy = fly[2:]   # obstacle y position list [m]
 
     if show_animation:
         plt.grid(True)

@@ -31,7 +31,7 @@ def main():
     # obstacles [ob1(x,y,r), ob2(x,y,r), ....]
     # x,y coord and obstacle radius
     coords = np.loadtxt(fname + str("_goal.csv"))
-    csv = np.loadtxt(fname + str("_map.csv"))
+    csv = np.loadtxt(fname + str("_map.csv"), delimiter=",")
     obs = 1.0
 
     # goal position [x, y]
@@ -44,11 +44,15 @@ def main():
     ox = []  # obstacle x position list [m]
     oy = []  # obstacle y position list [m]
 
-    for ix,iy in np.ndindex(csv.shape):
-        if int(csv[ix,iy]) == 1:
+    ly,lx = csv.shape
+    print("lx: " + str(lx))
+    print("ly: " + str(ly))
+
+    for iy,ix in np.ndindex(csv.shape):
+        if int(csv[iy,ix]) == 1:
             ox.append(ix)
-            oy.append(iy)
-            output = np.vstack([output, np.array([ix, iy ])])
+            oy.append(ly-iy)   # Las coordenadas arrancan en la esquina izquierda
+            output = np.vstack([output, np.array([ix, ly-iy])])
 
     # Save converted file
     np.savetxt(fname + str(".csv"), output, fmt='%d',)

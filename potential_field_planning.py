@@ -92,10 +92,14 @@ class LidarLimits:
         return limit
 
     # We get the limit for an specific angle.
+    # Where:
+    #        x: Is the position where LIDAR is measuring
+    #        r: Is the current limit LIDAR position being explored for object collision
+    #       ob: Is the x,y position of each object along with its radius (obs)
     def lidar_limits(self, x, y, r, ox, oy):
         oi = []
         for obx,oby,obs in np.nditer([ox, oy, self.grid_size]):
-            intersects, limit = self.detect_collision_point(np.array([x, y]), r, np.array([obx, oby]), obs)
+            intersects, limit = self.detect_collision_object(np.array([x, y]), r, np.array([obx, oby]), obs)
             if (intersects):
                 #print "Intersection at " + str(limit)
                 oi.append(limit)
@@ -113,8 +117,15 @@ class LidarLimits:
                     val_to_return = p
             return True, p
 
+    # We get the limit for an specific angle.
+    # Where:
+    #       p1: Is the first point of a segment
+    #       p2: Is the second point of a sagment
+    #        q: Is the center of a circle that could intersect with the segment
+    #        r: Is the radius of the circle that could intersect the segment
     def detect_collision_point(self, p1, p2, q, r):
         intersects, values = self.getSegmentCircleIntersection(p1,p2,q,r)
+        # This code returns the proper intersection point
         if (intersects):
             if (len(values) == 1):
                 return intersects, values[0]
@@ -125,6 +136,19 @@ class LidarLimits:
                     return intersects, values[1]
                 else:
                     return intersects, values[0]
+        else:
+            return intersects, None
+
+    # We get the object closest to the LIDAR looking angle.
+    # Where:
+    #       p1: Is the first point of a segment
+    #       p2: Is the second point of a sagment
+    #        q: Is the center of a circle that could intersect with the segment
+    #        r: Is the radius of the circle that could intersect the segment
+    def detect_collision_object(self, p1, p2, q, r):
+        intersects, values = self.getSegmentCircleIntersection(p1,p2,q,r)
+        if (intersects):
+            return intersects, q
         else:
             return intersects, None
 

@@ -32,6 +32,9 @@ class LidarPoint:
         print("oi: " + str(self.r))
         print("dist: " + str(self.dist))
         print("collision: " + str(self.col))
+
+    def get_coords(self):
+        return list(self.r)
 # END Class LidarPoint -------------------------------------------------
 
 # START Class LidarLimits ----------------------------------------------
@@ -46,30 +49,29 @@ class LidarLimits:
         self.robot_position_x = None
         self.robot_position_y = None
 
-    def fetch_limits(self, x, y, ox, oy):
-        #debug
-        #print "x: " + str(x) + " | y: " + str(y)
-        #print "ox: "
-        #print ox
-        #print "oy: "
-        #print oy
-        #raw_input("Limits! Press Enter to continue...")
-
+    # Fetch limits (by inspection)
+    #       (known problem is that detects through walls)
+    def fetch_limits_by_inspection(self, x, y, ox, oy):
         oi = []
         for obx,oby in np.nditer([ox, oy]):
             d = math.sqrt(math.pow(obx-x,2)+math.pow(oby-y,2))
             #print "Distance: " + str(d)
             if d < self.sensor_radius:
                 oi.append([int(obx), int(oby)])
-
-        #debug
-        #print "oi: "
-        #print oi
-
         return oi
 
-        #debug
-        #raw_input("Limits! Press Enter to continue...")
+    # Fetch limits
+    def fetch_limits(self, x, y, ox, oy):
+        limits = self.lidar(x, y, ox, oy)
+        oi_list = self.get_limits(limits)
+        oi = []
+        for aux in oi_list:
+            coords = []
+            mylist = aux.get_coords()
+            coords.append(int(mylist[0]))
+            coords.append(int(mylist[1]))
+            oi.append(coords)
+        return oi
 
     # We get the limit for each LIDAR point
     # We will have as many limits as self.sensor_angle_steps
@@ -147,6 +149,7 @@ class LidarLimits:
     #        r: Is the radius of the circle that could intersect the segment
     def detect_collision_object(self, p1, p2, q, r):
         intersects, values = self.getSegmentCircleIntersection(p1,p2,q,r)
+        # This code returns the actual objects (which simulation wise is better)
         if (intersects):
             return intersects, q
         else:
@@ -176,7 +179,7 @@ class LidarLimits:
                 i.append(i2)
             return True, i
 
-    # From the LIDAR list we get best possible paths
+    # From the LIDAR list we get obstacles
     def get_limits(self, limit):
         oi_list = []
 
@@ -186,6 +189,7 @@ class LidarLimits:
 
         return oi_list
 
+    # From the LIDAR list we get best possible paths
     def get_freepath(self, limit):
         fp_list = []
 
@@ -585,7 +589,8 @@ def main():
     stuck = False
     d, rx, ry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
     rd, rx, ry = [d], [sx], [sy]
-    limits = myLimits.fetch_limits(rx, ry, ox, oy)
+    limits = myLimits.fetch_limits(sx, sy, ox, oy)
+
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
     #intrap = trap.detect(myMap, sx, sy, myNavigation.get_cur_dir())
 

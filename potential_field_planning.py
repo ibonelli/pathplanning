@@ -28,17 +28,17 @@ class LidarPoint:
         self.col = False
 
     def print_values(self):
-        print "angle: " + str(self.angle)
-        print "oi: " + str(self.r)
-        print "dist: " + str(self.dist)
-        print "collision: " + str(self.col)
+        print("angle: " + str(self.angle))
+        print("oi: " + str(self.r))
+        print("dist: " + str(self.dist))
+        print("collision: " + str(self.col))
 # END Class LidarPoint -------------------------------------------------
 
 # START Class LidarLimits ----------------------------------------------
 class LidarLimits:
-    def __init__(self, grid_size):
+    def __init__(self, grid_size, radius):
         self.grid_size = grid_size
-        self.sensor_radius = grid_size * 15
+        self.sensor_radius = grid_size * radius
         self.sensor_angle_steps = 8  # [rad]
         self.angle_step = 2 * math.pi / self.sensor_angle_steps
         self.debug_limit_fname = "limit.png"
@@ -79,7 +79,7 @@ class LidarLimits:
         self.robot_position_x = x
         self.robot_position_y = y
 
-        for i in xrange(self.sensor_angle_steps):
+        for i in range(self.sensor_angle_steps):
             p = LidarPoint()
             p.angle = self.angle_step * i
             rx = x + self.sensor_radius * math.cos(self.angle_step * i)
@@ -157,7 +157,7 @@ class LidarLimits:
         oi_list = []
 
         for l in limit:
-            if (l.col <> False):
+            if (l.col != False):
                 oi_list.append(l)
 
         return oi_list
@@ -314,6 +314,8 @@ class ApfNavigation:
         self.scount = None
         self.rcheck = None
         self.stuck = False
+        self.curdirx = None
+        self.curdiry = None
 
     def calc_potential_field(self, gx, gy, ox, oy):
         myMap = Map(self.reso, gx, gy, ox, oy)
@@ -361,6 +363,9 @@ class ApfNavigation:
 
     def get_motion_model(self):
         return self.motion
+
+    def get_cur_dir(self):
+        return self.curdirx, self.curdiry
 
     def set_motion_model(self, motion):
         self.motion = motion
@@ -432,6 +437,8 @@ class ApfNavigation:
                 minp = p
                 self.minix = inx
                 self.miniy = iny
+                self.curdirx = motion[i][0]
+                self.curdiry = motion[i][1]
 
         self.ix = self.minix
         self.iy = self.miniy
@@ -450,6 +457,66 @@ class ApfNavigation:
         plt.pcolor(data, vmax=200.0, cmap=plt.cm.Blues)
 # END Class ApfNavigation ----------------------------------------------
 
+# START Class TrapNavigation --------------------------------------------
+class TrapNavigation:
+    def __init__(self, reso, rr, radius, supx, supy):
+        self.reso = reso
+        self.rr = rr
+        self.motion = [[1, 0],
+                      [0, 1],
+                      [-1, 0],
+                      [0, -1],
+                      [-1, -1],
+                      [-1, 1],
+                      [1, -1],
+                      [1, 1]]
+        self.detect_radius = radius
+        self.limit_x = supx
+        self.limit_y = supy
+
+    def detect(self, myMap, posX, posY, direction):
+        #print("Map max X: " + str(myMap.get_maxx()))
+        #print("Map max Y: " + str(myMap.get_maxy()))
+        #myMap.get_map()
+
+        #for j in range(int(myMap.get_maxy())):
+        #    for i in range(int(myMap.get_maxx())):
+        #        print(str(int(myMap.get_map()[i][j])) + " ", end='')
+        #    print("\n")
+        #sys.exit()
+
+        lim_sup_x = int(posX + self.detect_radius)
+        if lim_sup_x > self.limit_x:
+            lim_sup_x = self.limit_x
+        lim_inf_x = int(posX - self.detect_radius)
+        if lim_inf_x < 0:
+            lim_inf_x = 0
+        lim_sup_y = int(posY + self.detect_radius)
+        if lim_sup_y > self.limit_y:
+            lim_sup_y = self.limit_y
+        lim_inf_y = int(posY - self.detect_radius)
+        if lim_inf_y < 0:
+            lim_inf_y = 0
+
+        for i in range(lim_inf_x, lim_sup_x):
+            for j in range(lim_inf_y, lim_sup_y):
+                print(str(int(myMap.get_map()[i][j])) + " ", end='')
+            print("\n")
+        sys.exit()
+
+        #for j in range(int(myMap.get_maxy())):
+        #    for i in range(int(myMap.get_maxx())):
+        #        print(str(int(myMap.get_map()[i][j])) + " ", end='')
+
+        oi = []
+        for obx,oby in np.nditer([ox, oy]):
+            d = math.sqrt(math.pow(obx-x,2)+math.pow(oby-y,2))
+            #print "Distance: " + str(d)
+            if d < self.sensor_radius:
+                oi.append([int(obx), int(oby)])
+
+# END Class TrapDetection --------------------------------------------
+
 def main():
     # Cargando el archivo de descripcion del mundo a recorrer
     if(len(sys.argv) < 2):
@@ -462,6 +529,7 @@ def main():
 
     grid_size = 1  # potential grid size [m]
     robot_radius = 5.0  # robot radius [m]
+    vision_limit = 15
 
     ob = np.loadtxt(fname)
     flx = ob[:, 0]  # file x position list [m]
@@ -479,13 +547,14 @@ def main():
 
     # path generation
     myNavigation = ApfNavigation(grid_size, robot_radius)
+    trap = TrapNavigation(grid_size, robot_radius, vision_limit, max(ox), max(oy))
 
     # Objects learned
     myMap = Map(grid_size, gx, gy, ox, oy)
     myMap.create()
 
     # Get Limits
-    myLimits = LidarLimits(grid_size)
+    myLimits = LidarLimits(grid_size, vision_limit)
     limits = myLimits.fetch_limits(sx, sy, ox, oy)
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 
@@ -494,6 +563,7 @@ def main():
     rd, rx, ry = [d], [sx], [sy]
     limits = myLimits.fetch_limits(rx, ry, ox, oy)
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
+    #intrap = trap.detect(myMap, sx, sy, myNavigation.get_cur_dir())
 
     if show_animation:
         myNavigation.draw_heatmap(myNavigation.get_pmap())
@@ -508,6 +578,7 @@ def main():
         stuck = myNavigation.decide_status(rd)
         limits = myLimits.fetch_limits(xp, yp, ox, oy)
         myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
+        #intrap = trap.detect(myMap, rx, ry, myNavigation.get_cur_dir())
 
         if stuck:
             myMap.draw()

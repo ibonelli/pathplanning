@@ -35,6 +35,16 @@ class LidarPoint:
 
     def get_coords(self):
         return list(self.r)
+
+    def get_coord_list(self, limits_list):
+        oi = []
+        for aux in limits_list:
+            coords = []
+            mylist = aux.get_coords()
+            coords.append(int(mylist[0]))
+            coords.append(int(mylist[1]))
+            oi.append(coords)
+        return oi
 # END Class LidarPoint -------------------------------------------------
 
 # START Class LidarLimits ----------------------------------------------
@@ -64,13 +74,8 @@ class LidarLimits:
     def fetch_limits(self, x, y, ox, oy):
         limits = self.lidar(x, y, ox, oy)
         oi_list = self.get_limits(limits)
-        oi = []
-        for aux in oi_list:
-            coords = []
-            mylist = aux.get_coords()
-            coords.append(int(mylist[0]))
-            coords.append(int(mylist[1]))
-            oi.append(coords)
+        p = LidarPoint()
+        oi = p.get_coord_list(oi_list)
         return oi
 
     # We get the limit for each LIDAR point
@@ -199,21 +204,6 @@ class LidarLimits:
 
         return fp_list
 
-    # Change motion model according to found limits and prior path
-    def get_new_motion_model(self, x, y, limit):
-        # Debug
-        #print("limit: ")
-        #print(limit)
-        if (len(limit) >= 1):
-            for l in limit:
-                dx = int(l[0] - x)
-                dy = int(l[1] - y)
-                # Debug
-                #print("x: " + str(dx) + " | y: " + str(dy))
-        # TODO : Build model...
-        model = None
-        return model
-
     # Graph LIDAR limit
     def graph_limits(self, limit):
         plt.savefig(self.debug_graph_fname)
@@ -315,6 +305,7 @@ class Map:
         plt.axis("equal")
         plt.grid(True)
         plt.title("Map")
+        plt.ginput()
 
         plt.savefig(self.debug_map_fname)
 
@@ -515,6 +506,20 @@ class TrapNavigation:
             print("Found obstacle in robots way...")
 
         return True
+
+    def propose_new_path(self, myMap, posX, posY, curdirx, curdiry):
+        object_ahead = self.detect(myMap, posX, posY, curdirx, curdiry)
+        if object_ahead:
+            myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
+            ox, oy = myMap.get_objects()
+            limits = myLimits.lidar(posX, posY, ox, oy)
+            myLimits.graph_limits(limits)
+            free_path = myLimits.get_freepath(limits)
+            print("posX: " + str(posX) + " | posY: " + str(posY))
+            print("Free Path: ")
+            p = LidarPoint()
+            print(p.get_coord_list(free_path))
+
 # END Class TrapDetection --------------------------------------------
 
 def main():
@@ -579,11 +584,11 @@ def main():
         stuck = myNavigation.decide_status(rd)
         limits = myLimits.fetch_limits(xp, yp, ox, oy)
         myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
-        #intrap = trap.detect(myMap, rx, ry, myNavigation.get_cur_dir())
+        intrap = trap.detect(myMap, xp, yp, curdirx, curdiry)
 
         if stuck:
             myMap.draw()
-            myLimits.get_new_motion_model(xp, yp, limits)
+            trap.propose_new_path(myMap, xp, yp, curdirx, curdiry)
             print("NEED TO TRY DIFFERENT DIRECTION HERE...")
 
     print("Goal!!")

@@ -39,10 +39,10 @@ class LidarPoint:
 
 # START Class LidarLimits ----------------------------------------------
 class LidarLimits:
-    def __init__(self, grid_size, radius):
+    def __init__(self, grid_size, radius, steps):
         self.grid_size = grid_size
         self.sensor_radius = grid_size * radius
-        self.sensor_angle_steps = 8  # [rad]
+        self.sensor_angle_steps = steps  # [rad]
         self.angle_step = 2 * math.pi / self.sensor_angle_steps
         self.debug_limit_fname = "limit.png"
         self.debug_graph_fname = "navigation.png"
@@ -95,7 +95,7 @@ class LidarLimits:
 
     # We get the limit for an specific angle.
     # Where:
-    #        x: Is the position where LIDAR is measuring
+    #      x,y: Is the position where LIDAR is measuring
     #        r: Is the current limit LIDAR position being explored for object collision
     #       ob: Is the x,y position of each object along with its radius (obs)
     def lidar_limits(self, x, y, r, ox, oy):
@@ -317,6 +317,16 @@ class Map:
         plt.title("Map")
 
         plt.savefig(self.debug_map_fname)
+
+    def get_objects(self):
+        ox = []
+        oy = []
+        for j in range(self.yw):
+            for i in range(self.xw):
+                if self.map[i][j] == 1.0:
+                    ox.append(self.reso*i)
+                    oy.append(self.reso*j)
+        return ox,oy
 # END Class Map --------------------------------------------------
 
 # START Class ApfNavigation --------------------------------------------
@@ -478,7 +488,7 @@ class ApfNavigation:
             plt.plot(self.ix, self.iy, ".r")
             plt.pause(0.01)
 
-        return d, xp, yp
+        return d, xp, yp, self.curdirx, self.curdiry
 
     def draw_heatmap(self, data):
         data = np.array(data).T
@@ -487,62 +497,24 @@ class ApfNavigation:
 
 # START Class TrapNavigation --------------------------------------------
 class TrapNavigation:
-    def __init__(self, reso, rr, radius, supx, supy):
+    def __init__(self, reso, rr, radius):
         self.reso = reso
         self.rr = rr
-        self.motion = [[1, 0],
-                      [0, 1],
-                      [-1, 0],
-                      [0, -1],
-                      [-1, -1],
-                      [-1, 1],
-                      [1, -1],
-                      [1, 1]]
-        self.detect_radius = radius
-        self.limit_x = supx
-        self.limit_y = supy
+        self.vision_limit = radius
+        self.angle = math.atan(rr / radius)
+        self.angle_step = int(2 * math.pi / self.angle)
 
-    def detect(self, myMap, posX, posY, direction):
-        #print("Map max X: " + str(myMap.get_maxx()))
-        #print("Map max Y: " + str(myMap.get_maxy()))
-        #myMap.get_map()
+    def detect(self, myMap, posX, posY, curdirx, curdiry):
+        myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
+        rx = posX + self.vision_limit * curdirx
+        ry = posY + self.vision_limit * curdiry
+        ox, oy = myMap.get_objects()
+        col,r = myLimits.lidar_limits(posX, posY, (rx, ry), ox, oy)
 
-        #for j in range(int(myMap.get_maxy())):
-        #    for i in range(int(myMap.get_maxx())):
-        #        print(str(int(myMap.get_map()[i][j])) + " ", end='')
-        #    print("\n")
-        #sys.exit()
+        if col:
+            print("Found obstacle in robots way...")
 
-        lim_sup_x = int(posX + self.detect_radius)
-        if lim_sup_x > self.limit_x:
-            lim_sup_x = self.limit_x
-        lim_inf_x = int(posX - self.detect_radius)
-        if lim_inf_x < 0:
-            lim_inf_x = 0
-        lim_sup_y = int(posY + self.detect_radius)
-        if lim_sup_y > self.limit_y:
-            lim_sup_y = self.limit_y
-        lim_inf_y = int(posY - self.detect_radius)
-        if lim_inf_y < 0:
-            lim_inf_y = 0
-
-        for i in range(lim_inf_x, lim_sup_x):
-            for j in range(lim_inf_y, lim_sup_y):
-                print(str(int(myMap.get_map()[i][j])) + " ", end='')
-            print("\n")
-        sys.exit()
-
-        #for j in range(int(myMap.get_maxy())):
-        #    for i in range(int(myMap.get_maxx())):
-        #        print(str(int(myMap.get_map()[i][j])) + " ", end='')
-
-        oi = []
-        for obx,oby in np.nditer([ox, oy]):
-            d = math.sqrt(math.pow(obx-x,2)+math.pow(oby-y,2))
-            #print "Distance: " + str(d)
-            if d < self.sensor_radius:
-                oi.append([int(obx), int(oby)])
-
+        return True
 # END Class TrapDetection --------------------------------------------
 
 def main():
@@ -575,24 +547,24 @@ def main():
 
     # path generation
     myNavigation = ApfNavigation(grid_size, robot_radius)
-    trap = TrapNavigation(grid_size, robot_radius, vision_limit, max(ox), max(oy))
+    trap = TrapNavigation(grid_size, robot_radius, vision_limit)
 
     # Objects learned
     myMap = Map(grid_size, gx, gy, ox, oy)
     myMap.create()
 
     # Get Limits
-    myLimits = LidarLimits(grid_size, vision_limit)
+    myLimits = LidarLimits(grid_size, vision_limit, 8)
     limits = myLimits.fetch_limits(sx, sy, ox, oy)
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 
     stuck = False
-    d, rx, ry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
+    d, rx, ry, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
     rd, rx, ry = [d], [sx], [sy]
-    limits = myLimits.fetch_limits(sx, sy, ox, oy)
 
+    limits = myLimits.fetch_limits(sx, sy, ox, oy)
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
-    #intrap = trap.detect(myMap, sx, sy, myNavigation.get_cur_dir())
+    intrap = trap.detect(myMap, sx, sy, curdirx, curdiry)
 
     if show_animation:
         myNavigation.draw_heatmap(myNavigation.get_pmap())
@@ -600,7 +572,7 @@ def main():
         plt.plot(gx, gy, "*m")
 
     while d >= grid_size and not stuck:
-        d, xp, yp = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+        d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
         rd.append(d)
         rx.append(xp)
         ry.append(yp)

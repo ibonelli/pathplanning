@@ -548,32 +548,35 @@ class TrapNavigation:
 
         return True
 
-    def propose_new_path(self, myMap, posX, posY, curdirx, curdiry, motionmodel):
+    def propose_motion_model(self, myMap, posX, posY, curdirx, curdiry, motionmodel):
         object_ahead = self.detect(myMap, posX, posY, curdirx, curdiry)
         if object_ahead:
             myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
             ox, oy = myMap.get_objects()
             limits = myLimits.lidar(posX, posY, ox, oy)
-            myLimits.graph_limits(limits)
-            free_path = myLimits.get_freepath(limits)
+            #myLimits.graph_limits(limits)
             windows = myLimits.get_limit_windows(limits, posX, posY)
-            # Debug
-            print("posX: " + str(posX) + " | posY: " + str(posY))
-            print("Free Path: ")
-            p = LidarPoint()
-            print(p.get_coord_list(free_path))
-            windows = myLimits.get_limit_windows(limits, posX, posY)
-            for w in windows:
-                w.print()
-            exit(0)
-            # TODO
-            #proposed_motion_model = self.freepath_to_motionmodel(free_path, posX. posY, motionmodel):
-            #print(proposed_motion_model)
+            # We new get new motion model
+            proposed_motion_model = self.windows_to_motionmodel(windows, motionmodel)
+            return proposed_motion_model
 
-    #def freepath_to_motionmodel(self, freepath, posX. posY, motionmodel):
-    #    for direction in motionmodel:
-    #        math.atan2(direction[1],direction[0])
-    #        for path in freepath:
+    def windows_to_motionmodel(self, windows, motionmodel):
+        new_motionmodel = []
+        for direction in motionmodel:
+            ang = self.pangles(math.atan2(direction[1],direction[0]))
+            for w in windows:
+                if w.blocked == False:
+                    if ang > self.pangles(w.start) and ang < self.pangles(w.end):
+                        new_motionmodel.append([direction[0],direction[1]])
+        return new_motionmodel
+
+    # For the logic to work we need to have positive angles
+    # But atan2() returns negatives as well
+    def pangles(self,ang):
+        if ang > 0:
+            return ang
+        else:
+            return (2 * math.pi + ang)
 
 # END Class TrapDetection --------------------------------------------
 
@@ -642,9 +645,10 @@ def main():
         intrap = trap.detect(myMap, xp, yp, curdirx, curdiry)
 
         if stuck:
-            myMap.draw()
-            gx2, gy2 = trap.propose_new_path(myMap, xp, yp, curdirx, curdiry, myNavigation.get_motion_model())
-            print("NEED TO TRY DIFFERENT DIRECTION HERE...")
+            #myMap.draw()
+            motion_model = trap.propose_motion_model(myMap, xp, yp, curdirx, curdiry, myNavigation.get_motion_model())
+            myNavigation.set_motion_model(motion_model)
+            stuck = False
 
     print("Goal!!")
 

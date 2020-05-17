@@ -47,6 +47,19 @@ class LidarPoint:
         return oi
 # END Class LidarPoint -------------------------------------------------
 
+# START Class PathWindow -----------------------------------------------
+class PathWindow:
+    def __init__(self):
+        self.blocked = False
+        self.start = 0
+        self.end = 0
+
+    # From the LIDAR list we get obstacles windows
+    def print(self):
+        print("Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.start)) + " | End: " + str(math.degrees(self.end)))
+
+# END Class PathWindow -------------------------------------------------
+
 # START Class LidarLimits ----------------------------------------------
 class LidarLimits:
     def __init__(self, grid_size, radius, steps):
@@ -193,6 +206,34 @@ class LidarLimits:
                 oi_list.append(l)
 
         return oi_list
+
+    # From the LIDAR list we get obstacles windows
+    def get_limit_windows(self, limit, cX, cY):
+        windows = []
+        cur_window = PathWindow()
+        total = len(limit)
+
+        for i in range(total):
+            l = limit[i]
+            if i == 0:
+                cur_window.start = math.atan2(l.r[1] - cY, l.r[0] - cX)
+                init_type = cur_window.blocked = l.col
+            elif i == total-1:
+                if init_type == cur_window.blocked:
+                    windows[0].start = cur_window.start
+                else:
+                    cur_window.end = math.atan2(l.r[1] - cY, l.r[0] - cX)
+                    windows.append(cur_window)
+            else:
+                if cur_window.blocked != l.col:
+                    ang = math.atan2(l.r[1] - cY, l.r[0] - cX)
+                    cur_window.end = ang
+                    windows.append(cur_window)
+                    cur_window = PathWindow()
+                    cur_window.start = ang
+                    cur_window.blocked = l.col
+
+        return windows
 
     # From the LIDAR list we get best possible paths
     def get_freepath(self, limit):
@@ -507,7 +548,7 @@ class TrapNavigation:
 
         return True
 
-    def propose_new_path(self, myMap, posX, posY, curdirx, curdiry):
+    def propose_new_path(self, myMap, posX, posY, curdirx, curdiry, motionmodel):
         object_ahead = self.detect(myMap, posX, posY, curdirx, curdiry)
         if object_ahead:
             myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
@@ -515,10 +556,24 @@ class TrapNavigation:
             limits = myLimits.lidar(posX, posY, ox, oy)
             myLimits.graph_limits(limits)
             free_path = myLimits.get_freepath(limits)
+            windows = myLimits.get_limit_windows(limits, posX, posY)
+            # Debug
             print("posX: " + str(posX) + " | posY: " + str(posY))
             print("Free Path: ")
             p = LidarPoint()
             print(p.get_coord_list(free_path))
+            windows = myLimits.get_limit_windows(limits, posX, posY)
+            for w in windows:
+                w.print()
+            exit(0)
+            # TODO
+            #proposed_motion_model = self.freepath_to_motionmodel(free_path, posX. posY, motionmodel):
+            #print(proposed_motion_model)
+
+    #def freepath_to_motionmodel(self, freepath, posX. posY, motionmodel):
+    #    for direction in motionmodel:
+    #        math.atan2(direction[1],direction[0])
+    #        for path in freepath:
 
 # END Class TrapDetection --------------------------------------------
 
@@ -588,7 +643,7 @@ def main():
 
         if stuck:
             myMap.draw()
-            trap.propose_new_path(myMap, xp, yp, curdirx, curdiry)
+            gx2, gy2 = trap.propose_new_path(myMap, xp, yp, curdirx, curdiry, myNavigation.get_motion_model())
             print("NEED TO TRY DIFFERENT DIRECTION HERE...")
 
     print("Goal!!")

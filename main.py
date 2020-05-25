@@ -1,163 +1,134 @@
 """
 
-Mobile robot motion planning for different agents
+Potential Field based path planner
+
+Ref:
+    https://www.cs.cmu.edu/~motionplanning/lecture/Chap4-Potential-Field_howie.pdf
 
 """
 
+import os
+import sys
 import math
 import numpy as np
-	# https://docs.scipy.org/doc/numpy/user/basics.creation.html
 import matplotlib.pyplot as plt
-	# https://matplotlib.org/users/pyplot_tutorial.html
-import subprocess
 
 # Modules
-from agent_apf import apfAgent
+from navApfNavigation import ApfNavigation
+from navLidar import LidarPoint, LidarLimits, PathWindow
+from navTrapNavigation import TrapNavigation
+from navMap import Map
 
-# Globals
 show_animation = True
-file_number = 1
-goal_agent = "APF"
+
+# START Class MapNewPath --------------------------------------------
+class MapNewPath:
+    def __init__(self, reso, rr, radius):
+        self.reso = reso
+        self.rr = rr
+        self.vision_limit = radius
+        self.angle = math.atan(rr / radius)
+        self.angle_step = int(2 * math.pi / self.angle)
+        self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
+# END Class MapNewPath --------------------------------------------------
 
 def main():
-    global file_number
-    print(__file__ + " start!!")
+    # Cargando el archivo de descripcion del mundo a recorrer
+    if(len(sys.argv) < 2):
+        print('Ingresar el mundo a recorrer. Por ejemplo world1.csv')
+        exit(-1)
+    else:
+        fname = sys.argv[1]
 
-    # initial state [x, y, yaw(rad), v(m/s), omega(rad/s)]
-    if (goal_agent == "DWA"):
-        x = np.array([5, 5, math.pi / 8.0, 0.0, 0.0])
-    if (goal_agent == "tangentBug"):
-        x = np.array([5, 5])
+    print("potential_field_planning start")
 
-    # goal position [x, y]
-    goal = np.array([50, 50])
-    # Saving trajectory
-    traj = np.array(x)
-    u = np.array([0.0, 0.0])
+    grid_size = 1  # potential grid size [m]
+    robot_radius = 5.0  # robot radius [m]
+    vision_limit = 15
 
-    # obstacles [ob1(x,y,r), ob2(x,y,r), ....]
-    # x,y coord and obstacle radius
-    ob = np.loadtxt("world05.csv")
+    ob = np.loadtxt(fname)
+    flx = ob[:, 0]  # file x position list [m]
+    fly = ob[:, 1]  # file y position list [m]
+    sx = flx[0]     # start x position [m]
+    sy = fly[0]     # start y positon [m]
+    gx = flx[1]     # goal x position [m]
+    gy = fly[1]     # goal y position [m]
+    ox = flx[2:]   # obstacle x position list [m]
+    oy = fly[2:]   # obstacle y position list [m]
 
-    r1 = rAgent()
-    r2 = rAgent()
-    if (goal_agent == "DWA"):
-        dwa = dwaAgent()
-    if (goal_agent == "tangentBug"):
-        atan1 = atan1Agent()
-
-    for i in range(100):
-        # Random1 - Calculating trajectory
-        if (r1_ticks == 0):
-            r1_ang, r1_vel, r1_ticks = r1.random_control()
-        else:
-            r1_ticks-=1
-        # Random1 - Calculating movement
-        if (goal_agent == "tangentBug"):
-            ob2add = np.array([[x[0], x[1], atan1.robot_radius], [r2_x[0], r2_x[1], r2.robot_radius]])
-        if (goal_agent == "DWA"):
-            ob2add = np.array([[x[0], x[1], dwa.robot_radius], [r2_x[0], r2_x[1], r2.robot_radius]])
-        ob4r1 = np.vstack((ob,ob2add))
-        r1_x, r1_col = r1.motion(r1_x, ob4r1, r1_ang, r1_vel)
-        if (r1_col):
-            r1_ticks = 0
-        r1_traj = np.vstack((r1_traj, r1_x))  # store state history
-
-        # Random2 - Calculating trajectory
-        if (r2_ticks == 0):
-            r2_ang, r2_vel, r2_ticks = r2.random_control()
-        else:
-            r2_ticks-=1
-        # Random2 - Calculating movement
-        if (goal_agent == "tangentBug"):
-            ob2add = np.array([[x[0], x[1], atan1.robot_radius], [r1_x[0], r1_x[1], r1.robot_radius]])
-        if (goal_agent == "DWA"):
-            ob2add = np.array([[x[0], x[1], dwa.robot_radius], [r1_x[0], r1_x[1], r1.robot_radius]])
-        ob4r2 = np.vstack((ob,ob2add))
-        r2_x, r2_col = r2.motion(r2_x, ob4r2, r2_ang, r2_vel)
-        if (r2_col):
-            r2_ticks = 0
-        r2_traj = np.vstack((r2_traj, r2_x))  # store state history
-
-        # Goal agent
-        if (goal_agent == "DWA"):
-            ob2add = np.array([[r1_x[0], r1_x[1], r1.robot_radius], [r2_x[0], r2_x[1], r2.robot_radius]])
-            ob4dwa = np.vstack((ob,ob2add))
-            u, ltraj = dwa.dwa_control(x, u, goal, ob4dwa)
-            x = dwa.motion(x, u)
-            print "Pos " + str(i) + " - x: " + str(x)
-        if (goal_agent == "tangentBug"):
-            ob2add = np.array([[r1_x[0], r1_x[1], r1.robot_radius], [r2_x[0], r2_x[1], r2.robot_radius]])
-            ob4tb = np.vstack((ob,ob2add))
-            limit = atan1.lidar(x, ob4tb)
-            #graph_lidar(x, goal, limit, ob, i)
-            ang, vel, ticks = atan1.tangentbug_control(x, ob4tb, goal, limit)
-            x,col = atan1.motion(x, ob, ang, vel)
-            print "======================================================================="
-            print "Step " + str(i) + " | pos: " + str(x) + " | ang: " + str(ang) + " | col: " + str(col)
-
-        traj = np.vstack((traj, x))  # store state history
-
-        if show_animation:
-            plt.cla()
-            # Random1
-            plt.plot(r1_x[0], r1_x[1], "xr")
-            # Random1
-            plt.plot(r2_x[0], r2_x[1], "xb")
-            # DWA & TangentBug
-            if (goal_agent == "DWA"):
-                plt.plot(ltraj[:, 0], ltraj[:, 1], "-g")
-                dwa.plot_arrow(x[0], x[1], x[2])
-            plt.plot(x[0], x[1], "xg")
-            plt.plot(goal[0], goal[1], "ob")
-            # ob[:, 0] -> The full first row of the array (all X numbers)
-            # ob[:, 1] -> The full second row of the array (all Y numbers)
-            #plt.plot(ob[:, 0], ob[:, 1], "ok")
-            for obx,oby,obs in np.nditer([ob[:, 0], ob[:, 1], ob[:, 2]]):
-                patch=plt.Circle((obx, oby), obs, color='black', fill=True)
-                tmp=plt.gca()
-                tmp.add_patch(patch)
-            plt.axis("equal")
-            plt.grid(True)
-            # We save to a file
-            imagefile = format(file_number, '05d')
-            file_number += 1
-            plt.savefig("/home/ignacio/Downloads/PyPlot/anim_" + imagefile + ".png")
-            # And show as we used to
-            plt.pause(0.0001)
-
-        # check goal
-        if (goal_agent == "DWA"):
-            check_radius = dwa.robot_radius
-        if (goal_agent == "tangentBug"):
-            check_radius = atan1.robot_radius
-        if math.sqrt((x[0] - goal[0])**2 + (x[1] - goal[1])**2) <= check_radius:
-            print("Goal!!")
-            break
-
-    path = "/home/ignacio/Downloads/PyPlot/"
-    # Didn't work
-    #cmd = "convert -delay 0.5 " + path + "anim_*.png -loop 0 -monitor " + path + "movie.gif"
-    # Works, but not within Python
-    cmd = 'ffmpeg -framerate 25 -pattern_type glob -i "anim_*.png" output.mkv'
-    #status = subprocess.call(cmd, shell=True)
-    print "First run:"
-    print "    " + cmd
-    print "And then run:"
-    print "    " + "rm " + path + "anim_*.png"
-
-    print("Done")
     if show_animation:
-        # Random1
-        plt.plot(r1_traj[:, 0], r1_traj[:, 1], "-r")
-        # Random2
-        plt.plot(r2_traj[:, 0], r2_traj[:, 1], "-b")
-        # DWA & TangentBug
-        plt.plot(traj[:, 0], traj[:, 1], "-g")
+        plt.grid(True)
+        plt.axis("equal")
+
+    # path generation
+    myNavigation = ApfNavigation(grid_size, robot_radius)
+    trap = TrapNavigation(grid_size, robot_radius, vision_limit)
+
+    # Objects learned
+    myMap = Map(grid_size, gx, gy, ox, oy)
+    myMap.create()
+
+    # Get Limits
+    myLimits = LidarLimits(grid_size, vision_limit, 8)
+    limits = myLimits.fetch_limits(sx, sy, ox, oy)
+    myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
+
+    stuck = False
+    d, rx, ry, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
+    rd, rx, ry = [d], [sx], [sy]
+
+    limits = myLimits.fetch_limits(sx, sy, ox, oy)
+    myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
+    intrap = trap.detect(myMap, sx, sy, curdirx, curdiry)
+
+    if show_animation:
+        myNavigation.draw_heatmap(myNavigation.get_pmap())
+        plt.plot(sx, sy, "*k")
+        plt.plot(gx, gy, "*m")
+
+    while d >= grid_size and not stuck:
+        d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+        rd.append(d)
+        rx.append(xp)
+        ry.append(yp)
+        stuck = myNavigation.decide_status(rd)
+        limits = myLimits.fetch_limits(xp, yp, ox, oy)
+        myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
+        intrap = trap.detect(myMap, xp, yp, curdirx, curdiry)
+
+        #This blocks by intrap
+        #if stuck or intrap:
+        if stuck:
+            motion_model = trap.propose_motion_model(myMap, xp, yp)
+            if len(motion_model) < 1:
+                print("We can no longer navigate")
+                limits = myLimits.fetch_limits(xp, yp, ox, oy)
+                print("Limits: " + str(limits))
+                windows = myLimits.get_limit_windows(limits, xp, yp)
+                print("Current windows:")
+                for win in windows:
+                    win.print()
+                myMap.draw()
+                limits = myLimits.lidar(xp, yp, ox, oy)
+                myLimits.graph_limits(limits)
+                exit(0)
+            myNavigation.set_motion_model(motion_model)
+            #org_gx = gx
+            #org_gy = gy
+            #gx = 
+            #gy = 
+            stuck = False
+
+    print("Goal!!")
+
+    if show_animation:
         # We save to a file
-        plt.savefig("/home/ignacio/Downloads/PyPlot/movie_end.png")
-        # And show as we used to
+        base=os.path.basename(fname)
+        plt.savefig(os.path.splitext(base)[0] + "_nav.png")
         plt.show()
 
+
 if __name__ == '__main__':
+    print(__file__ + " start!!")
     main()
+    print(__file__ + " Done!!")

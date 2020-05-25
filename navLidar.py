@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import logging
 
 # START Class LidarPoint ----------------------------------------------
 class LidarPoint:
@@ -11,10 +12,10 @@ class LidarPoint:
         self.col = False
 
     def print_values(self):
-        print("angle: " + str(self.angle))
-        print("oi: " + str(self.r))
-        print("dist: " + str(self.dist))
-        print("collision: " + str(self.col))
+        logging.info("angle: " + str(self.angle))
+        logging.info("oi: " + str(self.r))
+        logging.info("dist: " + str(self.dist))
+        logging.info("collision: " + str(self.col))
 
     def get_coords(self):
         return list(self.r)
@@ -47,7 +48,7 @@ class LidarLimits:
         oi = []
         for obx,oby in np.nditer([ox, oy]):
             d = math.sqrt(math.pow(obx-x,2)+math.pow(oby-y,2))
-            #print "Distance: " + str(d)
+            #logging.debug("fetch_limits_by_inspection() | Distance: " + str(d))
             if d < self.sensor_radius:
                 oi.append([int(obx), int(oby)])
         return oi
@@ -90,7 +91,7 @@ class LidarLimits:
         for obx,oby,obs in np.nditer([ox, oy, self.grid_size]):
             intersects, limit = self.detect_collision_object(np.array([x, y]), r, np.array([obx, oby]), obs)
             if (intersects):
-                #print "Intersection at " + str(limit)
+                #logging.debug("lidar_limits() | Intersection at " + str(limit))
                 oi.append(limit)
         if (len(oi) == 0):
             return False, r
@@ -197,7 +198,7 @@ class LidarLimits:
                         cur_window.start = ang
                         cur_window.blocked = l.col
         else:
-            print("Only 1 limit")
+            logging.error("Only 1 limit")
             exit(-1)
 
         return windows
@@ -258,4 +259,4 @@ class PathWindow:
 
     # From the LIDAR list we get obstacles windows
     def print(self):
-        print("Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.start)) + " | End: " + str(math.degrees(self.end)))
+        logging.info("Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.start)) + " | End: " + str(math.degrees(self.end)))

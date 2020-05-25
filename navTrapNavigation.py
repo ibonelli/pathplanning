@@ -1,4 +1,5 @@
 import math
+import logging
 
 # Modules
 from navLidar import LidarLimits
@@ -21,10 +22,10 @@ class TrapNavigation:
         col,r = myLimits.lidar_limits(posX, posY, (rx, ry), ox, oy)
 
         if col:
-            print("Found obstacle in robots way...")
+            logging.info("Found obstacle in robots way...")
             limits = myLimits.lidar(posX, posY, ox, oy)
             windows = myLimits.get_limit_windows(limits, posX, posY)
-            print("Current windows:")
+            logging.info("Current windows:")
             for win in windows:
                 win.print()
 

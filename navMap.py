@@ -1,8 +1,17 @@
 import matplotlib.pyplot as plt
+import json
 
 # START Class Map ------------------------------------------------
 class Map:
-    def __init__(self, reso, gx, gy, ox, oy):
+    def __init__(self):
+        self.reso = None
+        self.minx = self.miny = None
+        self.maxx = self.maxy = None
+        self.xw = self.yw = None
+        self.map = None
+        self.debug_map_fname = "map.png"
+
+    def set_params(self, reso, gx, gy, ox, oy):
         self.reso = reso
         self.minx = min(ox)
         self.miny = min(oy)
@@ -24,6 +33,35 @@ class Map:
 
     def get_map(self):
         return self.map
+
+    def save_map(self, filename):
+        mapdata = {
+            "reso": self.reso,
+            "minx": self.minx,
+            "miny": self.miny,
+            "maxx": self.maxx,
+            "maxy": self.maxy,
+            "xw": self.xw,
+            "yw": self.yw,
+            "map": self.map,
+            }
+        map2save = json.JSONEncoder().encode(mapdata)
+        with open(filename, 'w') as json_file:
+            json.dump(map2save, json_file)
+        json_file.close()
+
+    def load_map(self, filename):
+        with open(filename) as json_data:
+            data = json.load(json_data)
+        mapdata = json.JSONDecoder().decode(data)
+        self.reso = mapdata["reso"]
+        self.minx = mapdata["minx"]
+        self.miny = mapdata["miny"]
+        self.maxx = mapdata["maxx"]
+        self.maxy = mapdata["maxy"]
+        self.xw = mapdata["xw"]
+        self.yw = mapdata["yw"]
+        self.map = mapdata["map"]
 
     def set_map(self, exmap):
         self.map = exmap
@@ -74,7 +112,6 @@ class Map:
         plt.grid(True)
         plt.title("Map")
         plt.ginput()
-
         plt.savefig(self.debug_map_fname)
 
     def get_objects(self):

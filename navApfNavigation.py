@@ -1,10 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import logging
 
 # Modules
 from navMap import Map
+import config
 
-show_animation = True
+show_animation = config.general['animation']
 
 class ApfNavigation:
     def __init__(self, reso, rr):
@@ -29,7 +31,8 @@ class ApfNavigation:
         self.curdiry = None
 
     def calc_potential_field(self, gx, gy, ox, oy):
-        myMap = Map(self.reso, gx, gy, ox, oy)
+        myMap = Map()
+        myMap.set_params(self.reso, gx, gy, ox, oy)
         pmap = myMap.create()
 
         for ix in range(myMap.get_xw()):
@@ -97,19 +100,19 @@ class ApfNavigation:
         if dif < 0 and self.scount == 0:
             self.scount = 1
             self.rcheck = rd[-2]
-            print("Stuck? : " + str(self.rcheck))
+            logging.debug("Stuck? : " + str(self.rcheck))
         elif self.scount != 0:
             if (self.rcheck - rd[-1]) <= self.reso and self.scount <= 3:
                 self.scount += 1
-                print("Still stuck... scount: " + str(self.scount))
+                logging.debug("Still stuck... scount: " + str(self.scount))
             elif (self.rcheck - rd[-1]) <= self.reso and self.scount > 3:
-                print("Now we are really stuck!!!")
+                logging.info("Now we are really stuck!!!")
                 self.stuck = True
             elif (self.rcheck - rd[-1]) > self.reso:
-                print("We got out of rcheck+reso area")
+                logging.debug("We got out of rcheck+reso area")
                 self.scount = 0
             else:
-                print("How did we get here? (scount!=0)")
+                logging.error("How did we get here? (scount!=0)")
         else:
             self.scount = 0
 

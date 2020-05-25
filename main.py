@@ -12,14 +12,17 @@ import sys
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import logging
 
 # Modules
+import config
 from navApfNavigation import ApfNavigation
 from navLidar import LidarPoint, LidarLimits, PathWindow
 from navTrapNavigation import TrapNavigation
 from navMap import Map
 
-show_animation = True
+show_animation = config.general['animation']
+logging.basicConfig(filename=config.general['logFile'],level=config.general['logLevel'])
 
 # START Class MapNewPath --------------------------------------------
 class MapNewPath:
@@ -65,7 +68,8 @@ def main():
     trap = TrapNavigation(grid_size, robot_radius, vision_limit)
 
     # Objects learned
-    myMap = Map(grid_size, gx, gy, ox, oy)
+    myMap = Map()
+    myMap.set_params(grid_size, gx, gy, ox, oy)
     myMap.create()
 
     # Get Limits
@@ -119,6 +123,7 @@ def main():
             #gy = 
             stuck = False
 
+    myMap.save_map("map.json")
     print("Goal!!")
 
     if show_animation:

@@ -180,7 +180,11 @@ class LidarLimits:
                     init_type = cur_window.blocked = l.col
                 elif i == total-1:
                     if init_type == cur_window.blocked:
-                        windows[0].start = cur_window.start
+                        if len(windows) == 0:
+                            cur_window.start = cur_window.end = 0
+                            windows.append(cur_window)
+                        else:
+                            windows[0].start = cur_window.start
                     else:
                         cur_window.end = math.atan2(l.r[1] - cY, l.r[0] - cX)
                         windows.append(cur_window)

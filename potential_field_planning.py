@@ -197,43 +197,47 @@ class LidarLimits:
                 i.append(i2)
             return True, i
 
-    # From the LIDAR list we get obstacles
-    def get_limits(self, limit):
-        oi_list = []
-
-        for l in limit:
-            if (l.col != False):
-                oi_list.append(l)
-
-        return oi_list
-
     # From the LIDAR list we get obstacles windows
     def get_limit_windows(self, limit, cX, cY):
         windows = []
         cur_window = PathWindow()
         total = len(limit)
 
-        for i in range(total):
-            l = limit[i]
-            if i == 0:
-                cur_window.start = math.atan2(l.r[1] - cY, l.r[0] - cX)
-                init_type = cur_window.blocked = l.col
-            elif i == total-1:
-                if init_type == cur_window.blocked:
-                    windows[0].start = cur_window.start
+        if total != 1:
+            for i in range(total):
+                l = limit[i]
+                if i == 0:
+                    cur_window.start = math.atan2(l.r[1] - cY, l.r[0] - cX)
+                    init_type = cur_window.blocked = l.col
+                elif i == total-1:
+                    if init_type == cur_window.blocked:
+                        windows[0].start = cur_window.start
+                    else:
+                        cur_window.end = math.atan2(l.r[1] - cY, l.r[0] - cX)
+                        windows.append(cur_window)
                 else:
-                    cur_window.end = math.atan2(l.r[1] - cY, l.r[0] - cX)
-                    windows.append(cur_window)
-            else:
-                if cur_window.blocked != l.col:
-                    ang = math.atan2(l.r[1] - cY, l.r[0] - cX)
-                    cur_window.end = ang
-                    windows.append(cur_window)
-                    cur_window = PathWindow()
-                    cur_window.start = ang
-                    cur_window.blocked = l.col
+                    if cur_window.blocked != l.col:
+                        ang = math.atan2(l.r[1] - cY, l.r[0] - cX)
+                        cur_window.end = ang
+                        windows.append(cur_window)
+                        cur_window = PathWindow()
+                        cur_window.start = ang
+                        cur_window.blocked = l.col
+        else:
+            print("Only 1 limit")
+            exit(-1)
 
         return windows
+
+    # From the LIDAR list we get obstacles
+    def get_limits(self, limit):
+        oi_list = []
+
+        for l in limit:
+            if (l.col == True):
+                oi_list.append(l)
+
+        return oi_list
 
     # From the LIDAR list we get best possible paths
     def get_freepath(self, limit):
@@ -366,14 +370,7 @@ class ApfNavigation:
     def __init__(self, reso, rr):
         self.reso = reso
         self.rr = rr
-        self.motion = [[1, 0],
-                      [0, 1],
-                      [-1, 0],
-                      [0, -1],
-                      [-1, -1],
-                      [-1, 1],
-                      [1, -1],
-                      [1, 1]]
+        self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
         self.pmap = None
         self.minx = None
         self.miny = None
@@ -535,6 +532,7 @@ class TrapNavigation:
         self.vision_limit = radius
         self.angle = math.atan(rr / radius)
         self.angle_step = int(2 * math.pi / self.angle)
+        self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
 
     def detect(self, myMap, posX, posY, curdirx, curdiry):
         myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
@@ -545,23 +543,27 @@ class TrapNavigation:
 
         if col:
             print("Found obstacle in robots way...")
+            limits = myLimits.lidar(posX, posY, ox, oy)
+            windows = myLimits.get_limit_windows(limits, posX, posY)
+            print("Current windows:")
+            for win in windows:
+                win.print()
 
         return True
 
-    def propose_motion_model(self, myMap, posX, posY, curdirx, curdiry, motionmodel):
-        object_ahead = self.detect(myMap, posX, posY, curdirx, curdiry)
-        if object_ahead:
-            myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
-            ox, oy = myMap.get_objects()
-            limits = myLimits.lidar(posX, posY, ox, oy)
-            #myLimits.graph_limits(limits)
-            windows = myLimits.get_limit_windows(limits, posX, posY)
-            # We new get new motion model
-            proposed_motion_model = self.windows_to_motionmodel(windows, motionmodel)
-            return proposed_motion_model
+    def propose_motion_model(self, myMap, posX, posY):
+        myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
+        ox, oy = myMap.get_objects()
+        limits = myLimits.lidar(posX, posY, ox, oy)
+        #myLimits.graph_limits(limits)
+        windows = myLimits.get_limit_windows(limits, posX, posY)
+        # We new get new motion model
+        proposed_motion_model = self.windows_to_motionmodel(windows)
+        return proposed_motion_model
 
-    def windows_to_motionmodel(self, windows, motionmodel):
+    def windows_to_motionmodel(self, windows):
         new_motionmodel = []
+        motionmodel = self.motion
         for direction in motionmodel:
             ang = self.pangles(math.atan2(direction[1],direction[0]))
             for w in windows:
@@ -577,6 +579,17 @@ class TrapNavigation:
             return ang
         else:
             return (2 * math.pi + ang)
+# END Class TrapDetection --------------------------------------------
+
+# START Class TrapNavigation --------------------------------------------
+class MapNewPath:
+    def __init__(self, reso, rr, radius):
+        self.reso = reso
+        self.rr = rr
+        self.vision_limit = radius
+        self.angle = math.atan(rr / radius)
+        self.angle_step = int(2 * math.pi / self.angle)
+        self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
 
 # END Class TrapDetection --------------------------------------------
 
@@ -644,10 +657,27 @@ def main():
         myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
         intrap = trap.detect(myMap, xp, yp, curdirx, curdiry)
 
+        #This blocks by intrap
+        #if stuck or intrap:
         if stuck:
-            #myMap.draw()
-            motion_model = trap.propose_motion_model(myMap, xp, yp, curdirx, curdiry, myNavigation.get_motion_model())
+            motion_model = trap.propose_motion_model(myMap, xp, yp)
+            if len(motion_model) < 1:
+                print("We can no longer navigate")
+                limits = myLimits.fetch_limits(xp, yp, ox, oy)
+                print("Limits: " + str(limits))
+                windows = myLimits.get_limit_windows(limits, xp, yp)
+                print("Current windows:")
+                for win in windows:
+                    win.print()
+                myMap.draw()
+                limits = myLimits.lidar(xp, yp, ox, oy)
+                myLimits.graph_limits(limits)
+                exit(0)
             myNavigation.set_motion_model(motion_model)
+            #org_gx = gx
+            #org_gy = gy
+            #gx = 
+            #gy = 
             stuck = False
 
     print("Goal!!")

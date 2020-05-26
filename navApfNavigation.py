@@ -4,9 +4,6 @@ import logging
 
 # Modules
 from navMap import Map
-import config
-
-show_animation = config.general['animation']
 
 class ApfNavigation:
     def __init__(self, reso, rr):
@@ -159,10 +156,6 @@ class ApfNavigation:
         xp = self.ix * self.reso + self.minx
         yp = self.iy * self.reso + self.miny
         d = np.hypot(gx - xp, gy - yp)
-
-        if show_animation:
-            plt.plot(self.ix, self.iy, ".r")
-            plt.pause(0.01)
 
         return d, xp, yp, self.curdirx, self.curdiry
 

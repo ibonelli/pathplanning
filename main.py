@@ -35,6 +35,21 @@ class MapNewPath:
         self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
 # END Class MapNewPath --------------------------------------------------
 
+# START Class MapNewPath --------------------------------------------
+class ShowNavigation:
+    def __init__(self, reso, rr, radius):
+        self.reso = reso
+        self.rr = rr
+        self.vision_limit = radius
+        self.angle = math.atan(rr / radius)
+        self.angle_step = int(2 * math.pi / self.angle)
+        self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
+    def show():
+        return
+    def step():
+        return
+# END Class MapNewPath --------------------------------------------------
+
 def main():
     # Cargando el archivo de descripcion del mundo a recorrer
     if(len(sys.argv) < 2):
@@ -95,6 +110,11 @@ def main():
         rd.append(d)
         rx.append(xp)
         ry.append(yp)
+
+        if show_animation:
+            plt.plot(xp, yp, ".r")
+            plt.pause(0.01)
+
         stuck = myNavigation.decide_status(rd)
         limits = myLimits.fetch_limits(xp, yp, ox, oy)
         myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))

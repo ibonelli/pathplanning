@@ -51,6 +51,7 @@ class ApfNavigation:
     def calc_repulsive_potential(self, x, y, ox, oy):
         # search nearest obstacle
         minid = -1
+        minid = -1
         dmin = float("inf")
         for i in range(len(ox)):
             d = np.hypot(x - ox[i], y - oy[i])
@@ -158,7 +159,3 @@ class ApfNavigation:
         d = np.hypot(gx - xp, gy - yp)
 
         return d, xp, yp, self.curdirx, self.curdiry
-
-    def draw_heatmap(self, data):
-        data = np.array(data).T
-        plt.pcolor(data, vmax=200.0, cmap=plt.cm.Blues)

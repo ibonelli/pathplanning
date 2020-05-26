@@ -20,6 +20,7 @@ from navApfNavigation import ApfNavigation
 from navLidar import LidarPoint, LidarLimits, PathWindow
 from navTrapNavigation import TrapNavigation
 from navMap import Map
+from navGraf import ShowNavigation
 
 show_animation = config.general['animation']
 logging.basicConfig(filename=config.general['logFile'],level=config.general['logLevel'])
@@ -33,21 +34,6 @@ class MapNewPath:
         self.angle = math.atan(rr / radius)
         self.angle_step = int(2 * math.pi / self.angle)
         self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
-# END Class MapNewPath --------------------------------------------------
-
-# START Class MapNewPath --------------------------------------------
-class ShowNavigation:
-    def __init__(self, reso, rr, radius):
-        self.reso = reso
-        self.rr = rr
-        self.vision_limit = radius
-        self.angle = math.atan(rr / radius)
-        self.angle_step = int(2 * math.pi / self.angle)
-        self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
-    def show():
-        return
-    def step():
-        return
 # END Class MapNewPath --------------------------------------------------
 
 def main():
@@ -75,8 +61,7 @@ def main():
     oy = fly[2:]   # obstacle y position list [m]
 
     if show_animation:
-        plt.grid(True)
-        plt.axis("equal")
+        MyGraf = ShowNavigation()
 
     # path generation
     myNavigation = ApfNavigation(grid_size, robot_radius)
@@ -93,17 +78,21 @@ def main():
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 
     stuck = False
-    d, rx, ry, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
+    d = float(np.hypot(sx - gx, sy - gy))
     rd, rx, ry = [d], [sx], [sy]
+    d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
+    rd.append(d)
+    rx.append(xp)
+    ry.append(yp)
+
+    if show_animation:
+        MyGraf.draw_heatmap(myNavigation.get_pmap())
+        MyGraf.show(sx, sy, gx, gy)
+        MyGraf.step(xp,yp)
 
     limits = myLimits.fetch_limits(sx, sy, ox, oy)
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
     intrap = trap.detect(myMap, sx, sy, curdirx, curdiry)
-
-    if show_animation:
-        myNavigation.draw_heatmap(myNavigation.get_pmap())
-        plt.plot(sx, sy, "*k")
-        plt.plot(gx, gy, "*m")
 
     while d >= grid_size and not stuck:
         d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
@@ -112,8 +101,7 @@ def main():
         ry.append(yp)
 
         if show_animation:
-            plt.plot(xp, yp, ".r")
-            plt.pause(0.01)
+            MyGraf.step(xp,yp)
 
         stuck = myNavigation.decide_status(rd)
         limits = myLimits.fetch_limits(xp, yp, ox, oy)

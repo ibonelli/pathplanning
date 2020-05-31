@@ -259,4 +259,4 @@ class PathWindow:
 
     # From the LIDAR list we get obstacles windows
     def print(self):
-        logging.info("Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.start)) + " | End: " + str(math.degrees(self.end)))
+        logging.debug("Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.start)) + " | End: " + str(math.degrees(self.end)))

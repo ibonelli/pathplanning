@@ -25,7 +25,7 @@ class TrapNavigation:
             logging.info("Found obstacle in robots way...")
             limits = myLimits.lidar(posX, posY, ox, oy)
             windows = myLimits.get_limit_windows(limits, posX, posY)
-            logging.info("Current windows:")
+            logging.debug("Current windows:")
             for win in windows:
                 win.print()
 

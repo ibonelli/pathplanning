@@ -64,20 +64,19 @@ def main():
     if show_animation:
         MyGraf = ShowNavigation()
 
-    # path generation
+    # Navigation Starting
     myNavigation = ApfNavigation(grid_size, robot_radius)
     trap = TrapNavigation(grid_size, robot_radius, vision_limit)
 
-    # Objects learned
+    # Map generation
     myMap = Map()
     myMap.set_params(grid_size, gx, gy, ox, oy)
     myMap.create()
-
-    # Get Limits
     myLimits = LidarLimits(grid_size, vision_limit, 8)
     limits = myLimits.fetch_limits(sx, sy, ox, oy)
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 
+    # Navigation 1st step
     stuck = False
     d = float(np.hypot(sx - gx, sy - gy))
     rd, rx, ry = [d], [sx], [sy]
@@ -85,22 +84,22 @@ def main():
     rd.append(d)
     rx.append(xp)
     ry.append(yp)
-
     if show_animation:
         MyGraf.draw_heatmap(myNavigation.get_pmap())
         MyGraf.show(sx, sy, gx, gy)
         MyGraf.step(xp, yp, graf_delay)
 
+    # Map update and trap detection
     limits = myLimits.fetch_limits(sx, sy, ox, oy)
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
     intrap = trap.detect(myMap, sx, sy, curdirx, curdiry)
 
+    # Main navigation loop
     while d >= grid_size and not stuck:
         d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
         rd.append(d)
         rx.append(xp)
         ry.append(yp)
-
         if show_animation:
             MyGraf.step(xp, yp, graf_delay)
 
@@ -110,8 +109,8 @@ def main():
         intrap = trap.detect(myMap, xp, yp, curdirx, curdiry)
 
         #This blocks by intrap
-        #if stuck or intrap:
-        if stuck:
+        if stuck or intrap:
+        #if stuck:
             motion_model = trap.propose_motion_model(myMap, xp, yp)
             if len(motion_model) < 1:
                 print("We can no longer navigate")

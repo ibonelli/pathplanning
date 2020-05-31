@@ -11,7 +11,9 @@ import sys
 sys.path.append('../')
 
 # Modules
-from navMap import Map
+from navGraf import ShowNavigation
+
+grafDelay = 0.01
 
 def main():
     # Cargando el archivo de descripcion del mundo a recorrer
@@ -21,9 +23,9 @@ def main():
     else:
         fname = sys.argv[1]
 
-    myMap = Map()
-    myMap.load_map(fname)
-    myMap.draw()
+    MyGraf = ShowNavigation()
+    MyGraf.load(fname)
+    MyGraf.draw_saved_data(grafDelay)
 
 if __name__ == '__main__':
     main()

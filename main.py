@@ -23,6 +23,7 @@ from navMap import Map
 from navGraf import ShowNavigation
 
 show_animation = config.general['animation']
+graf_delay = config.general['grafDelay']
 logging.basicConfig(filename=config.general['logFile'],level=config.general['logLevel'])
 
 # START Class MapNewPath --------------------------------------------
@@ -88,7 +89,7 @@ def main():
     if show_animation:
         MyGraf.draw_heatmap(myNavigation.get_pmap())
         MyGraf.show(sx, sy, gx, gy)
-        MyGraf.step(xp,yp)
+        MyGraf.step(xp, yp, graf_delay)
 
     limits = myLimits.fetch_limits(sx, sy, ox, oy)
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
@@ -101,7 +102,7 @@ def main():
         ry.append(yp)
 
         if show_animation:
-            MyGraf.step(xp,yp)
+            MyGraf.step(xp, yp, graf_delay)
 
         stuck = myNavigation.decide_status(rd)
         limits = myLimits.fetch_limits(xp, yp, ox, oy)
@@ -132,6 +133,8 @@ def main():
             stuck = False
 
     myMap.save_map("map.json")
+    MyGraf.save("path.json")
+
     print("Goal!!")
 
     if show_animation:

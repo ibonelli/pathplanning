@@ -73,7 +73,7 @@ def main():
     myMap.set_params(grid_size, gx, gy, ox, oy)
     myMap.create()
     myLimits = LidarLimits(grid_size, vision_limit, 8)
-    limits = myLimits.fetch_limits(sx, sy, ox, oy)
+    limits = myLimits.fetch_limits(sx, sy, ox, oy, "object")
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 
     # Navigation 1st step
@@ -90,7 +90,7 @@ def main():
         MyGraf.step(xp, yp, graf_delay)
 
     # Map update and trap detection
-    limits = myLimits.fetch_limits(sx, sy, ox, oy)
+    limits = myLimits.fetch_limits(sx, sy, ox, oy, "object")
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
     intrap = trap.detect(myMap, sx, sy, curdirx, curdiry)
 
@@ -104,24 +104,24 @@ def main():
             MyGraf.step(xp, yp, graf_delay)
 
         stuck = myNavigation.decide_status(rd)
-        limits = myLimits.fetch_limits(xp, yp, ox, oy)
+        limits = myLimits.fetch_limits(xp, yp, ox, oy, "object")
         myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
         intrap = trap.detect(myMap, xp, yp, curdirx, curdiry)
 
         #This blocks by intrap
-        if stuck or intrap:
-        #if stuck:
+        #if stuck or intrap:
+        if stuck:
             motion_model = trap.propose_motion_model(myMap, xp, yp)
             if len(motion_model) < 1:
                 print("We can no longer navigate")
-                limits = myLimits.fetch_limits(xp, yp, ox, oy)
+                limits = myLimits.fetch_limits(xp, yp, ox, oy, "limit")
                 print("Limits: " + str(limits))
                 windows = myLimits.get_limit_windows(limits, xp, yp)
                 print("Current windows:")
                 for win in windows:
                     win.print()
                 myMap.draw()
-                limits = myLimits.lidar(xp, yp, ox, oy)
+                limits = myLimits.lidar(xp, yp, ox, oy, "object")
                 myLimits.graph_limits(limits)
                 exit(0)
             myNavigation.set_motion_model(motion_model)

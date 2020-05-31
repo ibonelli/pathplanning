@@ -19,11 +19,11 @@ class TrapNavigation:
         rx = posX + self.vision_limit * curdirx
         ry = posY + self.vision_limit * curdiry
         ox, oy = myMap.get_objects()
-        col,r = myLimits.lidar_limits(posX, posY, (rx, ry), ox, oy)
+        col,r = myLimits.lidar_limits(posX, posY, (rx, ry), ox, oy, "object")
 
         if col:
             logging.info("Found obstacle in robots way...")
-            limits = myLimits.lidar(posX, posY, ox, oy)
+            limits = myLimits.lidar(posX, posY, ox, oy, "object")
             windows = myLimits.get_limit_windows(limits, posX, posY)
             logging.debug("Current windows:")
             for win in windows:
@@ -34,7 +34,7 @@ class TrapNavigation:
     def propose_motion_model(self, myMap, posX, posY):
         myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
         ox, oy = myMap.get_objects()
-        limits = myLimits.lidar(posX, posY, ox, oy)
+        limits = myLimits.lidar(posX, posY, ox, oy, "object")
         #myLimits.graph_limits(limits)
         windows = myLimits.get_limit_windows(limits, posX, posY)
         # We new get new motion model

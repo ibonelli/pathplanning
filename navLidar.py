@@ -54,8 +54,8 @@ class LidarLimits:
         return oi
 
     # Fetch limits
-    def fetch_limits(self, x, y, ox, oy):
-        limits = self.lidar(x, y, ox, oy)
+    def fetch_limits(self, x, y, ox, oy, mode):
+        limits = self.lidar(x, y, ox, oy, mode)
         oi_list = self.get_limits(limits)
         p = LidarPoint()
         oi = p.get_coord_list(oi_list)
@@ -64,7 +64,7 @@ class LidarLimits:
     # We get the limit for each LIDAR point
     # We will have as many limits as self.sensor_angle_steps
     # We store x, y and d (size of the vector)
-    def lidar(self, x, y, ox, oy):
+    def lidar(self, x, y, ox, oy, mode):
         limit = []
         self.robot_position_x = x
         self.robot_position_y = y
@@ -75,21 +75,27 @@ class LidarLimits:
             rx = x + self.sensor_radius * math.cos(self.angle_step * i)
             ry = y + self.sensor_radius * math.sin(self.angle_step * i)
             r = np.array([rx, ry])
-            p.col,p.r = self.lidar_limits(x, y, r, ox, oy)
+            p.col,p.r = self.lidar_limits(x, y, r, ox, oy, mode)
             p.dist = math.sqrt(math.pow(p.r[0]-x,2)+math.pow(p.r[1]-y,2))
             limit.append(p)
 
         return limit
 
-    # We get the limit for an specific angle.
+    # We get the limit for an specific angle
     # Where:
     #      x,y: Is the position where LIDAR is measuring
     #        r: Is the current limit LIDAR position being explored for object collision
     #       ob: Is the x,y position of each object along with its radius (obs)
-    def lidar_limits(self, x, y, r, ox, oy):
+    def lidar_limits(self, x, y, r, ox, oy, mode):
         oi = []
         for obx,oby,obs in np.nditer([ox, oy, self.grid_size]):
-            intersects, limit = self.detect_collision_object(np.array([x, y]), r, np.array([obx, oby]), obs)
+            if mode == "object":
+                intersects, limit = self.detect_collision_object(np.array([x, y]), r, np.array([obx, oby]), obs)
+            elif mode == "limit":
+                intersects, limit = self.detect_collision_point(np.array([x, y]), r, np.array([obx, oby]), obs)
+            else:
+                logging.error("Not proper mode: " + str(mode))
+                exit(-1)
             if (intersects):
                 #logging.debug("lidar_limits() | Intersection at " + str(limit))
                 oi.append(limit)
@@ -107,7 +113,9 @@ class LidarLimits:
                     val_to_return = p
             return True, p
 
-    # We get the limit for an specific angle.
+    # We get the limit for an specific angle and return collision point.
+    #   Builds a map with limits instead of objects (wich looks bad and leads to errors)
+    #   Really useful to find obstacles in the way
     # Where:
     #       p1: Is the first point of a segment
     #       p2: Is the second point of a sagment
@@ -130,6 +138,7 @@ class LidarLimits:
             return intersects, None
 
     # We get the object closest to the LIDAR looking angle.
+    #   (Useful to build a map, but leads to errors when finding obstacles in the way)
     # Where:
     #       p1: Is the first point of a segment
     #       p2: Is the second point of a sagment

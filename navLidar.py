@@ -12,10 +12,7 @@ class LidarPoint:
         self.col = False
 
     def print_values(self):
-        logging.info("angle: " + str(self.angle))
-        logging.info("oi: " + str(self.r))
-        logging.info("dist: " + str(self.dist))
-        logging.info("collision: " + str(self.col))
+        logging.info("angle: " + str(self.angle) + " | oi: " + str(self.r) + " | dist: " + str(self.dist) + " | collision: " + str(self.col))
 
     def get_coords(self):
         return list(self.r)
@@ -181,24 +178,33 @@ class LidarLimits:
         windows = []
         cur_window = PathWindow()
         total = len(limit)
+        #logging.debug("get_limit_windows --- Start")
 
         if total != 1:
             for i in range(total):
                 l = limit[i]
+                #logging.debug("limit[" + str(i) + "]:")
+                #l.print_values()
                 if i == 0:
+                    # Primer valor de la lista
                     cur_window.start = math.atan2(l.r[1] - cY, l.r[0] - cX)
                     init_type = cur_window.blocked = l.col
+                    init_start = cur_window.start
                 elif i == total-1:
+                    # Ultimo valor de la lista
                     if init_type == cur_window.blocked:
+                        # Continuamos en el mismo valor blocked
                         if len(windows) == 0:
                             cur_window.start = cur_window.end = 0
                             windows.append(cur_window)
                         else:
                             windows[0].start = cur_window.start
                     else:
-                        cur_window.end = math.atan2(l.r[1] - cY, l.r[0] - cX)
+                        # Cambiamos de valor blocked
+                        cur_window.end = init_start
                         windows.append(cur_window)
                 else:
+                    # Dentro de la lista
                     if cur_window.blocked != l.col:
                         ang = math.atan2(l.r[1] - cY, l.r[0] - cX)
                         cur_window.end = ang
@@ -210,6 +216,7 @@ class LidarLimits:
             logging.error("Only 1 limit")
             exit(-1)
 
+        #logging.debug("get_limit_windows --- End")
         return windows
 
     # From the LIDAR list we get obstacles
@@ -233,21 +240,34 @@ class LidarLimits:
         return fp_list
 
     # Graph LIDAR limit
-    def graph_limits(self, limit):
+    def graph_limits(self, limit, delay):
         plt.savefig(self.debug_graph_fname)
         oi_list = self.get_limits(limit)
         fp_list = self.get_freepath(limit)
         plt.cla()
         if (len(fp_list) >= 1):
             for l in fp_list:
-                plt.plot(l.r[0], l.r[1], "xr")
+                plt.plot(l.r[0], l.r[1], "b.")
         if (len(oi_list) >= 1):
             for l in oi_list:
-                plt.plot(l.r[0], l.r[1], "b.")
+                plt.plot(l.r[0], l.r[1], "xr")
         plt.axis("equal")
         plt.grid(True)
         plt.title("Lidar")
         plt.savefig(self.debug_limit_fname)
+        plt.pause(delay)
+
+    # Graph LIDAR limit
+    def graph_limits_polar(self, limit, delay):
+        plt.cla()
+        theta = np.linspace(0.0, 2 * np.pi, self.sensor_angle_steps, endpoint=False)
+        g = []
+        for l in limit:
+            g.append(np.linalg.norm(l.r))
+        radii = np.array(g)
+        ax = plt.subplot(111, projection='polar')
+        bars = ax.bar(theta, radii, width=self.angle_step, bottom=0.0)
+        plt.show()
 
     # Limits to map
     def limit2map(self, omap, limit):
@@ -268,4 +288,12 @@ class PathWindow:
 
     # From the LIDAR list we get obstacles windows
     def print(self):
-        logging.debug("Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.start)) + " | End: " + str(math.degrees(self.end)))
+        logging.debug("Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.pangles(self.start))) + " | End: " + str(math.degrees(self.pangles(self.end))))
+
+    # For the logic to work we need to have positive angles
+    # But atan2() returns negatives as well
+    def pangles(self,ang):
+        if ang >= 0:
+            return ang
+        else:
+            return (2 * math.pi + ang)

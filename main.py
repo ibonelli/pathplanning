@@ -92,7 +92,7 @@ def main():
     # Map update and trap detection
     limits = myLimits.fetch_limits(sx, sy, ox, oy, "object")
     myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
-    intrap = trap.detect(myMap, sx, sy, curdirx, curdiry)
+    path_blocked = trap.detect(myMap, sx, sy, curdirx, curdiry)
 
     # Main navigation loop
     while d >= grid_size and not stuck:
@@ -106,23 +106,23 @@ def main():
         stuck = myNavigation.decide_status(rd)
         limits = myLimits.fetch_limits(xp, yp, ox, oy, "object")
         myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
-        intrap = trap.detect(myMap, xp, yp, curdirx, curdiry)
+        path_blocked = trap.detect(myMap, xp, yp, curdirx, curdiry)
 
-        #This blocks by intrap
-        #if stuck or intrap:
-        if stuck:
+        #This blocks by path_blocked
+        if stuck or path_blocked:
+        #if stuck:
             motion_model = trap.propose_motion_model(myMap, xp, yp)
             if len(motion_model) < 1:
                 print("We can no longer navigate")
-                limits = myLimits.fetch_limits(xp, yp, ox, oy, "limit")
-                print("Limits: " + str(limits))
-                windows = myLimits.get_limit_windows(limits, xp, yp)
-                print("Current windows:")
-                for win in windows:
-                    win.print()
+                logging.debug("We can no longer navigate")
+                logging.debug("motion model: " + str(motion_model))
                 myMap.draw()
-                limits = myLimits.lidar(xp, yp, ox, oy, "object")
-                myLimits.graph_limits(limits)
+                checkMyLimits = LidarLimits(grid_size, vision_limit, 36)
+                limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
+                checkMyLimits.graph_limits(limits,3)
+                checkMyLimits.graph_limits_polar(limits,1)
+                myMap.save_map("map.json")
+                MyGraf.save("path.json")
                 exit(0)
             myNavigation.set_motion_model(motion_model)
             #org_gx = gx

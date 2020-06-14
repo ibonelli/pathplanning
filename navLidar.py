@@ -240,7 +240,7 @@ class LidarLimits:
         return fp_list
 
     # Graph LIDAR limit
-    def graph_limits(self, limit, delay):
+    def graph_limits(self, limit):
         plt.savefig(self.debug_graph_fname)
         oi_list = self.get_limits(limit)
         fp_list = self.get_freepath(limit)
@@ -255,10 +255,10 @@ class LidarLimits:
         plt.grid(True)
         plt.title("Lidar")
         plt.savefig(self.debug_limit_fname)
-        plt.pause(delay)
+        plt.ginput()
 
     # Graph LIDAR limit
-    def graph_limits_polar(self, limit, delay):
+    def graph_limits_polar(self, limit):
         plt.cla()
         theta = np.linspace(0.0, 2 * np.pi, self.sensor_angle_steps, endpoint=False)
         g = []
@@ -267,7 +267,7 @@ class LidarLimits:
         radii = np.array(g)
         ax = plt.subplot(111, projection='polar')
         bars = ax.bar(theta, radii, width=self.angle_step, bottom=0.0)
-        plt.show()
+        plt.ginput()
 
     # Limits to map
     def limit2map(self, omap, limit):

@@ -22,6 +22,7 @@ class ApfNavigation:
         self.gix = None
         self.giy = None
         self.scount = None
+        self.scount_limit = 3
         self.rcheck = None
         self.stuck = False
         self.curdirx = None
@@ -100,10 +101,10 @@ class ApfNavigation:
             self.rcheck = rd[-2]
             logging.debug("Stuck? : " + str(self.rcheck))
         elif self.scount != 0:
-            if (self.rcheck - rd[-1]) <= self.reso and self.scount <= 3:
+            if (self.rcheck - rd[-1]) <= self.reso and self.scount <= self.scount_limit:
                 self.scount += 1
                 logging.debug("Still stuck... scount: " + str(self.scount))
-            elif (self.rcheck - rd[-1]) <= self.reso and self.scount > 3:
+            elif (self.rcheck - rd[-1]) <= self.reso and self.scount > self.scount_limit:
                 logging.info("Now we are really stuck!!!")
                 self.stuck = True
             elif (self.rcheck - rd[-1]) > self.reso:
@@ -118,8 +119,9 @@ class ApfNavigation:
 
     def potential_field_planning(self, sx, sy, gx, gy, ox, oy, start):
         if start:
-            # calc potential field
-            self.pmap, self.minx, self.miny = self.calc_potential_field(gx, gy, ox, oy)
+            # calc potential field (only the first time)
+            if self.pmap == None:
+                self.pmap, self.minx, self.miny = self.calc_potential_field(gx, gy, ox, oy)
             # search path
             d = np.hypot(sx - gx, sy - gy)
             # Search variables

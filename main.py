@@ -109,8 +109,8 @@ def main():
         path_blocked = trap.detect(myMap, xp, yp, curdirx, curdiry)
 
         #This blocks by path_blocked
+        #if path_blocked and not stuck:
         if stuck or path_blocked:
-        #if stuck:
             motion_model = trap.propose_motion_model(myMap, xp, yp)
             if len(motion_model) < 1:
                 print("We can no longer navigate")
@@ -119,8 +119,8 @@ def main():
                 myMap.draw()
                 checkMyLimits = LidarLimits(grid_size, vision_limit, 36)
                 limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-                checkMyLimits.graph_limits(limits,3)
-                checkMyLimits.graph_limits_polar(limits,1)
+                checkMyLimits.graph_limits(limits)
+                checkMyLimits.graph_limits_polar(limits)
                 myMap.save_map("map.json")
                 MyGraf.save("path.json")
                 exit(0)
@@ -130,6 +130,8 @@ def main():
             #gx = 
             #gy = 
             stuck = False
+        else:
+            motion_model = trap.reset_motion_model()
 
     myMap.save_map("map.json")
     MyGraf.save("path.json")

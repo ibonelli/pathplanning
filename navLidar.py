@@ -2,33 +2,12 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
+import json
+from navLidarPoint import LidarPoint
+from navLidarLimit import LidarLimit
 
-# START Class LidarPoint ----------------------------------------------
-class LidarPoint:
-	def __init__(self):
-		self.angle = 0
-		self.r = np.zeros(2)
-		self.dist = 0
-		self.col = False
-
-	def print_values(self):
-		logging.info("angle: " + str(self.angle) + " | oi: " + str(self.r) + " | dist: " + str(self.dist) + " | collision: " + str(self.col))
-
-	def get_coords(self):
-		return list(self.r)
-
-	def get_coord_list(self, limits_list):
-		oi = []
-		for aux in limits_list:
-			coords = []
-			mylist = aux.get_coords()
-			coords.append(int(mylist[0]))
-			coords.append(int(mylist[1]))
-			oi.append(coords)
-		return oi
-
-# START Class LidarLimits ----------------------------------------------
-class LidarLimits:
+# START Class Lidar ----------------------------------------------
+class Lidar:
 	def __init__(self, grid_size, radius, steps):
 		self.grid_size = grid_size
 		self.sensor_radius = grid_size * radius
@@ -40,7 +19,7 @@ class LidarLimits:
 		self.robot_position_y = None
 
 	# Fetch limits (by inspection)
-	#	   (known problem is that detects through walls)
+	#		(known problem is that detects through walls)
 	def fetch_limits_by_inspection(self, x, y, ox, oy):
 		oi = []
 		for obx,oby in np.nditer([ox, oy]):
@@ -53,7 +32,8 @@ class LidarLimits:
 	# Fetch limits
 	def fetch_limits(self, x, y, ox, oy, mode):
 		limits = self.lidar(x, y, ox, oy, mode)
-		oi_list = self.get_limits(limits)
+		MyLimit = LidarLimit()
+		oi_list = MyLimit.get_limits(limits)
 		p = LidarPoint()
 		oi = p.get_coord_list(oi_list)
 		return oi
@@ -172,128 +152,3 @@ class LidarLimits:
 				i2 = v.dot(t2) + p1
 				i.append(i2)
 			return True, i
-
-	# From the LIDAR list we get obstacles windows
-	def get_limit_windows(self, limit, cX, cY):
-		windows = []
-		cur_window = PathWindow()
-		total = len(limit)
-		#logging.debug("get_limit_windows --- Start")
-
-		if total != 1:
-			for i in range(total):
-				l = limit[i]
-				#logging.debug("limit[" + str(i) + "]:")
-				#l.print_values()
-				if i == 0:
-					# Primer valor de la lista
-					cur_window.start = math.atan2(l.r[1] - cY, l.r[0] - cX)
-					init_type = cur_window.blocked = l.col
-					init_start = cur_window.start
-				elif i == total-1:
-					# Ultimo valor de la lista
-					if init_type == cur_window.blocked:
-						# Continuamos en el mismo valor blocked
-						if len(windows) == 0:
-							cur_window.start = cur_window.end = 0
-							windows.append(cur_window)
-						else:
-							windows[0].start = cur_window.start
-					else:
-						# Cambiamos de valor blocked
-						cur_window.end = init_start
-						windows.append(cur_window)
-				else:
-					# Dentro de la lista
-					if cur_window.blocked != l.col:
-						ang = math.atan2(l.r[1] - cY, l.r[0] - cX)
-						cur_window.end = ang
-						windows.append(cur_window)
-						cur_window = PathWindow()
-						cur_window.start = ang
-						cur_window.blocked = l.col
-		else:
-			logging.error("Only 1 limit")
-			exit(-1)
-
-		#logging.debug("get_limit_windows --- End")
-		return windows
-
-	# From the LIDAR list we get obstacles
-	def get_limits(self, limit):
-		oi_list = []
-
-		for l in limit:
-			if (l.col == True):
-				oi_list.append(l)
-
-		return oi_list
-
-	# From the LIDAR list we get best possible paths
-	def get_freepath(self, limit):
-		fp_list = []
-
-		for l in limit:
-			if (l.col == False):
-				fp_list.append(l)
-
-		return fp_list
-
-	# Graph LIDAR limit
-	def graph_limits(self, limit):
-		plt.savefig(self.debug_graph_fname)
-		oi_list = self.get_limits(limit)
-		fp_list = self.get_freepath(limit)
-		plt.cla()
-		if (len(fp_list) >= 1):
-			for l in fp_list:
-				plt.plot(l.r[0], l.r[1], "b.")
-		if (len(oi_list) >= 1):
-			for l in oi_list:
-				plt.plot(l.r[0], l.r[1], "xr")
-		plt.axis("equal")
-		plt.grid(True)
-		plt.title("Lidar")
-		plt.savefig(self.debug_limit_fname)
-		plt.ginput()
-
-	# Graph LIDAR limit
-	def graph_limits_polar(self, limit):
-		plt.cla()
-		theta = np.linspace(0.0, 2 * np.pi, self.sensor_angle_steps, endpoint=False)
-		g = []
-		for l in limit:
-			g.append(np.linalg.norm(l.r))
-		radii = np.array(g)
-		ax = plt.subplot(111, projection='polar')
-		bars = ax.bar(theta, radii, width=self.angle_step, bottom=0.0)
-		plt.ginput()
-
-	# Limits to map
-	def limit2map(self, omap, limit):
-		#limit = self.get_limits(path_limit)
-		if (len(limit) >= 1):
-			for l in limit:
-				ox = int(l[0])
-				oy = int(l[1])
-				omap[ox][oy] = 1.0
-		return omap
-
-# START Class PathWindow -----------------------------------------------
-class PathWindow:
-	def __init__(self):
-		self.blocked = False
-		self.start = 0
-		self.end = 0
-
-	# From the LIDAR list we get obstacles windows
-	def print(self):
-		logging.debug("Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.pangles(self.start))) + " | End: " + str(math.degrees(self.pangles(self.end))))
-
-	# For the logic to work we need to have positive angles
-	# But atan2() returns negatives as well
-	def pangles(self,ang):
-		if ang >= 0:
-			return ang
-		else:
-			return (2 * math.pi + ang)

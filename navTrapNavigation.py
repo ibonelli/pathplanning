@@ -2,7 +2,8 @@ import math
 import logging
 
 # Modules
-from navLidar import LidarLimits
+from navLidar import Lidar
+from navLidarLimit import LidarLimit, PathWindow
 
 # START Class TrapNavigation --------------------------------------------
 class TrapNavigation:
@@ -20,17 +21,18 @@ class TrapNavigation:
 	# We detect a collision in the robot path
 	def detect(self, myMap, posX, posY, curdirx, curdiry):
 		#logging.debug("angle_step: " + str(self.angle_step))
-		myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
+		myLidar = Lidar(self.reso, self.vision_limit, self.angle_step)
 		rx = posX + self.vision_limit * curdirx
 		ry = posY + self.vision_limit * curdiry
 		ox, oy = myMap.get_objects()
-		col,r = myLimits.lidar_limits(posX, posY, (rx, ry), ox, oy, "limit")
+		col,r = myLidar.lidar_limits(posX, posY, (rx, ry), ox, oy, "limit")
 		#logging.debug("col: " + str(col))
 		#logging.debug("r: " + str(r))
 
 		if col:
 			logging.info("Found obstacle in robots way...")
-			limits = myLimits.lidar(posX, posY, ox, oy, "limit")
+			limits = myLidar.lidar(posX, posY, ox, oy, "limit")
+			myLimits = LidarLimit()
 			windows = myLimits.get_limit_windows(limits, posX, posY)
 			logging.debug("Current windows:")
 			for win in windows:
@@ -53,9 +55,10 @@ class TrapNavigation:
 		motionmodel = self.motion
 
 	def propose_motion_model(self, myMap, posX, posY):
-		myLimits = LidarLimits(self.reso, self.vision_limit, self.angle_step)
+		myLidar = Lidar(self.reso, self.vision_limit, self.angle_step)
 		ox, oy = myMap.get_objects()
-		limits = myLimits.lidar(posX, posY, ox, oy, "limit")
+		limits = myLidar.lidar(posX, posY, ox, oy, "limit")
+		myLimits = LidarLimit()
 		windows = myLimits.get_limit_windows(limits, posX, posY)
 		logging.debug("Current windows:")
 		for win in windows:

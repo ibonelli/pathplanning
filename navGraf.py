@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 
+# START Class ShowNavigation ----------------------------------------------
 class ShowNavigation:
 	def __init__(self):
 		plt.cla()

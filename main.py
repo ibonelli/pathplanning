@@ -17,10 +17,12 @@ import logging
 # Modules
 import config
 from navApfNavigation import ApfNavigation
-from navLidar import LidarPoint, LidarLimits, PathWindow
+from navLidar import Lidar
+from navLidarPoint import LidarPoint
 from navTrapNavigation import TrapNavigation
 from navMap import Map
 from navGraf import ShowNavigation
+from navLidarLimit import LidarLimit
 
 show_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
@@ -72,8 +74,9 @@ def main():
 	myMap = Map()
 	myMap.set_params(grid_size, gx, gy, ox, oy)
 	myMap.create()
-	myLimits = LidarLimits(grid_size, vision_limit, 8)
-	limits = myLimits.fetch_limits(sx, sy, ox, oy, "object")
+	myLidar = Lidar(grid_size, vision_limit, 8)
+	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
+	myLimits = LidarLimit()
 	myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 
 	# Navigation 1st step
@@ -90,7 +93,7 @@ def main():
 		MyGraf.step(xp, yp, graf_delay)
 
 	# Map update and trap detection
-	limits = myLimits.fetch_limits(sx, sy, ox, oy, "object")
+	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
 	myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 	path_blocked = trap.detect(myMap, sx, sy, curdirx, curdiry)
 
@@ -104,7 +107,7 @@ def main():
 			MyGraf.step(xp, yp, graf_delay)
 
 		stuck = myNavigation.decide_status(rd)
-		limits = myLimits.fetch_limits(xp, yp, ox, oy, "object")
+		limits = myLidar.fetch_limits(xp, yp, ox, oy, "object")
 		myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 		path_blocked = trap.detect(myMap, xp, yp, curdirx, curdiry)
 
@@ -117,12 +120,15 @@ def main():
 				logging.debug("We can no longer navigate")
 				logging.debug("motion model: " + str(motion_model))
 				myMap.draw()
-				checkMyLimits = LidarLimits(grid_size, vision_limit, 36)
+				checkMyLimits = Lidar(grid_size, vision_limit, 36)
 				limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-				checkMyLimits.graph_limits(limits)
-				checkMyLimits.graph_limits_polar(limits)
+				debug_graph_fname = "navigation.png"
+				plt.savefig(debug_graph_fname)
+				myLimits.graph_limits(limits)
+				myLimits.graph_limits_polar(limits)
 				myMap.save_map("map.json")
 				MyGraf.save("path.json")
+				myLimits.save_limit(xp, yp, limits, "limit.json")
 				exit(0)
 			myNavigation.set_motion_model(motion_model)
 			#org_gx = gx

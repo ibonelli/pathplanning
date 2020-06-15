@@ -87,6 +87,7 @@ def main():
 
 	# Navigation 1st step
 	stuck = False
+	aborted = False
 	d = float(np.hypot(sx - gx, sy - gy))
 	rd, rx, ry = [d], [sx], [sy]
 	d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
@@ -119,12 +120,20 @@ def main():
 
 		#This blocks by path_blocked
 		#if path_blocked and not stuck:
-		if stuck or path_blocked:
+		if (stuck or path_blocked) and not aborted:
 			if motion_model_limit <= motion_model_count:
 				logging.debug("Reseting motion model (still stucked or trapped)")
 				motion_model_count = 0
 				motion_model = trap.reset_motion_model()
 				myNavigation.set_motion_model(motion_model)
+				stuck = myNavigation.decide_status(rd)
+				if stuck == True:
+					logging.debug("Still stucked... This will abort motion.")
+					aborted = True
+					#org_gx, org_gy = gx, gy
+					#gx, gy = MyDeliberative.XXX()
+				else:
+					logging.debug("No longer stucked :)")
 			else:
 				motion_model_count += 1
 				motion_model = trap.propose_motion_model(myMap, xp, yp)
@@ -132,43 +141,31 @@ def main():
 					print("We can no longer navigate")
 					logging.debug("We can no longer navigate")
 					logging.debug("motion model: " + str(motion_model))
-					myMap.draw()
-					checkMyLimits = Lidar(grid_size, vision_limit, 36)
-					limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-					debug_graph_fname = "navigation.png"
-					plt.savefig(debug_graph_fname)
-					myLimits.graph_limits(limits)
-					myLimits.graph_limits_polar(limits)
-					myMap.save_map("map.json")
-					MyGraf.save("path.json")
-					myLimits.save_limit(xp, yp, limits, "limit.json")
-					exit(0)
+					aborted = True
 				myNavigation.set_motion_model(motion_model)
-				#org_gx = gx
-				#org_gy = gy
-				#gx =
-				#gy =
 				stuck = False
-		else:
-			logging.debug("motion model (before): " + str(motion_model))
+		elif motion_model_count != 0:
 			logging.debug("Reseting motion model (not stucked or trapped)")
 			motion_model_count = 0
 			motion_model = trap.reset_motion_model()
 			myNavigation.set_motion_model(motion_model)
-			logging.debug("motion model (after): " + str(motion_model))
 
+	if aborted:
+		checkMyLimits = Lidar(grid_size, vision_limit, 36)
+		limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
+		myLimits.save_limit(xp, yp, limits, "limit.json")
+		print("Navigation aborted...")
+	else:
+		print("Goal!!")
 
 	myMap.save_map("map.json")
 	MyGraf.save("path.json")
 
-	print("Goal!!")
-
-	if show_animation:
-		# We save to a file
-		base=os.path.basename(fname)
-		plt.savefig(os.path.splitext(base)[0] + "_nav.png")
-		plt.show()
-
+	#if show_animation:
+	#	# We save to a file
+	#	base=os.path.basename(fname)
+	#	plt.savefig(os.path.splitext(base)[0] + "_nav.png")
+	#	plt.show()
 
 if __name__ == '__main__':
 	print(__file__ + " start!!")

@@ -12,10 +12,7 @@ sys.path.append('../')
 
 # Modules
 from navLidarPoint import LidarPoint
-from navLidar import Lidar, PathWindow
-
-grid_size = 1  # potential grid size [m]
-vision_limit = 15
+from navLidarLimit import LidarLimit
 
 def main():
 	# Cargando el archivo de descripcion del mundo a recorrer
@@ -25,10 +22,10 @@ def main():
 	else:
 		fname = sys.argv[1]
 
-	checkMyLimits = Lidar(grid_size, vision_limit, 36)
-
-	x, y, limits = checkMyLimits.load_limit(fname)
-	myMap.draw()
+	myLimits = LidarLimit()
+	x, y, limits = myLimits.load_limit(fname)
+	myLimits.graph_limits(limits)
+	myLimits.graph_limits_polar(limits)
 
 if __name__ == '__main__':
 	main()

@@ -42,3 +42,4 @@ class LidarPoint:
 		self.r[1] = point["ry"]
 		self.dist = point["dist"]
 		self.col = point["col"]
+		return self

@@ -137,7 +137,7 @@ class LidarLimit:
 		saved_limits = json.JSONDecoder().decode(data)
 		for l in saved_limits["limit"]:
 			p = LidarPoint()
-			limits.append(p.from_dict(self, l))
+			limits.append(p.from_dict(l))
 		return saved_limits["x"], saved_limits["y"], limits
 
 # START Class PathWindow -----------------------------------------------

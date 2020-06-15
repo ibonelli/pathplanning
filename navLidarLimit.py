@@ -110,11 +110,23 @@ class LidarLimit:
 		angle_step = limit[1].angle - limit[0].angle
 		theta = np.linspace(0.0, 2 * np.pi, sensor_angle_steps, endpoint=False)
 		g = []
+		b = []
 		for l in limit:
 			g.append(np.linalg.norm(l.r))
+			b.append(l.col)
 		radii = np.array(g)
 		ax = plt.subplot(111, projection='polar')
 		bars = ax.bar(theta, radii, width=angle_step, bottom=0.0)
+		# Use one color for block path, and a different one for free path
+		for l, bar in zip(b, bars):
+			if l == False:
+				# Dark Blue (RGB)
+				i=(0.1, 0.1, 1.0, 1.0)
+			else:
+				# Dark Red (RGB)
+				i=(1.0, 0.1, 0.1, 1.0)
+			bar.set_facecolor(i)
+			bar.set_alpha(1.0)
 		plt.ginput()
 
 	def save_limit(self, x, y, limit, filename):
@@ -148,8 +160,12 @@ class PathWindow:
 		self.end = 0
 
 	# From the LIDAR list we get obstacles windows
-	def print(self):
-		logging.debug("Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.pangles(self.start))) + " | End: " + str(math.degrees(self.pangles(self.end))))
+	def print(self, mode="debug"):
+		msg = "Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.pangles(self.start))) + " | End: " + str(math.degrees(self.pangles(self.end)))
+		if mode == "debug":
+			logging.debug(msg)
+		else:
+			print(msg)
 
 	# For the logic to work we need to have positive angles
 	# But atan2() returns negatives as well

@@ -26,6 +26,7 @@ from navLidarLimit import LidarLimit
 
 show_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
+motion_model_limit = config.general['motion_model_limit']
 logging.basicConfig(filename=config.general['logFile'],level=config.general['logLevel'])
 
 # START Class MapNewPath --------------------------------------------
@@ -79,6 +80,11 @@ def main():
 	myLimits = LidarLimit()
 	myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
 
+	# Start with a clean motion model
+	motion_model_count = 0
+	motion_model = trap.reset_motion_model()
+	myNavigation.set_motion_model(motion_model)
+
 	# Navigation 1st step
 	stuck = False
 	d = float(np.hypot(sx - gx, sy - gy))
@@ -95,7 +101,7 @@ def main():
 	# Map update and trap detection
 	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
 	myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
-	path_blocked = trap.detect(myMap, sx, sy, curdirx, curdiry)
+	path_blocked = trap.detect(myMap, sx, sy, curdirx, curdiry, gx, gy)
 
 	# Main navigation loop
 	while d >= grid_size and not stuck:
@@ -109,35 +115,48 @@ def main():
 		stuck = myNavigation.decide_status(rd)
 		limits = myLidar.fetch_limits(xp, yp, ox, oy, "object")
 		myMap.set_map(myLimits.limit2map(myMap.get_map(), limits))
-		path_blocked = trap.detect(myMap, xp, yp, curdirx, curdiry)
+		path_blocked = trap.detect(myMap, xp, yp, curdirx, curdiry, gx, gy)
 
 		#This blocks by path_blocked
 		#if path_blocked and not stuck:
 		if stuck or path_blocked:
-			motion_model = trap.propose_motion_model(myMap, xp, yp)
-			if len(motion_model) < 1:
-				print("We can no longer navigate")
-				logging.debug("We can no longer navigate")
-				logging.debug("motion model: " + str(motion_model))
-				myMap.draw()
-				checkMyLimits = Lidar(grid_size, vision_limit, 36)
-				limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-				debug_graph_fname = "navigation.png"
-				plt.savefig(debug_graph_fname)
-				myLimits.graph_limits(limits)
-				myLimits.graph_limits_polar(limits)
-				myMap.save_map("map.json")
-				MyGraf.save("path.json")
-				myLimits.save_limit(xp, yp, limits, "limit.json")
-				exit(0)
-			myNavigation.set_motion_model(motion_model)
-			#org_gx = gx
-			#org_gy = gy
-			#gx =
-			#gy =
-			stuck = False
+			if motion_model_limit <= motion_model_count:
+				logging.debug("Reseting motion model (still stucked or trapped)")
+				motion_model_count = 0
+				motion_model = trap.reset_motion_model()
+				myNavigation.set_motion_model(motion_model)
+			else:
+				motion_model_count += 1
+				motion_model = trap.propose_motion_model(myMap, xp, yp)
+				if len(motion_model) < 1:
+					print("We can no longer navigate")
+					logging.debug("We can no longer navigate")
+					logging.debug("motion model: " + str(motion_model))
+					myMap.draw()
+					checkMyLimits = Lidar(grid_size, vision_limit, 36)
+					limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
+					debug_graph_fname = "navigation.png"
+					plt.savefig(debug_graph_fname)
+					myLimits.graph_limits(limits)
+					myLimits.graph_limits_polar(limits)
+					myMap.save_map("map.json")
+					MyGraf.save("path.json")
+					myLimits.save_limit(xp, yp, limits, "limit.json")
+					exit(0)
+				myNavigation.set_motion_model(motion_model)
+				#org_gx = gx
+				#org_gy = gy
+				#gx =
+				#gy =
+				stuck = False
 		else:
+			logging.debug("motion model (before): " + str(motion_model))
+			logging.debug("Reseting motion model (not stucked or trapped)")
+			motion_model_count = 0
 			motion_model = trap.reset_motion_model()
+			myNavigation.set_motion_model(motion_model)
+			logging.debug("motion model (after): " + str(motion_model))
+
 
 	myMap.save_map("map.json")
 	MyGraf.save("path.json")

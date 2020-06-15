@@ -160,11 +160,11 @@ class PathWindow:
 		self.end = 0
 
 	# From the LIDAR list we get obstacles windows
-	def print(self, mode="debug"):
+	def print(self, mode=None):
 		msg = "Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.pangles(self.start))) + " | End: " + str(math.degrees(self.pangles(self.end)))
 		if mode == "debug":
 			logging.debug(msg)
-		else:
+		elif mode == "console":
 			print(msg)
 
 	# For the logic to work we need to have positive angles

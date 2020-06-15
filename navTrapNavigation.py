@@ -1,4 +1,5 @@
 import math
+import numpy as np
 import logging
 
 # Modules
@@ -15,11 +16,12 @@ class TrapNavigation:
 		self.angle_step = int(2 * math.pi / self.angle)
 		self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
 		self.path_blocked_count = 0
-		self.path_blocked_limit = 5
+		self.path_blocked_limit = 3
+		self.path_blocked_dir = np.zeros(2)
 		self.col_status = False
 
 	# We detect a collision in the robot path
-	def detect(self, myMap, posX, posY, curdirx, curdiry):
+	def detect(self, myMap, posX, posY, curdirx, curdiry, gx, gy):
 		#logging.debug("angle_step: " + str(self.angle_step))
 		myLidar = Lidar(self.reso, self.vision_limit, self.angle_step)
 		rx = posX + self.vision_limit * curdirx
@@ -30,20 +32,30 @@ class TrapNavigation:
 		#logging.debug("r: " + str(r))
 
 		if col:
-			logging.info("Found obstacle in robots way...")
-			limits = myLidar.lidar(posX, posY, ox, oy, "limit")
-			myLimits = LidarLimit()
-			windows = myLimits.get_limit_windows(limits, posX, posY)
-			logging.debug("Current windows:")
-			for win in windows:
-				win.print()
-			#myLimits.graph_limits(limits)
-			self.col_status = True
-			self.path_blocked_count+=1
+			dist_to_obstacle = np.linalg.norm(r)
+			g = np.zeros(2)
+			g[0] = posX - gx
+			g[1] = posY - gy
+			dist_to_goal = np.linalg.norm(g)
+			if dist_to_obstacle < dist_to_goal:
+				# To be a block, distance to obstacle must be less than distance to goal
+				logging.info("Found obstacle in robots way...")
+				limits = myLidar.lidar(posX, posY, ox, oy, "limit")
+				myLimits = LidarLimit()
+				windows = myLimits.get_limit_windows(limits, posX, posY)
+				#logging.debug("Current windows:")
+				#for win in windows:
+				#	win.print()
+				#myLimits.graph_limits(limits)
+				logging.debug("Collission status is True!")
+				self.col_status = True
+				self.path_blocked_count += 1
+				self.path_blocked_dir[0] = curdirx
+				self.path_blocked_dir[1] = curdiry
 		else:
+			self.path_blocked_dir = np.zeros(2)
 			self.col_status == False
 			self.path_blocked_count = 0
-
 		if self.path_blocked_count == self.path_blocked_limit:
 			blocked = True
 		else:
@@ -52,17 +64,19 @@ class TrapNavigation:
 		return blocked
 
 	def reset_motion_model(self):
-		motionmodel = self.motion
+		return self.motion
 
+	# We will check the robots map of the world and use a higher resolution
+	# The idea behind this is to have a resolution as high as the map can allow
 	def propose_motion_model(self, myMap, posX, posY):
 		myLidar = Lidar(self.reso, self.vision_limit, self.angle_step)
 		ox, oy = myMap.get_objects()
 		limits = myLidar.lidar(posX, posY, ox, oy, "limit")
 		myLimits = LidarLimit()
 		windows = myLimits.get_limit_windows(limits, posX, posY)
-		logging.debug("Current windows:")
-		for win in windows:
-			win.print()
+		#logging.debug("Current windows:")
+		#for win in windows:
+		#	win.print()
 		# We new get new motion model
 		proposed_motion_model = self.windows_to_motionmodel(windows)
 		logging.debug("Proposed Motion Model:")
@@ -76,9 +90,9 @@ class TrapNavigation:
 		logging.debug("Windows to motion model:")
 		for direction in motionmodel:
 			ang = self.pangles(math.atan2(direction[1],direction[0]))
-			logging.debug("For angle:" + str(math.degrees(self.pangles(ang))))
+			#logging.debug("For angle:" + str(math.degrees(self.pangles(ang))))
 			for w in windows:
-				w.print()
+				#w.print()
 				if w.blocked == False:
 					if ang >= self.pangles(w.start) and ang <= self.pangles(w.end):
 						new_motionmodel.append([direction[0],direction[1]])

@@ -77,10 +77,13 @@ class Lidar:
 				#logging.debug("lidar_limits() | Intersection at " + str(limit))
 				oi.append(limit)
 		if (len(oi) == 0):
+			# No collision found
 			return False, r
 		elif (len(oi) == 1):
+			# Found only one collision
 			return True, oi[0]
 		else:
+			# Found multiple collisions, returning closest one
 			min_val = float("inf")
 			val_to_return = None
 			for p in oi:

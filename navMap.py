@@ -34,6 +34,9 @@ class Map:
 	def get_map(self):
 		return self.map
 
+	def set_map(self, exmap):
+		self.map = exmap
+
 	def save_map(self, filename):
 		mapdata = {
 			"reso": self.reso,
@@ -62,9 +65,6 @@ class Map:
 		self.xw = mapdata["xw"]
 		self.yw = mapdata["yw"]
 		self.map = mapdata["map"]
-
-	def set_map(self, exmap):
-		self.map = exmap
 
 	def get_minx(self):
 		return self.minx
@@ -123,3 +123,24 @@ class Map:
 					ox.append(self.reso*i)
 					oy.append(self.reso*j)
 		return ox,oy
+
+	def get_map_params(self):
+		mapdata = {
+			"reso": self.reso,
+			"minx": self.minx,
+			"miny": self.miny,
+			"maxx": self.maxx,
+			"maxy": self.maxy,
+			"xw": self.xw,
+			"yw": self.yw,
+			}
+		return mapdata
+
+	def set_map_params(self, mapdata):
+		self.reso = mapdata["reso"]
+		self.minx = mapdata["minx"]
+		self.miny = mapdata["miny"]
+		self.maxx = mapdata["maxx"]
+		self.maxy = mapdata["maxy"]
+		self.xw = mapdata["xw"]
+		self.yw = mapdata["yw"]

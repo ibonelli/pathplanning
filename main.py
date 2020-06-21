@@ -24,6 +24,7 @@ from navMap import Map
 from navGraf import ShowNavigation
 from navLidarLimit import LidarLimit
 from navDeliverative import DeliverativeNavigation
+from navFollowPath import FollowPath
 
 show_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
@@ -68,11 +69,6 @@ def main():
 	if show_animation:
 		MyGraf = ShowNavigation()
 
-	# Navigation Starting
-	myNavigation = ApfNavigation(grid_size, robot_radius)
-	trap = TrapNavigation(grid_size, robot_radius, vision_limit)
-	myDeliverative = DeliverativeNavigation(gx, gy, vision_limit)
-
 	# Map generation
 	myMap = Map()
 	myMap.set_params(grid_size, gx, gy, ox, oy)
@@ -80,6 +76,12 @@ def main():
 	myLidar = Lidar(grid_size, vision_limit, 8)
 	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
 	myLimits = LidarLimit()
+
+	# Navigation Initializing
+	myNavigation = ApfNavigation(grid_size, robot_radius)
+	trap = TrapNavigation(grid_size, robot_radius, vision_limit)
+	myDeliverative = DeliverativeNavigation(robot_radius, vision_limit, grid_size, gx, gy, myMap)
+	myNavFollow = FollowPath(grid_size, gx, gy)
 	myDeliverative.set_map(myLimits.limit2map(myMap.get_map(), limits))
 
 	# Start with a clean motion model
@@ -92,8 +94,9 @@ def main():
 	aborted = False
 	d = float(np.hypot(sx - gx, sy - gy))
 	rd, rx, ry = [d], [sx], [sy]
+	nav = "apf"
 	d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
-	myDeliverative.set_step((xp, yp), (curdirx, curdiry))
+	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
 	rd.append(d)
 	rx.append(xp)
 	ry.append(yp)
@@ -109,8 +112,11 @@ def main():
 
 	# Main navigation loop
 	while d >= grid_size and not stuck:
-		d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
-		myDeliverative.set_step((xp, yp), (curdirx, curdiry))
+		if nav == "apf":
+			d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+		elif nav == "follow":
+			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
+		myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
 		myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
 
 		rd.append(d)
@@ -122,39 +128,65 @@ def main():
 		stuck = myNavigation.decide_status(rd)
 		limits = myLidar.fetch_limits(xp, yp, ox, oy, "object")
 		path_blocked = trap.detect(myMap, xp, yp, curdirx, curdiry, gx, gy)
+		myDeliverative.set_status(stuck, path_blocked)
 
 		#This blocks by path_blocked
 		#if path_blocked and not stuck:
+		#if (stuck or path_blocked) and not aborted:
+		#	if motion_model_limit <= motion_model_count:
+		#		logging.debug("Reseting motion model (still stucked or trapped)")
+		#		motion_model_count = 0
+		#		motion_model = trap.reset_motion_model()
+		#		myNavigation.set_motion_model(motion_model)
+		#		stuck = myNavigation.decide_status(rd)
+		#		if stuck == True:
+		#			logging.debug("Still stucked... This will abort motion.")
+		#			aborted = True
+		#			#org_gx, org_gy = gx, gy
+		#			#gx, gy = MyDeliberative.XXX()
+		#		else:
+		#			logging.debug("No longer stucked :)")
+		#	else:
+		#		motion_model_count += 1
+		#		motion_model = trap.propose_motion_model(myMap, xp, yp)
+		#		if len(motion_model) < 1:
+		#			msg = "We can no longer navigate, because something went wrong with the motion model."
+		#			print(msg)
+		#			logging.debug(msg)
+		#			logging.debug("Current motion model: " + str(motion_model))
+		#			aborted = True
+		#		myNavigation.set_motion_model(motion_model)
+		#		stuck = False
+		#elif motion_model_count != 0:
+		#	logging.debug("Reseting motion model (not stucked or trapped)")
+		#	motion_model_count = 0
+		#	motion_model = trap.reset_motion_model()
+		#	myNavigation.set_motion_model(motion_model)
+
 		if (stuck or path_blocked) and not aborted:
-			if motion_model_limit <= motion_model_count:
-				logging.debug("Reseting motion model (still stucked or trapped)")
-				motion_model_count = 0
-				motion_model = trap.reset_motion_model()
-				myNavigation.set_motion_model(motion_model)
-				stuck = myNavigation.decide_status(rd)
-				if stuck == True:
-					logging.debug("Still stucked... This will abort motion.")
-					aborted = True
-					#org_gx, org_gy = gx, gy
-					#gx, gy = MyDeliberative.XXX()
-				else:
-					logging.debug("No longer stucked :)")
-			else:
-				motion_model_count += 1
-				motion_model = trap.propose_motion_model(myMap, xp, yp)
-				if len(motion_model) < 1:
-					msg = "We can no longer navigate, because something went wrong with the motion model."
-					print(msg)
-					logging.debug(msg)
-					logging.debug("Current motion model: " + str(motion_model))
-					aborted = True
-				myNavigation.set_motion_model(motion_model)
+			if stuck:
+				nav = "follow"
 				stuck = False
-		elif motion_model_count != 0:
-			logging.debug("Reseting motion model (not stucked or trapped)")
-			motion_model_count = 0
-			motion_model = trap.reset_motion_model()
-			myNavigation.set_motion_model(motion_model)
+				dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
+				myNavFollow.set_limit(limitx, limity)
+				wlimit = False
+			#elif path_blocked:
+			#	motion_model_count += 1
+			#	motion_model = trap.propose_motion_model(myMap, xp, yp)
+			#	if len(motion_model) < 1:
+			#		msg = "We can no longer navigate, because something went wrong with the motion model."
+			#		print(msg)
+			#		logging.debug(msg)
+			#		logging.debug("Current motion model: " + str(motion_model))
+			#		aborted = True
+			#	myNavigation.set_motion_model(motion_model)
+			#	nav = "apf"
+			else:
+				msg = "Still need to figure it out what to do..."
+				print(msg)
+
+		if nav == "follow" and wlimit == True:
+			nav = "apf"
 
 	if aborted:
 		checkMyLimits = Lidar(grid_size, vision_limit, 36)

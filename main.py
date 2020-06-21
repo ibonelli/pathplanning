@@ -111,11 +111,13 @@ def main():
 	path_blocked = trap.detect(myMap, sx, sy, curdirx, curdiry, gx, gy)
 
 	# Main navigation loop
-	while d >= grid_size and not stuck:
+	while d >= grid_size and not aborted:
 		if nav == "apf":
 			d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
+		#elif nav == "follow_wall":
+		#	d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow_wall(xp, yp, dirx, diry, obj_to_follow)
 		myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
 		myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
 
@@ -170,23 +172,37 @@ def main():
 				dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
 				myNavFollow.set_limit(limitx, limity)
 				wlimit = False
-			#elif path_blocked:
-			#	motion_model_count += 1
-			#	motion_model = trap.propose_motion_model(myMap, xp, yp)
-			#	if len(motion_model) < 1:
-			#		msg = "We can no longer navigate, because something went wrong with the motion model."
-			#		print(msg)
-			#		logging.debug(msg)
-			#		logging.debug("Current motion model: " + str(motion_model))
-			#		aborted = True
-			#	myNavigation.set_motion_model(motion_model)
-			#	nav = "apf"
+				logging.debug("Switching to follow model | Direction: " + str((dirx, diry)) + " | limit: " + str((limitx, limity)))
+			elif nav == "follow" and path_blocked:
+				motion_model = trap.propose_motion_model(myMap, xp, yp)
+				if len(motion_model) < 1:
+					msg = "We can no longer navigate, because something went wrong with the motion model."
+					print(msg)
+					logging.debug(msg)
+					logging.debug("Current motion model: " + str(motion_model))
+					aborted = True
+				dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
+				myNavFollow.set_limit(limitx, limity)
+				wlimit = False
+			#elif nav == "apf" and path_blocked:
+			#	nav = "follow_wall"
+			#	
 			else:
-				msg = "Still need to figure it out what to do..."
+				logging.debug("Current motion model: " + str(motion_model) + " | stuck: " + str(stuck) + " | path_blocked: " + str(path_blocked))
+				msg = "For now we keep navigating..."
 				print(msg)
+				logging.debug(msg)
+				#aborted = True
 
 		if nav == "follow" and wlimit == True:
+			logging.debug("wlimit reached, moving back to apf navigation...")
 			nav = "apf"
+
+		if xp == 35 and yp == 47:
+			msg = "Reached problematic point, xp=35 & yp=47. Stopping navigation."
+			print(msg)
+			logging.debug(msg)
+			aborted = True
 
 	if aborted:
 		checkMyLimits = Lidar(grid_size, vision_limit, 36)

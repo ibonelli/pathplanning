@@ -28,6 +28,10 @@ class ApfNavigation:
 		self.curdirx = None
 		self.curdiry = None
 
+	def set_cur_pos(self, xp, yp):
+		self.ix = xp
+		self.iy = yp
+
 	def calc_potential_field(self, gx, gy, ox, oy):
 		myMap = Map()
 		myMap.set_params(self.reso, gx, gy, ox, oy)

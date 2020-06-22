@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 import json
 
 # START Class LidarPoint ----------------------------------------------
@@ -9,7 +10,7 @@ class LidarPoint:
 		self.dist = 0
 		self.col = False
 
-	def print_values(self):
+	def print(self):
 		logging.info("angle: " + str(self.angle) + " | oi: " + str(self.r) + " | dist: " + str(self.dist) + " | collision: " + str(self.col))
 
 	def get_coords(self):

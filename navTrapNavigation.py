@@ -72,11 +72,14 @@ class TrapNavigation:
 		myLidar = Lidar(self.reso, self.vision_limit, self.angle_step)
 		ox, oy = myMap.get_objects()
 		limits = myLidar.lidar(posX, posY, ox, oy, "limit")
+		logging.debug("Limits:")
+		for L in limits:
+			L.print()
 		myLimits = LidarLimit()
 		windows = myLimits.get_limit_windows(limits, posX, posY)
-		#logging.debug("Current windows:")
-		#for win in windows:
-		#	win.print()
+		logging.debug("Current windows:")
+		for win in windows:
+			win.print()
 		# We new get new motion model
 		proposed_motion_model = self.windows_to_motionmodel(windows)
 		logging.debug("Proposed Motion Model:")

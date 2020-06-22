@@ -26,6 +26,9 @@ class DeliverativeNavigation:
 	def get_map(self):
 		return self.map.get_map()
 
+	def get_map_obj(self):
+		return self.map
+
 	def set_step(self, step, direction, nav):
 		self.path.append(step)
 		self.dir.append(direction)
@@ -46,8 +49,8 @@ class DeliverativeNavigation:
 				dirx, diry = m[0], m[1]
 				best_distance = m[2]
 		if dirx != None and diry != None:
-			limitx = self.vision_limit * dirx
-			limity = self.vision_limit * diry
+			limitx = xp + self.vision_limit * dirx
+			limity = yp + self.vision_limit * diry
 		logging.debug("Chosen direction:")
 		logging.debug("dirx = " + str(dirx) + " | diry = " + str(diry) + " | limitx = " + str(limitx) + " | limity = " + str(limity))
 		logging.debug("----------------------")

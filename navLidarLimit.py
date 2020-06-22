@@ -51,7 +51,7 @@ class LidarLimit:
 			for i in range(total):
 				l = limit[i]
 				#logging.debug("limit[" + str(i) + "]:")
-				#l.print_values()
+				#l.print()
 				if i == 0:
 					# Primer valor de la lista
 					cur_window.start = math.atan2(l.r[1] - cY, l.r[0] - cX)

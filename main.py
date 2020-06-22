@@ -108,16 +108,18 @@ def main():
 	# Map update and trap detection
 	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
 	myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
-	path_blocked = trap.detect(myMap, sx, sy, curdirx, curdiry, gx, gy)
+	path_blocked = trap.detect(myDeliverative.get_map_obj(), sx, sy, curdirx, curdiry, gx, gy)
 
 	# Main navigation loop
 	while d >= grid_size and not aborted:
 		if nav == "apf":
 			d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+			stuck = myNavigation.decide_status(rd)
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
-		#elif nav == "follow_wall":
-		#	d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow_wall(xp, yp, dirx, diry, obj_to_follow)
+		limits = myLidar.fetch_limits(xp, yp, ox, oy, "object")
+		path_blocked = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
+		myDeliverative.set_status(stuck, path_blocked)
 		myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
 		myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
 
@@ -126,11 +128,6 @@ def main():
 		ry.append(yp)
 		if show_animation:
 			MyGraf.step(xp, yp, graf_delay)
-
-		stuck = myNavigation.decide_status(rd)
-		limits = myLidar.fetch_limits(xp, yp, ox, oy, "object")
-		path_blocked = trap.detect(myMap, xp, yp, curdirx, curdiry, gx, gy)
-		myDeliverative.set_status(stuck, path_blocked)
 
 		#This blocks by path_blocked
 		#if path_blocked and not stuck:
@@ -150,7 +147,7 @@ def main():
 		#			logging.debug("No longer stucked :)")
 		#	else:
 		#		motion_model_count += 1
-		#		motion_model = trap.propose_motion_model(myMap, xp, yp)
+		#		motion_model = trap.propose_motion_model(myDeliverative.get_map_obj(), xp, yp)
 		#		if len(motion_model) < 1:
 		#			msg = "We can no longer navigate, because something went wrong with the motion model."
 		#			print(msg)
@@ -173,8 +170,8 @@ def main():
 				myNavFollow.set_limit(limitx, limity)
 				wlimit = False
 				logging.debug("Switching to follow model | Direction: " + str((dirx, diry)) + " | limit: " + str((limitx, limity)))
-			elif nav == "follow" and path_blocked:
-				motion_model = trap.propose_motion_model(myMap, xp, yp)
+			elif path_blocked:
+				motion_model = trap.propose_motion_model(myDeliverative.get_map_obj(), xp, yp)
 				if len(motion_model) < 1:
 					msg = "We can no longer navigate, because something went wrong with the motion model."
 					print(msg)
@@ -195,11 +192,18 @@ def main():
 				#aborted = True
 
 		if nav == "follow" and wlimit == True:
-			logging.debug("wlimit reached, moving back to apf navigation...")
-			nav = "apf"
+			logging.debug("wlimit reached, what should we do?")
+			#if 
+			#	logging.debug("Moving back to apf navigation...")
+			#	nav = "apf"
+			#	myNavigation.set_cur_pos(xp, yp)
+			#	motion_model = trap.reset_motion_model()
+			#	myNavigation.set_motion_model(motion_model)
+			#else:
+			#	
 
-		if xp == 35 and yp == 47:
-			msg = "Reached problematic point, xp=35 & yp=47. Stopping navigation."
+		if xp == 35 and yp == 45:
+			msg = "Reached problematic point, xp=35 & yp=45. Stopping navigation."
 			print(msg)
 			logging.debug(msg)
 			aborted = True

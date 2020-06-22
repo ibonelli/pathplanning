@@ -36,6 +36,9 @@ class FollowPath:
 		return d, xs, ys, curdirx, curdiry, self.limit
 
 	def follow_wall(self, xp, yp):
+		# TODO -- Mantenerme siempre a la distancia actual del
+		#			path_blocked_dir para evitar nuevo
+		#			escenario descripto en WorldBuilder.ods
 		xs = xp + curdirx * self.reso
 		ys = yp + curdiry * self.reso
 		d = np.hypot(self.gx - xs, self.gy - ys)

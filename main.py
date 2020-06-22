@@ -108,7 +108,7 @@ def main():
 	# Map update and trap detection
 	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
 	myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
-	path_blocked = trap.detect(myDeliverative.get_map_obj(), sx, sy, curdirx, curdiry, gx, gy)
+	path_blocked, path_blocked_dir = trap.detect(myDeliverative.get_map_obj(), sx, sy, curdirx, curdiry, gx, gy)
 
 	# Main navigation loop
 	while d >= grid_size and not aborted:
@@ -118,8 +118,8 @@ def main():
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
 		limits = myLidar.fetch_limits(xp, yp, ox, oy, "object")
-		path_blocked = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
-		myDeliverative.set_status(stuck, path_blocked)
+		path_blocked, path_blocked_dir = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
+		myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
 		myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
 		myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
 
@@ -193,6 +193,9 @@ def main():
 
 		if nav == "follow" and wlimit == True:
 			logging.debug("wlimit reached, what should we do?")
+			if myDeliverative.checked_path_blocked_dir()
+				# TODO -- Seguir con esto
+				Set_new_goal and move_back_to_apf
 			#if 
 			#	logging.debug("Moving back to apf navigation...")
 			#	nav = "apf"

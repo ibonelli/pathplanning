@@ -14,6 +14,7 @@ class DeliverativeNavigation:
 		self.grid_size = grid_size
 		self.stuck = False
 		self.path_blocked = False
+		self.path_blocked_dir = None
 		self.org_gx = gx
 		self.org_gy = gy
 		self.map = myMap
@@ -34,9 +35,10 @@ class DeliverativeNavigation:
 		self.dir.append(direction)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav))
 
-	def set_status(self, stuck, path_blocked):
+	def set_status(self, stuck, path_blocked, path_blocked_dir):
 		self.stuck = stuck
 		self.path_blocked = path_blocked
+		self.path_blocked_dir = path_blocked_dir
 
 	def choose_dir(self, xp, yp):
 		dirx = diry = None
@@ -68,6 +70,16 @@ class DeliverativeNavigation:
 			m.append(d)
 			motion_model_progression.append(m)
 		return motion_model_progression
+
+	# TODO -- Terminar de escribir!!!
+	def checked_path_blocked_dir()
+		USE lidar_limits(x, y, r, ox, oy, mode)
+		Check
+			blocked_direction
+			and
+			Check_current_direction compuesta_con blocked_direction
+				(este es el nuevo punto de escape)
+		return 
 
 	def new_goal():
 		return 0

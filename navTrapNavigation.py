@@ -58,10 +58,12 @@ class TrapNavigation:
 			self.path_blocked_count = 0
 		if self.path_blocked_count == self.path_blocked_limit:
 			blocked = True
+			blocked_dir = curdirx, curdiry
 		else:
 			blocked = False
+			blocked_dir = None
 
-		return blocked
+		return blocked, blocked_dir
 
 	def reset_motion_model(self):
 		return self.motion

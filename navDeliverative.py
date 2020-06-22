@@ -59,8 +59,8 @@ class DeliverativeNavigation:
 		motion_model = trap.propose_motion_model(self.map, xp, yp)
 		motion_model_progression = []
 		for m in motion_model:
-			x2 = m[0] + self.grid_size
-			y2 = m[1] + self.grid_size
+			x2 = xp + m[0] * self.vision_limit
+			y2 = yp + m[1] * self.vision_limit
 			d = np.hypot(self.org_gx - x2, self.org_gy - y2)
 			m.append(d)
 			motion_model_progression.append(m)

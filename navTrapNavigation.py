@@ -31,6 +31,7 @@ class TrapNavigation:
 		#logging.debug("col: " + str(col))
 		#logging.debug("r: " + str(r))
 
+		# We look for collisions
 		if col:
 			dist_to_obstacle = np.linalg.norm(r)
 			g = np.zeros(2)
@@ -52,10 +53,14 @@ class TrapNavigation:
 				self.path_blocked_count += 1
 				self.path_blocked_dir[0] = curdirx
 				self.path_blocked_dir[1] = curdiry
+			wall_detected = self.check_wall()
 		else:
 			self.path_blocked_dir = np.zeros(2)
-			self.col_status == False
+			self.col_status = False
 			self.path_blocked_count = 0
+			wall_detected = False
+
+		# If we have a collisions, we don't react immediately
 		if self.path_blocked_count == self.path_blocked_limit:
 			blocked = True
 			blocked_dir = curdirx, curdiry
@@ -63,7 +68,7 @@ class TrapNavigation:
 			blocked = False
 			blocked_dir = None
 
-		return blocked, blocked_dir
+		return blocked, blocked_dir, wall_detected
 
 	def reset_motion_model(self):
 		return self.motion
@@ -110,3 +115,7 @@ class TrapNavigation:
 			return ang
 		else:
 			return (2 * math.pi + ang)
+
+	def check_wall(self):
+		# TODO - Need to infer wall if there is a collision in the way
+		return False

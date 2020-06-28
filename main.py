@@ -30,17 +30,7 @@ show_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
 motion_model_limit = config.general['motion_model_limit']
 logging.basicConfig(filename=config.general['logFile'],level=config.general['logLevel'])
-
-# START Class MapNewPath --------------------------------------------
-class MapNewPath:
-	def __init__(self, reso, rr, radius):
-		self.reso = reso
-		self.rr = rr
-		self.vision_limit = radius
-		self.angle = math.atan(rr / radius)
-		self.angle_step = int(2 * math.pi / self.angle)
-		self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
-# END Class MapNewPath --------------------------------------------------
+lidar_steps = config.general['lidar_steps']
 
 def main():
 	# Cargando el archivo de descripcion del mundo a recorrer
@@ -73,7 +63,7 @@ def main():
 	myMap = Map()
 	myMap.set_params(grid_size, gx, gy, ox, oy)
 	myMap.create()
-	myLidar = Lidar(grid_size, vision_limit, 8)
+	myLidar = Lidar(grid_size, vision_limit, lidar_steps)
 	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
 	myLimits = LidarLimit()
 
@@ -108,7 +98,7 @@ def main():
 	# Map update and trap detection
 	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
 	myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
-	path_blocked, path_blocked_dir = trap.detect(myDeliverative.get_map_obj(), sx, sy, curdirx, curdiry, gx, gy)
+	path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), sx, sy, curdirx, curdiry, gx, gy)
 
 	# Main navigation loop
 	while d >= grid_size and not aborted:
@@ -118,7 +108,7 @@ def main():
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
 		limits = myLidar.fetch_limits(xp, yp, ox, oy, "object")
-		path_blocked, path_blocked_dir = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
+		path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 		myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
 		myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
 		myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
@@ -183,7 +173,7 @@ def main():
 				wlimit = False
 			#elif nav == "apf" and path_blocked:
 			#	nav = "follow_wall"
-			#	
+			#	???
 			else:
 				logging.debug("Current motion model: " + str(motion_model) + " | stuck: " + str(stuck) + " | path_blocked: " + str(path_blocked))
 				msg = "For now we keep navigating..."
@@ -193,17 +183,19 @@ def main():
 
 		if nav == "follow" and wlimit == True:
 			logging.debug("wlimit reached, what should we do?")
-			if myDeliverative.checked_path_blocked_dir()
-				# TODO -- Seguir con esto
-				Set_new_goal and move_back_to_apf
-			#if 
-			#	logging.debug("Moving back to apf navigation...")
-			#	nav = "apf"
-			#	myNavigation.set_cur_pos(xp, yp)
-			#	motion_model = trap.reset_motion_model()
-			#	myNavigation.set_motion_model(motion_model)
-			#else:
-			#	
+			# First we check if APF proposed path is free
+			d, posX, posY, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
+			col,r = myLidar.lidar_limits(posX, posY, (curdirx, curdiry), ox, oy, "object")
+			if col:
+				# If not we get a new path to follow
+				dirx, diry, limitx, limity = myDeliverative.checked_path_blocked_dir(xp, yp)
+			else:
+				# Otherwise we move back to APF
+				nav = "apf"
+				myNavigation.set_cur_pos(xp, yp)
+				myNavigation.set_motion_model(trap.reset_motion_model())
+				logging.debug("Moving back to apf navigation...")
 
 		if xp == 35 and yp == 45:
 			msg = "Reached problematic point, xp=35 & yp=45. Stopping navigation."

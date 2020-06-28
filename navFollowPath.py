@@ -35,10 +35,11 @@ class FollowPath:
 			self.limit = True
 		return d, xs, ys, curdirx, curdiry, self.limit
 
-	def follow_wall(self, xp, yp):
+	def follow_wall(self, xp, yp, curdirx, curdiry, obsx, obsy):
 		# TODO -- Mantenerme siempre a la distancia actual del
 		#			path_blocked_dir para evitar nuevo
 		#			escenario descripto en WorldBuilder.ods
+		# VER middle_theta algo in checked_path_blocked_dir()
 		xs = xp + curdirx * self.reso
 		ys = yp + curdiry * self.reso
 		d = np.hypot(self.gx - xs, self.gy - ys)

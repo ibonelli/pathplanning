@@ -45,8 +45,8 @@ def main():
 	oy = []  # obstacle y position list [m]
 
 	ly,lx = csv.shape
-	print("lx: " + str(lx))
-	print("ly: " + str(ly))
+	#print("lx: " + str(lx))
+	#print("ly: " + str(ly))
 
 	for iy,ix in np.ndindex(csv.shape):
 		if int(csv[iy,ix]) == 1:

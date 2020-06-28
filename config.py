@@ -5,7 +5,8 @@ general = dict(
 	logLevel = logging.DEBUG,
 	logFile = "navigation.log",
 	grafDelay = 0.01,
-	motion_model_limit = 3
+	motion_model_limit = 3,
+	lidar_steps = 8,
 )
 
 logger = logging.getLogger('matplotlib')

@@ -67,8 +67,10 @@ class Lidar:
 		oi = []
 		for obx,oby,obs in np.nditer([ox, oy, self.grid_size]):
 			if mode == "object":
+				# We get the object closest to the LIDAR looking angle.
 				intersects, limit = self.detect_collision_object(np.array([x, y]), r, np.array([obx, oby]), obs)
 			elif mode == "limit":
+				# We get the limit for an specific angle and return collision point.
 				intersects, limit = self.detect_collision_point(np.array([x, y]), r, np.array([obx, oby]), obs)
 			else:
 				logging.error("Not proper mode: " + str(mode))

@@ -102,13 +102,21 @@ class TrapNavigation:
 			ang = self.pangles(math.atan2(direction[1],direction[0]))
 			logging.debug("\tFor angle:" + str(math.degrees(ang)))
 			for w in windows:
-				logging.debug("\tw_start:"  + str(math.degrees(self.pangles(w.start))) + " | w_end: " + str(math.degrees(self.pangles(w.end))))
 				if w.blocked == False:
-					if ang >= self.pangles(w.start) and ang <= self.pangles(w.end):
-						new_motionmodel.append([direction[0],direction[1]])
-						logging.debug("\tValid direction:" + str((direction[0],direction[1])))
+					if self.pangles(w.end) > self.pangles(w.start):
+						logging.debug("\t\tNormal logic... | ang: " + str(math.degrees(ang)) + " | w_start:"  + str(math.degrees(self.pangles(w.start))) + " | w_end: " + str(math.degrees(self.pangles(w.end))))
+						if ang >= self.pangles(w.start) and ang <= self.pangles(w.end):
+							new_motionmodel.append([direction[0],direction[1]])
+							logging.debug("\t\t\tValid direction:" + str((direction[0],direction[1])))
+						else:
+							logging.debug("\t\t\tNot valid direction.")
 					else:
-						logging.debug("\tNot valid direction:" + str(math.degrees(ang)))
+						logging.debug("\t\tOutside window logic... | ang: " + str(math.degrees(ang)) + " | w_start:"  + str(math.degrees(self.pangles(w.start))) + " | w_end: " + str(math.degrees(self.pangles(w.end))))
+						if ang <= self.pangles(w.start) or ang >= self.pangles(w.end):
+							new_motionmodel.append([direction[0],direction[1]])
+							logging.debug("\t\t\tValid direction:" + str((direction[0],direction[1])))
+						else:
+							logging.debug("\t\t\tNot valid direction.")
 		return new_motionmodel
 
 	# For the logic to work we need to have positive angles

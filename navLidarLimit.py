@@ -45,45 +45,68 @@ class LidarLimit:
 		windows = []
 		cur_window = PathWindow()
 		total = len(limit)
-		#logging.debug("get_limit_windows --- Start")
+		logging.debug("get_limit_windows --- Start")
 
 		if total != 1:
 			for i in range(total):
 				l = limit[i]
 				#logging.debug("limit[" + str(i) + "]:")
-				#l.print()
+				l.print()
 				if i == 0:
 					# Primer valor de la lista
-					cur_window.start = math.atan2(l.r[1] - cY, l.r[0] - cX)
+					init = True
+					init_start = math.atan2(l.r[1] - cY, l.r[0] - cX)
 					init_type = cur_window.blocked = l.col
-					init_start = cur_window.start
-				elif i == total-1:
+					logging.debug("\tPrimer valor de la lista...")
+				elif i == 1:
+					# Segundo valor de la lista, calculamos angle_step/2
+					win_ang_half_step = (math.atan2(l.r[1] - cY, l.r[0] - cX)-init_start)/2
+					#logging.debug("\tSegundo valor de la lista... half_step: " + str(math.degrees(win_ang_half_step)))
+				# Dentro de la lista y cambio el estado
+				if i > 0 and cur_window.blocked != l.col:
+					ang = math.atan2(l.r[1] - cY, l.r[0] - cX)
+					if init:
+						#logging.debug("\tFound first change... ang: " + str(math.degrees(ang)))
+						init_ang = cur_window.start = ang - win_ang_half_step
+						cur_window.blocked = l.col
+						init = False
+					else:
+						cur_window.end = ang - win_ang_half_step
+						#logging.debug("\tFound a change... ang: " + str(math.degrees(ang)))
+						windows.append(cur_window)
+						cur_window.print("debug")
+						cur_window = PathWindow()
+						cur_window.start = ang - win_ang_half_step
+						cur_window.blocked = l.col
+				if i == total-1:
 					# Ultimo valor de la lista
-					if init_type == cur_window.blocked:
+					logging.debug("\tFound last change... ang: " + str(math.degrees(ang)))
+					if init_type == l.col:
 						# Continuamos en el mismo valor blocked
 						if len(windows) == 0:
 							cur_window.start = cur_window.end = 0
 							windows.append(cur_window)
 						else:
-							windows[0].start = cur_window.start
+							cur_window.end = init_ang
+							#logging.debug("\tFound a change... ang: " + str(math.degrees(ang)))
+							windows.append(cur_window)
+							cur_window.print("debug")
 					else:
-						# Cambiamos de valor blocked
-						cur_window.end = init_start
+						# Cambiamos de valor blocked, tenemos que guardar este y el primero
+						cur_window.end = ang - win_ang_half_step
 						windows.append(cur_window)
-				else:
-					# Dentro de la lista
-					if cur_window.blocked != l.col:
-						ang = math.atan2(l.r[1] - cY, l.r[0] - cX)
-						cur_window.end = ang
-						windows.append(cur_window)
+						cur_window.print("debug")
 						cur_window = PathWindow()
-						cur_window.start = ang
-						cur_window.blocked = l.col
+						cur_window.start = ang - win_ang_half_step
+						cur_window.end = init_start - win_ang_half_step
+						cur_window.blocked = init_type
+						windows.append(cur_window)
+						cur_window.print("debug")
 		else:
 			logging.error("Only 1 limit")
 			exit(-1)
 
-		#logging.debug("get_limit_windows --- End")
+		logging.debug("get_limit_windows --- End")
 		return windows
 
 	# Graph LIDAR limit
@@ -161,7 +184,7 @@ class PathWindow:
 
 	# From the LIDAR list we get obstacles windows
 	def print(self, mode=None):
-		msg = "Blocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.pangles(self.start))) + " | End: " + str(math.degrees(self.pangles(self.end)))
+		msg = "\t\tBlocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.pangles(self.start))) + " | End: " + str(math.degrees(self.pangles(self.end)))
 		if mode == "debug":
 			logging.debug(msg)
 		elif mode == "console":

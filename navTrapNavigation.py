@@ -86,7 +86,7 @@ class TrapNavigation:
 		windows = myLimits.get_limit_windows(limits, posX, posY)
 		logging.debug("Current windows:")
 		for win in windows:
-			win.print()
+			win.print("debug")
 		# We new get new motion model
 		proposed_motion_model = self.windows_to_motionmodel(windows)
 		logging.debug("Proposed Motion Model:")
@@ -100,12 +100,15 @@ class TrapNavigation:
 		logging.debug("Windows to motion model:")
 		for direction in motionmodel:
 			ang = self.pangles(math.atan2(direction[1],direction[0]))
-			#logging.debug("For angle:" + str(math.degrees(self.pangles(ang))))
+			logging.debug("\tFor angle:" + str(math.degrees(ang)))
 			for w in windows:
-				#w.print()
+				logging.debug("\tw_start:"  + str(math.degrees(self.pangles(w.start))) + " | w_end: " + str(math.degrees(self.pangles(w.end))))
 				if w.blocked == False:
 					if ang >= self.pangles(w.start) and ang <= self.pangles(w.end):
 						new_motionmodel.append([direction[0],direction[1]])
+						logging.debug("\tValid direction:" + str((direction[0],direction[1])))
+					else:
+						logging.debug("\tNot valid direction:" + str(math.degrees(ang)))
 		return new_motionmodel
 
 	# For the logic to work we need to have positive angles

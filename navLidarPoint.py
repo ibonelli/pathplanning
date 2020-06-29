@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import logging
 import json
@@ -11,7 +12,7 @@ class LidarPoint:
 		self.col = False
 
 	def print(self):
-		logging.info("angle: " + str(self.angle) + " | oi: " + str(self.r) + " | dist: " + str(self.dist) + " | collision: " + str(self.col))
+		logging.info("angle: " + str(math.degrees(self.angle)) + " | oi: " + str(self.r) + " | dist: " + str(self.dist) + " | collision: " + str(self.col))
 
 	def get_coords(self):
 		return list(self.r)

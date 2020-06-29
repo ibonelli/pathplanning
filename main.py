@@ -119,39 +119,7 @@ def main():
 		if show_animation:
 			MyGraf.step(xp, yp, graf_delay)
 
-		#This blocks by path_blocked
-		#if path_blocked and not stuck:
-		#if (stuck or path_blocked) and not aborted:
-		#	if motion_model_limit <= motion_model_count:
-		#		logging.debug("Reseting motion model (still stucked or trapped)")
-		#		motion_model_count = 0
-		#		motion_model = trap.reset_motion_model()
-		#		myNavigation.set_motion_model(motion_model)
-		#		stuck = myNavigation.decide_status(rd)
-		#		if stuck == True:
-		#			logging.debug("Still stucked... This will abort motion.")
-		#			aborted = True
-		#			#org_gx, org_gy = gx, gy
-		#			#gx, gy = MyDeliberative.XXX()
-		#		else:
-		#			logging.debug("No longer stucked :)")
-		#	else:
-		#		motion_model_count += 1
-		#		motion_model = trap.propose_motion_model(myDeliverative.get_map_obj(), xp, yp)
-		#		if len(motion_model) < 1:
-		#			msg = "We can no longer navigate, because something went wrong with the motion model."
-		#			print(msg)
-		#			logging.debug(msg)
-		#			logging.debug("Current motion model: " + str(motion_model))
-		#			aborted = True
-		#		myNavigation.set_motion_model(motion_model)
-		#		stuck = False
-		#elif motion_model_count != 0:
-		#	logging.debug("Reseting motion model (not stucked or trapped)")
-		#	motion_model_count = 0
-		#	motion_model = trap.reset_motion_model()
-		#	myNavigation.set_motion_model(motion_model)
-
+		# We now check status
 		if (stuck or path_blocked) and not aborted:
 			if stuck:
 				nav = "follow"
@@ -184,6 +152,8 @@ def main():
 		if nav == "follow" and wlimit == True:
 			logging.debug("wlimit reached, what should we do?")
 			# First we check if APF proposed path is free
+			myNavigation.set_cur_pos(xp, yp)
+			myNavigation.set_motion_model(trap.reset_motion_model())
 			d, posX, posY, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
 			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 			col,r = myLidar.lidar_limits(posX, posY, (curdirx, curdiry), ox, oy, "object")
@@ -192,10 +162,8 @@ def main():
 				dirx, diry, limitx, limity = myDeliverative.checked_path_blocked_dir(xp, yp)
 			else:
 				# Otherwise we move back to APF
-				nav = "apf"
-				myNavigation.set_cur_pos(xp, yp)
-				myNavigation.set_motion_model(trap.reset_motion_model())
 				logging.debug("Moving back to apf navigation...")
+				nav = "apf"
 
 		if xp == 35 and yp == 45:
 			msg = "Reached problematic point, xp=35 & yp=45. Stopping navigation."

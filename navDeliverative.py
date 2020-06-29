@@ -78,6 +78,8 @@ class DeliverativeNavigation:
 		return motion_model_progression
 
 	def checked_path_blocked_dir(self, posX, posY):
+		# TODO --- This is not working as it should...
+		#          NEED TO ADD DEBUGGING AND FIGURE IT OUT WHAT'S WRONG!!!
 		myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
 		ox, oy = self.map.get_objects()
 		col,r = myLidar.lidar_limits(posX, posY, self.trap_dir, ox, oy, "object")

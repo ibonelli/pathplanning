@@ -45,19 +45,19 @@ class LidarLimit:
 		windows = []
 		cur_window = PathWindow()
 		total = len(limit)
-		logging.debug("get_limit_windows --- Start")
+		#logging.debug("get_limit_windows --- Start")
 
 		if total != 1:
 			for i in range(total):
 				l = limit[i]
 				#logging.debug("limit[" + str(i) + "]:")
-				l.print()
+				#l.print()
 				if i == 0:
 					# Primer valor de la lista
 					init = True
 					init_start = math.atan2(l.r[1] - cY, l.r[0] - cX)
 					init_type = cur_window.blocked = l.col
-					logging.debug("\tPrimer valor de la lista...")
+					#logging.debug("\tPrimer valor de la lista...")
 				elif i == 1:
 					# Segundo valor de la lista, calculamos angle_step/2
 					win_ang_half_step = (math.atan2(l.r[1] - cY, l.r[0] - cX)-init_start)/2
@@ -106,7 +106,7 @@ class LidarLimit:
 			logging.error("Only 1 limit")
 			exit(-1)
 
-		logging.debug("get_limit_windows --- End")
+		#logging.debug("get_limit_windows --- End")
 		return windows
 
 	# Graph LIDAR limit

@@ -105,9 +105,10 @@ class DeliverativeNavigation:
 				diry = m_dir[1]
 				limitx = posX + self.vision_limit * dirx
 				limity = posY + self.vision_limit * diry
-			logging.debug("Chosen direction:")
-			logging.debug("dirx = " + str(dirx) + " | diry = " + str(diry) + " | limitx = " + str(limitx) + " | limity = " + str(limity))
-			logging.debug("----------------------")
+			logging.debug("\t----------------------")
+			logging.debug("\tChosen direction:")
+			logging.debug("\tdirx = " + str(dirx) + " | diry = " + str(diry) + " | limitx = " + str(limitx) + " | limity = " + str(limity))
+			logging.debug("\t----------------------")
 		else:
 			# We keep original direction and set a new limit
 			dirx = self.dir[-1][0]

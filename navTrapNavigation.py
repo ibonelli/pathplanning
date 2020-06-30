@@ -79,9 +79,9 @@ class TrapNavigation:
 		myLidar = Lidar(self.reso, self.vision_limit, self.angle_step)
 		ox, oy = myMap.get_objects()
 		limits = myLidar.lidar(posX, posY, ox, oy, "limit")
-		logging.debug("Limits:")
-		for L in limits:
-			L.print()
+		#logging.debug("Limits:")
+		#for L in limits:
+		#	L.print()
 		myLimits = LidarLimit()
 		windows = myLimits.get_limit_windows(limits, posX, posY)
 		logging.debug("Current windows:")
@@ -97,26 +97,26 @@ class TrapNavigation:
 	def windows_to_motionmodel(self, windows):
 		new_motionmodel = []
 		motionmodel = self.motion
-		logging.debug("Windows to motion model:")
+		#logging.debug("Windows to motion model:")
 		for direction in motionmodel:
 			ang = self.pangles(math.atan2(direction[1],direction[0]))
-			logging.debug("\tFor angle:" + str(math.degrees(ang)))
+			#logging.debug("\tFor angle:" + str(math.degrees(ang)))
 			for w in windows:
 				if w.blocked == False:
 					if self.pangles(w.end) > self.pangles(w.start):
-						logging.debug("\t\tNormal logic... | ang: " + str(math.degrees(ang)) + " | w_start:"  + str(math.degrees(self.pangles(w.start))) + " | w_end: " + str(math.degrees(self.pangles(w.end))))
+						#logging.debug("\t\tNormal logic... | ang: " + str(math.degrees(ang)) + " | w_start:"  + str(math.degrees(self.pangles(w.start))) + " | w_end: " + str(math.degrees(self.pangles(w.end))))
 						if ang >= self.pangles(w.start) and ang <= self.pangles(w.end):
 							new_motionmodel.append([direction[0],direction[1]])
-							logging.debug("\t\t\tValid direction: " + str((direction[0],direction[1])))
-						else:
-							logging.debug("\t\t\tNot valid direction.")
+							#logging.debug("\t\t\tValid direction: " + str((direction[0],direction[1])))
+						#else:
+						#	logging.debug("\t\t\tNot valid direction.")
 					else:
-						logging.debug("\t\tOutside window logic... | ang: " + str(math.degrees(ang)) + " | w_start:"  + str(math.degrees(self.pangles(w.start))) + " | w_end: " + str(math.degrees(self.pangles(w.end))))
+						#logging.debug("\t\tOutside window logic... | ang: " + str(math.degrees(ang)) + " | w_start:"  + str(math.degrees(self.pangles(w.start))) + " | w_end: " + str(math.degrees(self.pangles(w.end))))
 						if ang <= self.pangles(w.start) or ang >= self.pangles(w.end):
 							new_motionmodel.append([direction[0],direction[1]])
 							logging.debug("\t\t\tValid direction: " + str((direction[0],direction[1])))
-						else:
-							logging.debug("\t\t\tNot valid direction.")
+						#else:
+						#	logging.debug("\t\t\tNot valid direction.")
 		return new_motionmodel
 
 	# For the logic to work we need to have positive angles

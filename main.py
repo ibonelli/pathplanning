@@ -155,6 +155,7 @@ def main():
 			myNavigation.set_cur_pos(xp, yp)
 			myNavigation.set_motion_model(trap.reset_motion_model())
 			d, posX, posY, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+			logging.debug("\tAPF new info... | curdirx: " + str(curdirx) + " | curdiry: " + str(curdiry))
 			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 			col,r = myLidar.lidar_limits(posX, posY, (curdirx, curdiry), ox, oy, "object")
 			if col:
@@ -162,14 +163,15 @@ def main():
 				dirx, diry, limitx, limity = myDeliverative.checked_path_blocked_dir(xp, yp)
 			else:
 				# Otherwise we move back to APF
-				logging.debug("Moving back to apf navigation...")
+				logging.debug("\tMoving back to apf navigation...")
 				nav = "apf"
+			wlimit = False
 
-		if xp == 35 and yp == 45:
-			msg = "Reached problematic point, xp=35 & yp=45. Stopping navigation."
-			print(msg)
-			logging.debug(msg)
-			aborted = True
+		#if xp == 35 and yp == 45:
+		#	msg = "Reached problematic point, xp=35 & yp=45. Stopping navigation."
+		#	print(msg)
+		#	logging.debug(msg)
+		#	aborted = True
 
 	if aborted:
 		checkMyLimits = Lidar(grid_size, vision_limit, 36)

@@ -24,6 +24,7 @@ class DeliverativeNavigation:
 		self.map = myMap
 		self.path = []
 		self.dir = []
+		self.nav = []
 		self.trap_dir = None
 
 	def set_map(self, Map):
@@ -38,6 +39,7 @@ class DeliverativeNavigation:
 	def set_step(self, step, direction, nav):
 		self.path.append(step)
 		self.dir.append(direction)
+		self.nav.append(nav)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav))
 
 	def set_status(self, stuck, path_blocked, path_blocked_dir):

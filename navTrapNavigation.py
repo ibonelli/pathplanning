@@ -60,8 +60,8 @@ class TrapNavigation:
 			self.path_blocked_count = 0
 			wall_detected = False
 
-		# If we have a collisions, we don't react immediately
 		if self.path_blocked_count == self.path_blocked_limit:
+			# If we have a collisions, we don't react immediately
 			blocked = True
 			blocked_dir = curdirx, curdiry
 		else:

@@ -1,3 +1,14 @@
+"""
+
+Potential Field based path planner
+
+Ref:
+	https://www.cs.cmu.edu/~motionplanning/lecture/Chap4-Potential-Field_howie.pdf
+Original work by:
+	https://github.com/AtsushiSakai/PythonRobotics#rapidly-exploring-random-trees-rrt
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
@@ -100,6 +111,8 @@ class ApfNavigation:
 	def decide_status(self,rd):
 		## Checking if we get stuck...
 		dif = rd[-2] - rd[-1]
+		logging.debug("decide_status() | dif: " + str(dif))
+		# Si aumento la distancia al objetivo
 		if dif < 0 and self.scount == 0:
 			self.scount = 1
 			self.rcheck = rd[-2]

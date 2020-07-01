@@ -1,12 +1,3 @@
-"""
-
-Potential Field based path planner
-
-Ref:
-	https://www.cs.cmu.edu/~motionplanning/lecture/Chap4-Potential-Field_howie.pdf
-
-"""
-
 import os
 import sys
 import math
@@ -167,11 +158,24 @@ def main():
 				nav = "apf"
 			wlimit = False
 
-		#if xp == 35 and yp == 45:
+		#if xp == 37 and yp == 45:
 		#	msg = "Reached problematic point, xp=35 & yp=45. Stopping navigation."
 		#	print(msg)
 		#	logging.debug(msg)
 		#	aborted = True
+
+		if (xp == 33 and yp == 55):
+			checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
+			limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
+			myLimits.save_limit(xp, yp, limits, "limit_x33_y55.json")
+		if (xp == 37 and yp == 55):
+			checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
+			limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
+			myLimits.save_limit(xp, yp, limits, "limit_x37_y55.json")
+		if (xp == 37 and yp == 56):
+			checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
+			limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
+			myLimits.save_limit(xp, yp, limits, "limit_x37_y56.json")
 
 	if aborted:
 		checkMyLimits = Lidar(grid_size, vision_limit, 36)

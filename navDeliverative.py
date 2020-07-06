@@ -51,7 +51,8 @@ class DeliverativeNavigation:
 		dirx = diry = None
 		limitx = limity = None
 		motion_model_progression = self.motion_model_progression(xp, yp)
-		logging.debug("Deliverative --> Model progression: " + str(motion_model_progression))
+		logging.debug("Deliverative --> Model progression:")
+		logging.debug("\t" + str(motion_model_progression))
 		best_distance = sys.float_info[0]
 		for m in motion_model_progression:
 			if best_distance > m[2]:
@@ -61,7 +62,7 @@ class DeliverativeNavigation:
 			limitx = xp + self.vision_limit * dirx
 			limity = yp + self.vision_limit * diry
 		logging.debug("Chosen direction:")
-		logging.debug("dirx = " + str(dirx) + " | diry = " + str(diry) + " | limitx = " + str(limitx) + " | limity = " + str(limity))
+		logging.debug("\tdirx = " + str(dirx) + " | diry = " + str(diry) + " | limitx = " + str(limitx) + " | limity = " + str(limity))
 		logging.debug("----------------------")
 		self.trap_dir = self.dir[-1]
 		return dirx, diry, limitx, limity

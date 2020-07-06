@@ -17,6 +17,9 @@ class LidarPoint:
 	def get_coords(self):
 		return list(self.r)
 
+	def get_col(self):
+		return self.col
+
 	def get_coord_list(self, limits_list):
 		oi = []
 		for aux in limits_list:

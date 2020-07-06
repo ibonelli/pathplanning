@@ -90,7 +90,7 @@ class TrapNavigation:
 		# We new get new motion model
 		proposed_motion_model = self.windows_to_motionmodel(windows)
 		logging.debug("Proposed Motion Model:")
-		logging.debug(proposed_motion_model)
+		logging.debug("\t" + str(proposed_motion_model))
 		logging.debug("----------------------")
 		return proposed_motion_model
 

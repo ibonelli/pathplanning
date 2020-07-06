@@ -61,6 +61,19 @@ class Lidar:
 	# We get the limit for an specific angle
 	# Where:
 	#	  x,y: Is the position where LIDAR is measuring
+	#		d: Is a direction to explore
+	#	   ob: Is the x,y position of each object along with its radius (obs)
+	def lidar_limits_direction(self, x, y, d, ox, oy):
+		angle = math.atan2(d[1], d[0])
+		rx = x + self.sensor_radius * math.cos(angle)
+		ry = y + self.sensor_radius * math.sin(angle)
+		r = np.array([rx, ry])
+		col, p = self.lidar_limits(x, y, r, ox, oy, "object")
+		return col
+
+	# We get the limit for an specific angle
+	# Where:
+	#	  x,y: Is the position where LIDAR is measuring
 	#		r: Is the current limit LIDAR position being explored for object collision
 	#	   ob: Is the x,y position of each object along with its radius (obs)
 	def lidar_limits(self, x, y, r, ox, oy, mode):

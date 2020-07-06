@@ -38,10 +38,14 @@ class ApfNavigation:
 		self.stuck = False
 		self.curdirx = None
 		self.curdiry = None
+		self.pvec = []
 
 	def set_cur_pos(self, xp, yp):
 		self.ix = xp
 		self.iy = yp
+
+	def get_pvec(self):
+		return self.pvec
 
 	def calc_potential_field(self, gx, gy, ox, oy):
 		myMap = Map()
@@ -156,6 +160,8 @@ class ApfNavigation:
 		motion = self.get_motion_model()
 
 		minp = float("inf")
+		self.pvec = []
+
 		self.minix, self.miniy = -1, -1
 		for i in range(len(motion)):
 			inx = int(self.ix + motion[i][0])
@@ -164,6 +170,7 @@ class ApfNavigation:
 				p = float("inf")  # outside area
 			else:
 				p = self.pmap[inx][iny]
+				self.pvec.append(pStruct(p, motion[i][0], motion[i][1]))
 			if minp > p:
 				minp = p
 				self.minix = inx
@@ -177,4 +184,25 @@ class ApfNavigation:
 		yp = self.iy * self.reso + self.miny
 		d = np.hypot(gx - xp, gy - yp)
 
+		self.pvec = sorted(self.pvec, key=lambda pstruct: pstruct.p)
+
 		return d, xp, yp, self.curdirx, self.curdiry
+
+class pStruct:
+	def __init__(self, p=None, dirx=None, diry=None):
+		self.p = p
+		self.dirx = dirx
+		self.diry = diry
+		self.blocked = None
+
+	def __repr__(self):
+		return repr((self.p, self.dirx, self.diry, self.blocked))
+
+	def get(self):
+		return self.p, self.dirx, self.diry, self.blocked
+
+	def set(self, p, dirx, diry, blocked):
+		self.p = p
+		self.dirx = dirx
+		self.diry = diry
+		self.blocked = blocked

@@ -74,13 +74,13 @@ class LidarLimit:
 						cur_window.end = ang - win_ang_half_step
 						#logging.debug("\tFound a change... ang: " + str(math.degrees(ang)))
 						windows.append(cur_window)
-						cur_window.print("debug")
+						#cur_window.print("debug")
 						cur_window = PathWindow()
 						cur_window.start = ang - win_ang_half_step
 						cur_window.blocked = l.col
 				if i == total-1:
 					# Ultimo valor de la lista
-					logging.debug("\tFound last change... ang: " + str(math.degrees(ang)))
+					#logging.debug("\tFound last change... ang: " + str(math.degrees(ang)))
 					if init_type == l.col:
 						# Continuamos en el mismo valor blocked
 						if len(windows) == 0:
@@ -90,18 +90,18 @@ class LidarLimit:
 							cur_window.end = init_ang
 							#logging.debug("\tFound a change... ang: " + str(math.degrees(ang)))
 							windows.append(cur_window)
-							cur_window.print("debug")
+							#cur_window.print("debug")
 					else:
 						# Cambiamos de valor blocked, tenemos que guardar este y el primero
 						cur_window.end = ang - win_ang_half_step
 						windows.append(cur_window)
-						cur_window.print("debug")
+						#cur_window.print("debug")
 						cur_window = PathWindow()
 						cur_window.start = ang - win_ang_half_step
 						cur_window.end = init_start - win_ang_half_step
 						cur_window.blocked = init_type
 						windows.append(cur_window)
-						cur_window.print("debug")
+						#cur_window.print("debug")
 		else:
 			logging.error("Only 1 limit")
 			exit(-1)

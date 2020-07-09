@@ -28,7 +28,7 @@ class Map:
 
 	def create(self):
 		# calc each potential
-		self.map = [[0.0 for i in range(self.yw)] for i in range(self.xw)]
+		self.map = [[0 for j in range(self.yw)] for i in range(self.xw)]
 		return self.map
 
 	def get_map(self):

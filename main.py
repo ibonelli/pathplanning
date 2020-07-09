@@ -16,6 +16,7 @@ from navGraf import ShowNavigation
 from navLidarLimit import LidarLimit
 from navDeliverative import DeliverativeNavigation
 from navFollowPath import FollowPath
+from navBrushfire import BrushfireNavigation
 
 show_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
@@ -199,6 +200,11 @@ def main():
 	myMap.set_map(myDeliverative.get_map())
 	myMap.save_map("map.json")
 	MyGraf.save("path.json")
+
+	myNavWave = BrushfireNavigation()
+	myNavWave.set_params(grid_size, gx, gy, ox, oy)
+	myNavWave.set_map(myDeliverative.get_map())
+	myNavWave.show_map("console")
 
 	#if show_animation:
 	#	# We save to a file

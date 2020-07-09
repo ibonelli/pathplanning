@@ -167,7 +167,9 @@ def main():
 			d, posX, posY, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
 			logging.debug("\tAPF new info... | curdirx: " + str(curdirx) + " | curdiry: " + str(curdiry))
 			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
+			logging.debug("\ttrap.detect() | path_blocked: " + str(path_blocked) + " | path_blocked_dir: " + str(path_blocked_dir) + " | wall_detected: " + str(wall_detected))
 			col,r = myLidar.lidar_limits(posX, posY, (curdirx, curdiry), ox, oy, "object")
+			logging.debug("\tlidar_limits() | col: " + str(col) + " | r: " + str(path_blocked_dir))
 			if col:
 				# If not we get a new path to follow
 				dirx, diry, limitx, limity = myDeliverative.checked_path_blocked_dir(xp, yp)
@@ -183,10 +185,11 @@ def main():
 		#	logging.debug(msg)
 		#	aborted = True
 
-		if (xp == 33 and yp == 55):
+		if (xp == 60 and yp == 32):
 			checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
 			limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-			myLimits.save_limit(xp, yp, limits, "limit_x33_y55.json")
+			myLimits.save_limit(xp, yp, limits, "limit_x60_y32.json")
+			aborted = True
 		if (xp == 37 and yp == 55):
 			checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
 			limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")

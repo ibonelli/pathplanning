@@ -31,8 +31,16 @@ class FollowPath:
 		ys = yp + curdiry * self.reso
 		d = np.hypot(self.gx - xs, self.gy - ys)
 		d_limit = np.hypot(self.limitx - xs, self.limity - ys)
+
+		# Llegamos al objetivo?
 		if d_limit < self.reso:
 			self.limit = True
+		# Verificamos no superar el limite
+		if int(self.limitx) == int(xs):
+			self.limit = True
+		if int(self.limity) == int(ys):
+			self.limit = True
+
 		return d, xs, ys, curdirx, curdiry, self.limit
 
 	def follow_wall(self, xp, yp, curdirx, curdiry, obsx, obsy):

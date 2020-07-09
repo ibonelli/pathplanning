@@ -22,6 +22,8 @@ class DeliverativeNavigation:
 		self.org_gx = gx
 		self.org_gy = gy
 		self.map = myMap
+		self.minx = self.miny = None
+		self.maxx = self.maxy = None
 		self.path = []
 		self.dir = []
 		self.nav = []
@@ -29,6 +31,10 @@ class DeliverativeNavigation:
 
 	def set_map(self, Map):
 		self.map.set_map(Map)
+		self.minx = self.map.get_minx()
+		self.miny = self.map.get_miny()
+		self.maxx = self.map.get_maxx()
+		self.maxy = self.map.get_maxy()
 
 	def get_map(self):
 		return self.map.get_map()
@@ -54,17 +60,30 @@ class DeliverativeNavigation:
 		logging.debug("Deliverative --> Model progression:")
 		logging.debug("\t" + str(motion_model_progression))
 		best_distance = sys.float_info[0]
+
 		for m in motion_model_progression:
 			if best_distance > m[2]:
 				dirx, diry = m[0], m[1]
 				best_distance = m[2]
+
 		if dirx != None and diry != None:
 			limitx = xp + self.vision_limit * dirx
 			limity = yp + self.vision_limit * diry
+			# We need to check map limits
+			if self.maxx < limitx:
+				limitx = self.maxx - 1
+			if self.maxy < limity:
+				limity = self.maxy - 1
+			if self.minx > limitx:
+				limitx = self.minx - 1
+			if self.miny > limity:
+				limity = self.miny - 1
+
 		logging.debug("Chosen direction:")
 		logging.debug("\tdirx = " + str(dirx) + " | diry = " + str(diry) + " | limitx = " + str(limitx) + " | limity = " + str(limity))
 		logging.debug("----------------------")
 		self.trap_dir = self.dir[-1]
+
 		return dirx, diry, limitx, limity
 
 	def motion_model_progression(self, xp, yp):

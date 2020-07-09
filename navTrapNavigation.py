@@ -114,7 +114,7 @@ class TrapNavigation:
 						#logging.debug("\t\tOutside window logic... | ang: " + str(math.degrees(ang)) + " | w_start:"  + str(math.degrees(self.pangles(w.start))) + " | w_end: " + str(math.degrees(self.pangles(w.end))))
 						if ang <= self.pangles(w.start) or ang >= self.pangles(w.end):
 							new_motionmodel.append([direction[0],direction[1]])
-							logging.debug("\t\t\tValid direction: " + str((direction[0],direction[1])))
+							logging.debug("\t\t\tValid direction: " + str((direction[0],direction[1])) + " | Angle: " + str(math.degrees(self.pangles(math.atan2(direction[1],direction[0])))))
 						#else:
 						#	logging.debug("\t\t\tNot valid direction.")
 		return new_motionmodel

@@ -57,12 +57,45 @@ class BrushfireNavigation:
 		self.print("-----------------------------------------", mode)
 
 	def update_map(self, myMap, xp, yp, limits):
+		# Indices must be integers, not numpy.float64
+		xp = int(xp)
+		yp = int(yp)
+		#self.print("Brushfire limits -------------------", "console")
+		#self.print(str(limits), "console")
+		for p in limits:
+			# same X position, we increment Y
+			if xp == p["rx"]:
+				inc_limit = int(abs(p["ry"]-yp))
+				for yinc in range(inc_limit):
+					if yp+yinc < self.maxy:
+						myMap[xp][yp+yinc] = self.get_dist_value(p["col"], inc_limit-yinc)
+			# same Y position, we increment X
+			elif yp == p["ry"]:
+				inc_limit = int(abs(p["rx"]-xp))
+				for xinc in range(inc_limit):
+					if xp+xinc < self.maxx:
+						myMap[xp+xinc][yp] = self.get_dist_value(p["col"], inc_limit-xinc)
+			# Diagonal, we increment both
+			else:
+				inc_limit = int(abs(p["rx"]-xp))
+				for inc in range(inc_limit):
+					if (xp+inc < self.maxx) and (yp+inc < self.maxy):
+						myMap[xp+inc][yp+inc] = self.get_dist_value(p["col"], inc_limit-inc)
 		self.map = myMap
-		self.print("Brushfire limits -------------------", "console")
-		self.print(str(limits), "console")
-		#for l in limits:
-		#	self.print(str(l), "console")
-		#return myMap
+		return myMap
+
+	def get_dist_value(self, col, d):
+		# There is an object, we trace back and assign distance to object
+		if col == True:
+			value = d
+		# There is no object, we set all to the vision limit
+		elif col == False:
+			value = self.vlimit
+		else:
+			# Something went wrong. We shouldn't be here!
+			logging.error("We have no collision information!")
+			value = -2
+		return value
 
 	def print(self, msg, mode):
 		if mode == "debug":

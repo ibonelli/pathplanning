@@ -44,14 +44,14 @@ class Lidar:
 		MyLimit = LidarLimit()
 		oi_list = MyLimit.get_all(limits)
 		p = LidarPoint()
-		oi = p.get_coord_and_status_list(oi_list)
+		oi = p.get_coords_point_data(oi_list)
 		return oi
 
 	def get_blocked_path(self, limits):
 		object_list = []
 		for l in limits:
-			if (l[2] == True):
-				object_list.append([l[0],l[1]])
+			if (l["col"] == True):
+				object_list.append([l["rx"],l["ry"]])
 		return object_list
 
 	# We get the limit for each LIDAR point

@@ -30,6 +30,15 @@ class LidarLimit:
 
 		return fp_list
 
+	# From the LIDAR we list all seen directions
+	def get_all(self, limit):
+		oi_list = []
+
+		for l in limit:
+			oi_list.append(l)
+
+		return oi_list
+
 	# Limits to map
 	def limit2map(self, omap, limit):
 		#limit = self.get_limits(path_limit)

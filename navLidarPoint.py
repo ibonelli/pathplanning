@@ -30,6 +30,17 @@ class LidarPoint:
 			oi.append(coords)
 		return oi
 
+	def get_coord_and_status_list(self, limits_list):
+		oi = []
+		for aux in limits_list:
+			mycoord = aux.to_dict()
+			coords = []
+			coords.append(int(mycoord["rx"]))
+			coords.append(int(mycoord["ry"]))
+			coords.append(mycoord["col"])
+			oi.append(coords)
+		return oi
+
 	def to_dict(self):
 		point = {
 			"angle": self.angle,

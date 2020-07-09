@@ -38,6 +38,22 @@ class Lidar:
 		oi = p.get_coord_list(oi_list)
 		return oi
 
+	# Fetch limits
+	def fetch_all(self, x, y, ox, oy, mode):
+		limits = self.lidar(x, y, ox, oy, mode)
+		MyLimit = LidarLimit()
+		oi_list = MyLimit.get_all(limits)
+		p = LidarPoint()
+		oi = p.get_coord_and_status_list(oi_list)
+		return oi
+
+	def get_blocked_path(self, limits):
+		object_list = []
+		for l in limits:
+			if (l[2] == True):
+				object_list.append([l[0],l[1]])
+		return object_list
+
 	# We get the limit for each LIDAR point
 	# We will have as many limits as self.sensor_angle_steps
 	# We store x, y and d (size of the vector)

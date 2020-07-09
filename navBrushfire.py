@@ -11,9 +11,10 @@ class BrushfireNavigation:
 		self.minx = self.miny = None
 		self.maxx = self.maxy = None
 		self.xw = self.yw = None
+		self.vlimit = None
 		self.map = None
 
-	def set_params(self, reso, gx, gy, ox, oy):
+	def set_params(self, reso, gx, gy, ox, oy, vlimit):
 		self.reso = reso
 		self.minx = min(ox)
 		self.miny = min(oy)
@@ -25,6 +26,7 @@ class BrushfireNavigation:
 			self.maxy = gy
 		self.xw = int(round((self.maxx - self.minx) / self.reso)) + 1
 		self.yw = int(round((self.maxy - self.miny) / self.reso)) + 1
+		self.vlimit = vlimit
 		self.map = None
 
 	def get_map(self):
@@ -45,18 +47,6 @@ class BrushfireNavigation:
 	def set_yw(self, yw):
 		self.yw = yw
 
-	#def draw(self):
-	#	plt.cla()
-	#	for j in range(self.yw):
-	#		for i in range(self.xw):
-	#			if self.map[i][j] == 1.0:
-	#				plt.plot(i*self.reso, j*self.reso, "b.")
-	#	plt.axis("equal")
-	#	plt.grid(True)
-	#	plt.title("Map")
-	#	plt.ginput()
-	#	plt.savefig(self.debug_map_fname)
-
 	def show_map(self, mode="debug"):
 		self.print("Map--------------------------------------", mode)
 		for j in range(self.yw):
@@ -68,12 +58,11 @@ class BrushfireNavigation:
 
 	def update_map(self, myMap, xp, yp, limits):
 		self.map = myMap
-		for j in range(self.yw):
-			for i in range(self.xw):
-				if self.map[i][j] == 1.0:
-					plt.plot(i*self.reso, j*self.reso, "b.")
-
-		return myMap
+		self.print("Brushfire limits -------------------", "console")
+		self.print(str(limits), "console")
+		#for l in limits:
+		#	self.print(str(l), "console")
+		#return myMap
 
 	def print(self, msg, mode):
 		if mode == "debug":

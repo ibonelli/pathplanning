@@ -56,7 +56,7 @@ def main():
 	myMap.set_params(grid_size, gx, gy, ox, oy)
 	myMap.create()
 	myLidar = Lidar(grid_size, vision_limit, lidar_steps)
-	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
+	limits = myLidar.fetch_all(sx, sy, ox, oy, "object")
 	myLimits = LidarLimit()
 
 	# Navigation Initializing
@@ -64,7 +64,12 @@ def main():
 	trap = TrapNavigation(grid_size, robot_radius, vision_limit)
 	myDeliverative = DeliverativeNavigation(robot_radius, vision_limit, grid_size, gx, gy, myMap)
 	myNavFollow = FollowPath(grid_size, gx, gy)
-	myDeliverative.set_map(myLimits.limit2map(myMap.get_map(), limits))
+	myDeliverative.set_map(myLimits.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
+
+	# Wavefront navigation initializing
+	myNavWave = BrushfireNavigation()
+	myNavWave.set_params(grid_size, gx, gy, ox, oy, vision_limit)
+	myNavWave.set_map(myMap.get_map())
 
 	# Start with a clean motion model
 	motion_model_count = 0
@@ -88,8 +93,9 @@ def main():
 		MyGraf.step(xp, yp, graf_delay)
 
 	# Map update and trap detection
-	limits = myLidar.fetch_limits(sx, sy, ox, oy, "object")
-	myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
+	limits = myLidar.fetch_all(sx, sy, ox, oy, "object")
+	myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
+	myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 	path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), sx, sy, curdirx, curdiry, gx, gy)
 
 	# Main navigation loop
@@ -99,11 +105,12 @@ def main():
 			stuck = myNavigation.decide_status(rd)
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
-		limits = myLidar.fetch_limits(xp, yp, ox, oy, "object")
+		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
 		path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 		myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
 		myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
-		myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), limits))
+		myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
+		myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 
 		rd.append(d)
 		rx.append(xp)
@@ -201,9 +208,6 @@ def main():
 	myMap.save_map("map.json")
 	MyGraf.save("path.json")
 
-	myNavWave = BrushfireNavigation()
-	myNavWave.set_params(grid_size, gx, gy, ox, oy)
-	myNavWave.set_map(myDeliverative.get_map())
 	myNavWave.show_map("console")
 
 	#if show_animation:

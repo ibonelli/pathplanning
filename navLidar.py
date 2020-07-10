@@ -109,7 +109,7 @@ class Lidar:
 				logging.error("Not proper mode: " + str(mode))
 				exit(-1)
 			if (intersects):
-				logging.debug("lidar_limits() | Intersection at " + str(limit))
+				#logging.debug("lidar_limits() | Intersection at " + str(limit))
 				oi.append(limit)
 		if (len(oi) == 0):
 			# No collision found

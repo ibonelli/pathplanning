@@ -65,14 +65,30 @@ class BrushfireNavigation:
 		for p in limits:
 			xi = int(round(math.cos(p["angle"])))
 			yi = int(round(math.sin(p["angle"])))
-			steps = int(round(p["dist"],0))
-			self.print("p: " + str(p) + " | xinc: " + str(xi) + " | yinc " + str(yi) + " | steps: " + str(steps), "debug")
+			if abs(xi) == abs(yi):
+				# We move in diagonal, steps are not the same as distance
+				rx = int(round(p["rx"],0))
+				ry = int(round(p["ry"],0))
+				distx = abs(rx-xp)
+				disty = abs(ry-yp)
+				if distx > disty:
+					steps = distx
+				else:
+					steps = disty
+			else:
+				# We move in horizontal or vertical, steps are distance
+				steps = int(round(p["dist"],0))
+			# Need to adjust this as we start from zero
+			steps = steps + 1
+			self.print("p: " + str(p) + " | xi: " + str(xi) + " | yi " + str(yi) + " | steps: " + str(steps), "debug")
 			# We use the increments to calculate the path to record the "wave"
 			for s in range(steps):
 				x = xp + xi*s
 				y = yp + yi*s
 				if (x >= 0) and (y >=0) and (x < self.maxx) and (y < self.maxy):
-					myMap[x][y] = self.get_dist_value(p["col"], steps-s)
+					new_val = self.get_dist_value(p["col"], steps-s)
+					if myMap[x][y] == 0 or myMap[x][y] > new_val:
+						myMap[x][y] = new_val
 		self.map = myMap
 		self.show_map()
 		return myMap

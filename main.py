@@ -61,15 +61,14 @@ def main():
 
 	# Navigation Initializing
 	myNavigation = ApfNavigation(grid_size, robot_radius)
-	trap = TrapNavigation(grid_size, robot_radius, vision_limit)
-	myDeliverative = DeliverativeNavigation(robot_radius, vision_limit, grid_size, gx, gy, myMap)
-	myNavFollow = FollowPath(grid_size, gx, gy)
-	myDeliverative.set_map(myLimits.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
-
-	# Wavefront navigation initializing
 	myNavWave = BrushfireNavigation()
 	myNavWave.set_params(grid_size, gx, gy, ox, oy, vision_limit)
 	myNavWave.set_map(myMap.get_map())
+	myNavWave.update_map(myNavWave.get_map(), sx, sy, limits)
+	trap = TrapNavigation(grid_size, robot_radius, vision_limit)
+	myDeliverative = DeliverativeNavigation(robot_radius, vision_limit, grid_size, gx, gy, myMap)
+	myDeliverative.set_map(myLimits.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
+	myNavFollow = FollowPath(grid_size, gx, gy)
 
 	# Start with a clean motion model
 	motion_model_count = 0
@@ -93,10 +92,10 @@ def main():
 		MyGraf.step(xp, yp, graf_delay)
 
 	# Map update and trap detection
-	limits = myLidar.fetch_all(sx, sy, ox, oy, "object")
+	limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
 	myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 	myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
-	path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), sx, sy, curdirx, curdiry, gx, gy)
+	path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 
 	# Main navigation loop
 	while d >= grid_size and not aborted:

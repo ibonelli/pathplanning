@@ -44,9 +44,9 @@ class LidarLimit:
 		#limit = self.get_limits(path_limit)
 		if (len(limit) >= 1):
 			for l in limit:
-				ox = int(l[0])
-				oy = int(l[1])
-				omap[ox][oy] = 1.0
+				ox = int(round(l[0],0))
+				oy = int(round(l[1],0))
+				omap[ox][oy] = 1
 		return omap
 
 	# From the LIDAR list we get obstacles windows

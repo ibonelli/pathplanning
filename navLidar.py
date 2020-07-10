@@ -62,15 +62,18 @@ class Lidar:
 		self.robot_position_x = x
 		self.robot_position_y = y
 
+		#self.print("Start Lidar ------------------", "debug")
 		for i in range(self.sensor_angle_steps):
 			p = LidarPoint()
 			p.angle = self.angle_step * i
-			rx = x + self.sensor_radius * math.cos(self.angle_step * i)
-			ry = y + self.sensor_radius * math.sin(self.angle_step * i)
+			rx = x + self.sensor_radius * math.cos(p.angle)
+			ry = y + self.sensor_radius * math.sin(p.angle)
 			r = np.array([rx, ry])
 			p.col,p.r = self.lidar_limits(x, y, r, ox, oy, mode)
 			p.dist = math.sqrt(math.pow(p.r[0]-x,2)+math.pow(p.r[1]-y,2))
+			#self.print("p: " + str(p.angle) + " | x: " + str(p.r[0]-x) + " | y " + str(p.r[1]-y) + " | d: " + str(p.dist), "debug")
 			limit.append(p)
+		#self.print("-------------------------------", "debug")
 
 		return limit
 
@@ -94,7 +97,8 @@ class Lidar:
 	#	   ob: Is the x,y position of each object along with its radius (obs)
 	def lidar_limits(self, x, y, r, ox, oy, mode):
 		oi = []
-		for obx,oby,obs in np.nditer([ox, oy, self.grid_size]):
+		object_size_standard = self.grid_size/2 + 0.001
+		for obx,oby,obs in np.nditer([ox, oy, object_size_standard]):
 			if mode == "object":
 				# We get the object closest to the LIDAR looking angle.
 				intersects, limit = self.detect_collision_object(np.array([x, y]), r, np.array([obx, oby]), obs)
@@ -105,7 +109,7 @@ class Lidar:
 				logging.error("Not proper mode: " + str(mode))
 				exit(-1)
 			if (intersects):
-				#logging.debug("lidar_limits() | Intersection at " + str(limit))
+				logging.debug("lidar_limits() | Intersection at " + str(limit))
 				oi.append(limit)
 		if (len(oi) == 0):
 			# No collision found
@@ -152,7 +156,7 @@ class Lidar:
 	#   (Useful to build a map, but leads to errors when finding obstacles in the way)
 	# Where:
 	#	   p1: Is the first point of a segment
-	#	   p2: Is the second point of a sagment
+	#	   p2: Is the second point of a segment
 	#		q: Is the center of a circle that could intersect with the segment
 	#		r: Is the radius of the circle that could intersect the segment
 	def detect_collision_object(self, p1, p2, q, r):
@@ -186,3 +190,9 @@ class Lidar:
 				i2 = v.dot(t2) + p1
 				i.append(i2)
 			return True, i
+
+	def print(self, msg, mode):
+		if mode == "debug":
+			logging.debug(msg)
+		elif mode == "console":
+			print(msg)

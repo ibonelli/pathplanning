@@ -90,7 +90,12 @@ class TrapNavigation:
 		# We new get new motion model
 		proposed_motion_model = self.windows_to_motionmodel(windows)
 		logging.debug("Proposed Motion Model:")
-		logging.debug("\t" + str(proposed_motion_model))
+		msg = "\t"
+		for m in proposed_motion_model:
+			if len(msg) > 2:
+				msg = msg + " | "
+			msg = msg + str(m) + " ang: " + str(math.degrees(self.pangles(math.atan2(m[1],m[0]))))
+		logging.debug(msg)
 		logging.debug("----------------------")
 		return proposed_motion_model
 

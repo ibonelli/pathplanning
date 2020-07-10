@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import logging
 
@@ -58,30 +59,22 @@ class BrushfireNavigation:
 
 	def update_map(self, myMap, xp, yp, limits):
 		# Indices must be integers, not numpy.float64
-		xp = int(xp)
-		yp = int(yp)
-		#self.print("Brushfire limits -------------------", "console")
-		#self.print(str(limits), "console")
+		xp = int(round(xp,0))
+		yp = int(round(yp,0))
+		self.print("Brushfire limits -------------------", "debug")
 		for p in limits:
-			# same X position, we increment Y
-			if xp == p["rx"]:
-				inc_limit = int(abs(p["ry"]-yp))
-				for yinc in range(inc_limit):
-					if yp+yinc < self.maxy:
-						myMap[xp][yp+yinc] = self.get_dist_value(p["col"], inc_limit-yinc)
-			# same Y position, we increment X
-			elif yp == p["ry"]:
-				inc_limit = int(abs(p["rx"]-xp))
-				for xinc in range(inc_limit):
-					if xp+xinc < self.maxx:
-						myMap[xp+xinc][yp] = self.get_dist_value(p["col"], inc_limit-xinc)
-			# Diagonal, we increment both
-			else:
-				inc_limit = int(abs(p["rx"]-xp))
-				for inc in range(inc_limit):
-					if (xp+inc < self.maxx) and (yp+inc < self.maxy):
-						myMap[xp+inc][yp+inc] = self.get_dist_value(p["col"], inc_limit-inc)
+			xi = int(round(math.cos(p["angle"])))
+			yi = int(round(math.sin(p["angle"])))
+			steps = int(round(p["dist"],0))
+			self.print("p: " + str(p) + " | xinc: " + str(xi) + " | yinc " + str(yi) + " | steps: " + str(steps), "debug")
+			# We use the increments to calculate the path to record the "wave"
+			for s in range(steps):
+				x = xp + xi*s
+				y = yp + yi*s
+				if (x >= 0) and (y >=0) and (x < self.maxx) and (y < self.maxy):
+					myMap[x][y] = self.get_dist_value(p["col"], steps-s)
 		self.map = myMap
+		self.show_map()
 		return myMap
 
 	def get_dist_value(self, col, d):

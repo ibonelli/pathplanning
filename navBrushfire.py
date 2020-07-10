@@ -51,12 +51,12 @@ class BrushfireNavigation:
 	def show_map(self, mode="debug"):
 		self.print("Map+--------------------------------------", mode)
 		for j in range(self.yw):
-			msg = str('{0:02d}').format(int(self.maxy)-j) + " | "
+			msg = str('{0:02d}').format(int(self.maxy)-j) + " |"
 			for i in range(self.xw):
 				msg = msg + " " + str('{0:02d}').format(int(self.map[i][int(self.maxy)-j]))
 			self.print(msg, mode)
 		self.print("   +----------------------------------------", mode)
-		msg = "     "
+		msg = "    "
 		for i in range(self.xw):
 			msg = msg + " " + str('{0:02d}').format(i)
 		self.print(msg, mode)
@@ -65,7 +65,7 @@ class BrushfireNavigation:
 		# Indices must be integers, not numpy.float64
 		xp = int(round(xp,0))
 		yp = int(round(yp,0))
-		self.print("Brushfire limits -------------------", "debug")
+		#self.print("Brushfire limits -------------------", "debug")
 		dir_steps = []
 		for p in limits:
 			xi = int(round(math.cos(p["angle"])))
@@ -85,11 +85,10 @@ class BrushfireNavigation:
 				steps = int(round(p["dist"],0))
 			# Need to adjust this as we start from zero
 			steps = steps + 1
-			#self.print("p: " + str(p) + " | xi: " + str(xi) + " | yi " + str(yi) + " | steps: " + str(steps), "debug")
 			dir_steps.append((xi,yi,steps,p["col"]))
 		dir_steps = sorted(dir_steps, key=lambda mystep: mystep[2])
 		for r in dir_steps:
-			self.print("col: " + str(r[3]) + " | xi: " + str(r[0]) + " | yi " + str(r[1]) + " | steps: " + str(r[2]), "debug")
+			#self.print("col: " + str(r[3]) + " | xi: " + str(r[0]) + " | yi " + str(r[1]) + " | steps: " + str(r[2]), "debug")
 			# We use the increments to calculate the path to record the "wave"
 			for s in range(r[2]):
 				x = xp + r[0]*s
@@ -105,7 +104,7 @@ class BrushfireNavigation:
 						# The "myMap[x][y] != 1" evaluation is included as it is the lowest valid val
 						myMap[x][y] = value
 		self.map = myMap
-		self.show_map()
+		#self.show_map()
 		return myMap
 
 	def print(self, msg, mode):

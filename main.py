@@ -119,6 +119,8 @@ def main():
 
 		# We now check status
 		if (stuck or path_blocked) and not aborted:
+			print("Map when switching from APF to Follow")
+			myNavWave.show_map("console")
 			if stuck:
 				logging.debug("Stuck (start) ----------------")
 				nav = "follow"

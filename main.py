@@ -110,6 +110,8 @@ def main():
 		myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
 		myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 		myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
+		myNavWave.show_map("debug")
+		myDeliverative.is_following_wall(myNavWave.get_map(), xp, yp)
 
 		rd.append(d)
 		rx.append(xp)
@@ -120,6 +122,7 @@ def main():
 		# We now check status
 		if (stuck or path_blocked) and not aborted:
 			print("Map when switching from APF to Follow")
+			print("Step xp: " + str(xp) + " | yp: " + str(yp))
 			myNavWave.show_map("console")
 			if stuck:
 				logging.debug("Stuck (start) ----------------")

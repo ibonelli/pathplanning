@@ -43,7 +43,9 @@ class DeliverativeNavigation:
 		return self.map
 
 	def set_step(self, step, direction, nav):
-		self.path.append(step)
+		stepx = int(round(step[0],0))
+		stepy = int(round(step[1],0))
+		self.path.append((stepx, stepy))
 		self.dir.append(direction)
 		self.nav.append(nav)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav))
@@ -138,6 +140,18 @@ class DeliverativeNavigation:
 			limitx = posX + self.vision_limit * dirx
 			limity = posY + self.vision_limit * diry
 		return dirx, diry, limitx, limity
+
+	def is_following_wall(self, bmap, xp, yp):
+		status = False
+		if len(self.path) > 3:
+			pot1 = bmap[self.path[-1][0]][self.path[-1][1]]
+			pot2 = bmap[self.path[-2][0]][self.path[-2][1]]
+			pot3 = bmap[self.path[-3][0]][self.path[-3][1]]
+			if pot1 == pot2 and pot2 == pot3:
+				logging.debug("----> We are following an equipotential line!")
+				status = True
+
+		return status
 
 	def new_goal():
 		return 0

@@ -7,8 +7,10 @@ import sys
 from navMap import Map
 from navTrapNavigation import TrapNavigation
 from navLidar import Lidar
+from navBrushfire import BrushfireNavigation
 
 lidar_steps = config.general['lidar_steps']
+wall_detection_threshold = config.general['wall_detection_threshold']
 
 # START Class DelivNavigation --------------------------------------------
 class DeliverativeNavigation:
@@ -27,7 +29,9 @@ class DeliverativeNavigation:
 		self.path = []
 		self.dir = []
 		self.nav = []
+		self.pot = []
 		self.trap_dir = None
+		self.last_apf_direction = None
 
 	def set_map(self, Map):
 		self.map.set_map(Map)
@@ -42,18 +46,30 @@ class DeliverativeNavigation:
 	def get_map_obj(self):
 		return self.map
 
-	def set_step(self, step, direction, nav):
+	def set_step(self, step, direction, nav, pot):
 		stepx = int(round(step[0],0))
 		stepy = int(round(step[1],0))
 		self.path.append((stepx, stepy))
 		self.dir.append(direction)
 		self.nav.append(nav)
+		self.nav.append(pot)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav))
 
 	def set_status(self, stuck, path_blocked, path_blocked_dir):
 		self.stuck = stuck
 		self.path_blocked = path_blocked
 		self.path_blocked_dir = path_blocked_dir
+
+	def check_limits(self, xp, yp):
+		abort = False
+		if xp < self.minx or xp > self.maxx:
+			abort = True
+		if yp < self.miny or yp > self.maxy:
+			abort = True
+		if abort:
+			print("We went outside of the navigation limits. Aborting...")
+
+		return abort
 
 	def choose_dir(self, xp, yp):
 		dirx = diry = None
@@ -141,17 +157,76 @@ class DeliverativeNavigation:
 			limity = posY + self.vision_limit * diry
 		return dirx, diry, limitx, limity
 
-	def is_following_wall(self, bmap, xp, yp):
+	def is_following_wall(self, bmap):
+		# TODO --- Make this flexible and dependent on wall_detection_threshold
+		#	   --- Now it is not flexible. Below is a starting point...
+		#
+		#		status = False
+		#		if len(self.path) > wall_detection_threshold:
+		#			pot_cur = pot_prev = None
+		#			all_equal = True
+		#			for i in range(wall_detection_threshold):
+		#				idx = -1
+		#				if i == 0:
+		#					pot_prev = bmap[self.path[-i][0]][self.path[-i][1]]
+		#				else:
+		#					pot_cur = bmap[self.path[-i][0]][self.path[-i][1]]
+		#				
+		#			if pot[0] == pot[1] and pot[1] == pot3:
+
 		status = False
-		if len(self.path) > 3:
+		if len(self.path) > wall_detection_threshold:
 			pot1 = bmap[self.path[-1][0]][self.path[-1][1]]
 			pot2 = bmap[self.path[-2][0]][self.path[-2][1]]
 			pot3 = bmap[self.path[-3][0]][self.path[-3][1]]
 			if pot1 == pot2 and pot2 == pot3:
-				logging.debug("----> We are following an equipotential line!")
+				logging.debug("===================================")
+				logging.debug("We are following an equipotential line!")
+				logging.debug("\tCurrent potential: " + str(pot1))
+				logging.debug("===================================")
 				status = True
+				self.pot = pot1
 
 		return status
+
+	def is_path_blocked(self):
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		ox, oy = self.map.get_objects()
+		rx = xp + self.vision_limit * self.dir[-1][0]
+		ry = yp + self.vision_limit * self.dir[-1][1]
+		myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
+		col,r = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "limit")
+
+		return col
+
+	def decide_status(self, bmap):
+		# TODO - Not finished, only working for certain status
+		chosen_dir = None
+		following_wall = self.is_following_wall(bmap)
+		path_blocked = self.is_path_blocked()
+		if following_wall and path_blocked:
+			xp = self.path[-1][0]
+			yp = self.path[-1][1]
+			pot = bmap[self.path[-1][0]][self.path[-1][1]]
+			# In this situation APF fails
+			self.last_apf_direction = self.dir[-1]
+			myNavWave = BrushfireNavigation()
+			all_pot = myNavWave.get_motion_potentials(bmap, xp, yp)
+			possible_dir = []
+			for p in all_pot:
+				if pot == p[2]:
+					nextx = xp + p[0]
+					nexty = xp + p[1]
+					# Untraveled direction
+					if nextx != self.path[-2][0] or nexty == self.path[-2][1]:
+						possible_dir.append(p)
+			if len(possible_dir) == 1:
+				chosen_dir = (possible_dir[0][0], possible_dir[0][1])
+			elif len(possible_dir) > 1:
+					logging.error("More than one... Need to choose!")
+
+		return chosen_dir
 
 	def new_goal():
 		return 0

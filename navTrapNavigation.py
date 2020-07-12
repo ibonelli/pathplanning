@@ -2,6 +2,8 @@ import math
 import numpy as np
 import logging
 
+import config
+
 # Modules
 from navLidar import Lidar
 from navLidarLimit import LidarLimit, PathWindow
@@ -12,8 +14,14 @@ class TrapNavigation:
 		self.reso = reso
 		self.rr = rr
 		self.vision_limit = radius
-		self.angle = math.atan(rr / radius)
-		self.angle_step = int(2 * math.pi / self.angle)
+		# PROBLEMS - For this method I used internal lidar resolution
+		#			 This induced to problems and I'll only use 8 step directions
+		# ---------------- TODO / REVIEW THIS ----------------
+		#self.angle = math.atan(rr / radius)
+		#self.angle_step = int(2 * math.pi / self.angle)
+		lidar_steps = config.general['lidar_steps']
+		self.angle_step = lidar_steps
+		# ----------------
 		self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
 		self.path_blocked_count = 0
 		self.path_blocked_limit = 3
@@ -22,7 +30,6 @@ class TrapNavigation:
 
 	# We detect a collision in the robot path
 	def detect(self, myMap, posX, posY, curdirx, curdiry, gx, gy):
-		#logging.debug("angle_step: " + str(self.angle_step))
 		myLidar = Lidar(self.reso, self.vision_limit, self.angle_step)
 		rx = posX + self.vision_limit * curdirx
 		ry = posY + self.vision_limit * curdiry
@@ -79,9 +86,9 @@ class TrapNavigation:
 		myLidar = Lidar(self.reso, self.vision_limit, self.angle_step)
 		ox, oy = myMap.get_objects()
 		limits = myLidar.lidar(posX, posY, ox, oy, "limit")
-		#logging.debug("Limits:")
-		#for L in limits:
-		#	L.print()
+		logging.debug("Limits:")
+		for L in limits:
+			L.print()
 		myLimits = LidarLimit()
 		windows = myLimits.get_limit_windows(limits, posX, posY)
 		logging.debug("Current windows:")

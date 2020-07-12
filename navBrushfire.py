@@ -14,6 +14,14 @@ class BrushfireNavigation:
 		self.xw = self.yw = None
 		self.vlimit = None
 		self.map = None
+		self.motion = [[1, 0],
+					  [0, 1],
+					  [-1, 0],
+					  [0, -1],
+					  [-1, -1],
+					  [-1, 1],
+					  [1, -1],
+					  [1, 1]]
 
 	def set_params(self, reso, gx, gy, ox, oy, vlimit):
 		self.reso = reso
@@ -50,16 +58,22 @@ class BrushfireNavigation:
 
 	def show_map(self, mode="debug"):
 		self.print("Map+--------------------------------------", mode)
+		msg_xruler = "    "
+		for i in range(self.xw):
+			msg_xruler = msg_xruler + " " + str('{0:02d}').format(i)
+		self.print(msg_xruler, mode)
+		self.print("   +----------------------------------------", mode)
 		for j in range(self.yw):
 			msg = str('{0:02d}').format(int(self.maxy)-j) + " |"
 			for i in range(self.xw):
-				msg = msg + " " + str('{0:02d}').format(int(self.map[i][int(self.maxy)-j]))
+				try:
+					msg = msg + " " + str('{0:02d}').format(int(self.map[i][int(self.maxy)-j]))
+				except:
+					self.print("Error show_map() | maxx : " + str(self.maxx) + " | maxy: " + str(self.maxy), mode)
+			msg = msg + " | " + str('{0:02d}').format(int(self.maxy)-j)
 			self.print(msg, mode)
 		self.print("   +----------------------------------------", mode)
-		msg = "    "
-		for i in range(self.xw):
-			msg = msg + " " + str('{0:02d}').format(i)
-		self.print(msg, mode)
+		self.print(msg_xruler, mode)
 
 	def update_map(self, myMap, xp, yp, limits):
 		# Indices must be integers, not numpy.float64
@@ -105,7 +119,16 @@ class BrushfireNavigation:
 						myMap[x][y] = value
 		self.map = myMap
 		#self.show_map()
-		return myMap
+		return myMap[xp][yp]
+
+	def get_motion_potentials(self, myMap, xp, yp):
+		pot = []
+		for d in self.motion:
+			posx = xp + d[0]
+			posy = yp + d[1]
+			pot.append((d[0], d[1], myMap[posx][posy]))
+
+		return pot
 
 	def print(self, msg, mode):
 		if mode == "debug":

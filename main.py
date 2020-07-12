@@ -21,7 +21,6 @@ from navBrushfire import BrushfireNavigation
 show_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
 motion_model_limit = config.general['motion_model_limit']
-logging.basicConfig(filename=config.general['logFile'],level=config.general['logLevel'])
 lidar_steps = config.general['lidar_steps']
 
 def main():
@@ -64,7 +63,7 @@ def main():
 	myNavWave = BrushfireNavigation()
 	myNavWave.set_params(grid_size, gx, gy, ox, oy, vision_limit)
 	myNavWave.set_map(myMap.get_map())
-	myNavWave.update_map(myNavWave.get_map(), sx, sy, limits)
+	pot = myNavWave.update_map(myNavWave.get_map(), sx, sy, limits)
 	trap = TrapNavigation(grid_size, robot_radius, vision_limit)
 	myDeliverative = DeliverativeNavigation(robot_radius, vision_limit, grid_size, gx, gy, myMap)
 	myDeliverative.set_map(myLimits.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
@@ -82,7 +81,7 @@ def main():
 	rd, rx, ry = [d], [sx], [sy]
 	nav = "apf"
 	d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
-	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
+	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot)
 	rd.append(d)
 	rx.append(xp)
 	ry.append(yp)
@@ -94,8 +93,9 @@ def main():
 	# Map update and trap detection
 	limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
 	myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
-	myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
+	pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 	path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
+	aborted = myDeliverative.check_limits(xp, yp)
 
 	# Main navigation loop
 	while d >= grid_size and not aborted:
@@ -105,13 +105,31 @@ def main():
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
 		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
-		path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
-		myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
-		myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav)
-		myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
-		myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
-		myNavWave.show_map("debug")
-		myDeliverative.is_following_wall(myNavWave.get_map(), xp, yp)
+		if myDeliverative.check_limits(xp, yp):
+			aborted = True
+		else:
+			pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
+			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
+			myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
+			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot)
+			myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
+			is_following_wall = myDeliverative.is_following_wall(myNavWave.get_map())
+
+		if is_following_wall:
+			myNavWave.show_map("debug")
+			col = myDeliverative.is_path_blocked()
+			if col:
+				new_dir = myDeliverative.decide_status(myNavWave.get_map())
+				logging.debug("===================================")
+				logging.debug("FOLLOWING WALL AND PATH BLOCKED | New direction: " + str(new_dir))
+				logging.debug("===================================")
+				if new_dir != None:
+					nav = "follow"
+					dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
+					#dirx, diry = new_dir
+
+		if stuck and is_following_wall:
+			aborted = True
 
 		rd.append(d)
 		rx.append(xp)

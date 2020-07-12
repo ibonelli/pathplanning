@@ -7,13 +7,12 @@ general = dict(
 	grafDelay = 0.01,
 	motion_model_limit = 3,
 	lidar_steps = 8,
+	wall_detection_threshold = 3,
 )
 
-#LOG_FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
-#logging.basicConfig(filename = program.log,
-#					level=logging.CRITICAL,
-#					format = LOG_FORMAT,
-#					filemode = 'w')
+logging.basicConfig(filename=general['logFile'],
+					level=general['logLevel'],
+					filemode = 'w')
 
 logger = logging.getLogger('matplotlib')
 logger.setLevel(level=logging.CRITICAL)

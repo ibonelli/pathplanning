@@ -197,20 +197,32 @@ class DeliverativeNavigation:
 		ry = yp + self.vision_limit * self.dir[-1][1]
 		myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
 		col,r = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "limit")
+		d = np.hypot(r[0] - xp, r[1] - yp)
+		return col, d
 
-		return col
+	def is_goal_unreachable(self, dist_to_obstacle):
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		d = np.hypot(self.org_gx - xp, self.org_gy - yp)
+		if dist_to_obstacle > d:
+			return False
+		else:
+			return True
 
 	def decide_status(self, bmap):
 		# TODO - Not finished, only working for certain status
 		chosen_dir = None
+		goal_unreachable = False
 		following_wall = self.is_following_wall(bmap)
-		path_blocked = self.is_path_blocked()
-		if following_wall and path_blocked:
-			xp = self.path[-1][0]
-			yp = self.path[-1][1]
+		path_blocked, dist_to_obstacle = self.is_path_blocked()
+		if path_blocked:
+			goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
+		if following_wall and path_blocked and goal_unreachable:
 			pot = bmap[self.path[-1][0]][self.path[-1][1]]
 			# In this situation APF fails
 			self.last_apf_direction = self.dir[-1]
+			xp = self.path[-1][0]
+			yp = self.path[-1][1]
 			myNavWave = BrushfireNavigation()
 			all_pot = myNavWave.get_motion_potentials(bmap, xp, yp)
 			possible_dir = []

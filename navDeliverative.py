@@ -21,8 +21,8 @@ class DeliverativeNavigation:
 		self.stuck = False
 		self.path_blocked = False
 		self.path_blocked_dir = None
-		self.org_gx = gx
-		self.org_gy = gy
+		self.org_goal = (gx, gy)
+		self.new_goal = None
 		self.map = myMap
 		self.minx = self.miny = None
 		self.maxx = self.maxy = None
@@ -31,7 +31,9 @@ class DeliverativeNavigation:
 		self.nav = []
 		self.pot = []
 		self.trap_dir = None
+		self.following_wall = None
 		self.last_apf_direction = None
+		self.last_apf_dist_to_obstacle = None
 
 	def set_map(self, Map):
 		self.map.set_map(Map)
@@ -112,7 +114,7 @@ class DeliverativeNavigation:
 		for m in motion_model:
 			x2 = xp + m[0] * self.vision_limit
 			y2 = yp + m[1] * self.vision_limit
-			d = np.hypot(self.org_gx - x2, self.org_gy - y2)
+			d = np.hypot(self.org_goal[0] - x2, self.org_goal[1] - y2)
 			m.append(d)
 			motion_model_progression.append(m)
 		return motion_model_progression
@@ -187,6 +189,10 @@ class DeliverativeNavigation:
 				status = True
 				self.pot = pot1
 
+		# This only applies when we are following the original goal
+		if self.new_goal != None:
+			status = False
+
 		return status
 
 	def is_path_blocked(self):
@@ -196,14 +202,14 @@ class DeliverativeNavigation:
 		rx = xp + self.vision_limit * self.dir[-1][0]
 		ry = yp + self.vision_limit * self.dir[-1][1]
 		myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
-		col,r = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "limit")
+		col,r = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
 		d = np.hypot(r[0] - xp, r[1] - yp)
 		return col, d
 
 	def is_goal_unreachable(self, dist_to_obstacle):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
-		d = np.hypot(self.org_gx - xp, self.org_gy - yp)
+		d = np.hypot(self.org_goal[0] - xp, self.org_goal[1] - yp)
 		if dist_to_obstacle > d:
 			return False
 		else:
@@ -218,9 +224,11 @@ class DeliverativeNavigation:
 		if path_blocked:
 			goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
 		if following_wall and path_blocked and goal_unreachable:
+			self.following_wall = True
 			pot = bmap[self.path[-1][0]][self.path[-1][1]]
 			# In this situation APF fails
 			self.last_apf_direction = self.dir[-1]
+			self.last_apf_dist_to_obstacle = dist_to_obstacle
 			xp = self.path[-1][0]
 			yp = self.path[-1][1]
 			myNavWave = BrushfireNavigation()
@@ -240,5 +248,59 @@ class DeliverativeNavigation:
 
 		return chosen_dir
 
-	def new_goal():
-		return 0
+	def unblock_status(self, nav):
+		new_nav = nav
+		newgx = self.org_goal[0]
+		newgy = self.org_goal[1]
+		curdirx = self.dir[-1][0]
+		curdiry = self.dir[-1][1]
+		if nav != "apf":
+			if self.new_goal != None:
+				logging.debug("unblock_status() : Reached new goal, moving back to APF.")
+				xp = self.path[-1][0]
+				yp = self.path[-1][1]
+				if xp == self.new_goal[0] and yp == self.new_goal[1]:
+					self.new_goal = None
+					new_nav = "apf"
+			else:
+				xp = self.path[-1][0]
+				yp = self.path[-1][1]
+				ox, oy = self.map.get_objects()
+
+				last_apf_ang = math.atan2(self.last_apf_direction[1], self.last_apf_direction[0])
+				rx = xp + self.vision_limit * self.last_apf_direction[0]
+				ry = yp + self.vision_limit * self.last_apf_direction[1]
+				myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
+				col1,r1 = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "limit")
+				d1 = np.hypot(r1[0] - xp, r1[1] - yp)
+
+				if d1 != self.last_apf_dist_to_obstacle:
+					logging.debug("We are not following wall, distance has changed...")
+
+				current_direction_ang = math.atan2(curdiry, curdirx)
+				second_ang_to_check = (last_apf_ang + current_direction_ang) / 2
+				logging.debug("unblock_status() => second_ang_to_check: " + str(math.degrees(second_ang_to_check)))
+				rx = xp + self.vision_limit * math.cos(second_ang_to_check)
+				ry = yp + self.vision_limit * math.sin(second_ang_to_check)
+				myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
+				col2,r2 = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "limit")
+				d2 = np.hypot(r2[0] - xp, r2[1] - yp)
+
+				if col2:
+					new_nav = "follow"
+				else:
+					# We build direction (as 1s instead of angles)
+					xi = int(round(math.cos(second_ang_to_check)))
+					yi = int(round(math.sin(second_ang_to_check)))
+					# We calculate new goal
+					new_nav = "follow"
+					logging.debug("unblock_status() | xi: " + str(xi) + " | yi: " + str(yi))
+					logging.debug("unblock_status() | last_apf_dist_to_obstacle: " + str(self.last_apf_dist_to_obstacle))
+					newgx = xp + self.last_apf_dist_to_obstacle * xi
+					newgy = yp + self.last_apf_dist_to_obstacle * yi
+					curdirx = xi
+					curdiry = yi
+					logging.debug("unblock_status() : We have a new goal: (" + str(newgx) + "," + str(newgy) + ")")
+					self.new_goal = (newgx, newgy)
+
+		return curdirx, curdiry, newgx, newgy, new_nav

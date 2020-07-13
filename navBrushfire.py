@@ -82,6 +82,7 @@ class BrushfireNavigation:
 		#self.print("Brushfire limits -------------------", "debug")
 		dir_steps = []
 		for p in limits:
+			# We build direction (as 1s instead of angles)
 			xi = int(round(math.cos(p["angle"])))
 			yi = int(round(math.sin(p["angle"])))
 			if abs(xi) == abs(yi):

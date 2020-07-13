@@ -113,6 +113,7 @@ def main():
 			myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
 			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot)
 			myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
+			dirx, diry, limitx, limity, nav = myDeliverative.unblock_status(nav)
 			is_following_wall = myDeliverative.is_following_wall(myNavWave.get_map())
 
 		if is_following_wall:
@@ -126,10 +127,15 @@ def main():
 				if new_dir != None:
 					nav = "follow"
 					dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
-					#dirx, diry = new_dir
 
-		if stuck and is_following_wall:
-			aborted = True
+		if nav == "follow":
+			myNavFollow.set_limit(limitx, limity)
+		elif nav == "apf":
+			myNavigation.set_cur_pos(xp, yp)
+			myNavigation.set_motion_model(trap.reset_motion_model())
+
+		# if stuck and is_following_wall:
+		# 	aborted = True
 
 		rd.append(d)
 		rx.append(xp)
@@ -138,68 +144,68 @@ def main():
 			MyGraf.step(xp, yp, graf_delay)
 
 		# We now check status
-		if (stuck or path_blocked) and not aborted:
-			print("Map when switching from APF to Follow")
-			print("Step xp: " + str(xp) + " | yp: " + str(yp))
-			myNavWave.show_map("console")
-			if stuck:
-				logging.debug("Stuck (start) ----------------")
-				nav = "follow"
-				stuck = False
-				dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
-				myNavFollow.set_limit(limitx, limity)
-				wlimit = False
-				logging.debug("Switching to follow model | Direction: " + str((dirx, diry)) + " | limit: " + str((limitx, limity)))
-				logging.debug("Stuck (end) ----------------")
-			elif path_blocked:
-				logging.debug("Path blocked (start) ----------------")
-				pvec = myNavigation.get_pvec()
-				logging.debug("\tApf vect:")
-				for p in pvec:
-					apf_pot, apf_dirx, apf_diry, apf_blocked = p.get()
-					apf_blocked = myLidar.lidar_limits_direction(xp, yp, (apf_dirx, apf_diry), ox, oy)
-					logging.debug("\t\t" + str((apf_pot, apf_dirx, apf_diry, apf_blocked)))
-				logging.debug("Path blocked (continue) ----------------")
-				motion_model = trap.propose_motion_model(myDeliverative.get_map_obj(), xp, yp)
-				if len(motion_model) < 1:
-					msg = "We can no longer navigate, because something went wrong with the motion model."
-					print(msg)
-					logging.debug(msg)
-					logging.debug("Current motion model: " + str(motion_model))
-					aborted = True
-				dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
-				myNavFollow.set_limit(limitx, limity)
-				wlimit = False
-				logging.debug("Path blocked (end) ----------------")
-			#elif nav == "apf" and path_blocked:
-			#	nav = "follow_wall"
-			#	???
-			else:
-				logging.debug("Current motion model: " + str(motion_model) + " | stuck: " + str(stuck) + " | path_blocked: " + str(path_blocked))
-				msg = "For now we keep navigating..."
-				print(msg)
-				logging.debug(msg)
-				#aborted = True
-
-		if nav == "follow" and wlimit == True:
-			logging.debug("wlimit reached, what should we do?")
-			# First we check if APF proposed path is free
-			myNavigation.set_cur_pos(xp, yp)
-			myNavigation.set_motion_model(trap.reset_motion_model())
-			d, posX, posY, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
-			logging.debug("\tAPF new info... | curdirx: " + str(curdirx) + " | curdiry: " + str(curdiry))
-			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
-			logging.debug("\ttrap.detect() | path_blocked: " + str(path_blocked) + " | path_blocked_dir: " + str(path_blocked_dir) + " | wall_detected: " + str(wall_detected))
-			col,r = myLidar.lidar_limits(posX, posY, (curdirx, curdiry), ox, oy, "object")
-			logging.debug("\tlidar_limits() | col: " + str(col) + " | r: " + str(path_blocked_dir))
-			if col:
-				# If not we get a new path to follow
-				dirx, diry, limitx, limity = myDeliverative.checked_path_blocked_dir(xp, yp)
-			else:
-				# Otherwise we move back to APF
-				logging.debug("\tMoving back to apf navigation...")
-				nav = "apf"
-			wlimit = False
+		# if (stuck or path_blocked) and not aborted:
+		# 	print("Map when switching from APF to Follow")
+		# 	print("Step xp: " + str(xp) + " | yp: " + str(yp))
+		# 	myNavWave.show_map("console")
+		# 	if stuck:
+		# 		logging.debug("Stuck (start) ----------------")
+		# 		nav = "follow"
+		# 		stuck = False
+		# 		dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
+		# 		myNavFollow.set_limit(limitx, limity)
+		# 		wlimit = False
+		# 		logging.debug("Switching to follow model | Direction: " + str((dirx, diry)) + " | limit: " + str((limitx, limity)))
+		# 		logging.debug("Stuck (end) ----------------")
+		# 	elif path_blocked:
+		# 		logging.debug("Path blocked (start) ----------------")
+		# 		pvec = myNavigation.get_pvec()
+		# 		logging.debug("\tApf vect:")
+		# 		for p in pvec:
+		# 			apf_pot, apf_dirx, apf_diry, apf_blocked = p.get()
+		# 			apf_blocked = myLidar.lidar_limits_direction(xp, yp, (apf_dirx, apf_diry), ox, oy)
+		# 			logging.debug("\t\t" + str((apf_pot, apf_dirx, apf_diry, apf_blocked)))
+		# 		logging.debug("Path blocked (continue) ----------------")
+		# 		motion_model = trap.propose_motion_model(myDeliverative.get_map_obj(), xp, yp)
+		# 		if len(motion_model) < 1:
+		# 			msg = "We can no longer navigate, because something went wrong with the motion model."
+		# 			print(msg)
+		# 			logging.debug(msg)
+		# 			logging.debug("Current motion model: " + str(motion_model))
+		# 			aborted = True
+		# 		dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
+		# 		myNavFollow.set_limit(limitx, limity)
+		# 		wlimit = False
+		# 		logging.debug("Path blocked (end) ----------------")
+		# 	#elif nav == "apf" and path_blocked:
+		# 	#	nav = "follow_wall"
+		# 	#	???
+		# 	else:
+		# 		logging.debug("Current motion model: " + str(motion_model) + " | stuck: " + str(stuck) + " | path_blocked: " + str(path_blocked))
+		# 		msg = "For now we keep navigating..."
+		# 		print(msg)
+		# 		logging.debug(msg)
+		# 		#aborted = True
+		# 
+		# if nav == "follow" and wlimit == True:
+		# 	logging.debug("wlimit reached, what should we do?")
+		# 	# First we check if APF proposed path is free
+		# 	myNavigation.set_cur_pos(xp, yp)
+		# 	myNavigation.set_motion_model(trap.reset_motion_model())
+		# 	d, posX, posY, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+		# 	logging.debug("\tAPF new info... | curdirx: " + str(curdirx) + " | curdiry: " + str(curdiry))
+		# 	path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
+		# 	logging.debug("\ttrap.detect() | path_blocked: " + str(path_blocked) + " | path_blocked_dir: " + str(path_blocked_dir) + " | wall_detected: " + str(wall_detected))
+		# 	col,r = myLidar.lidar_limits(posX, posY, (curdirx, curdiry), ox, oy, "object")
+		# 	logging.debug("\tlidar_limits() | col: " + str(col) + " | r: " + str(path_blocked_dir))
+		# 	if col:
+		# 		# If not we get a new path to follow
+		# 		dirx, diry, limitx, limity = myDeliverative.checked_path_blocked_dir(xp, yp)
+		# 	else:
+		# 		# Otherwise we move back to APF
+		# 		logging.debug("\tMoving back to apf navigation...")
+		# 		nav = "apf"
+		# 	wlimit = False
 
 		#if xp == 37 and yp == 45:
 		#	msg = "Reached problematic point, xp=35 & yp=45. Stopping navigation."
@@ -207,10 +213,10 @@ def main():
 		#	logging.debug(msg)
 		#	aborted = True
 
-		if (xp == 60 and yp == 32):
+		if (xp == 35 and yp == 20):
 			checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
 			limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-			myLimits.save_limit(xp, yp, limits, "limit_x60_y32.json")
+			myLimits.save_limit(xp, yp, limits, "limit_x35_y20.json")
 			aborted = True
 		if (xp == 37 and yp == 55):
 			checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)

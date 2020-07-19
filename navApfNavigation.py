@@ -170,7 +170,7 @@ class ApfNavigation:
 				p = float("inf")  # outside area
 			else:
 				p = self.pmap[inx][iny]
-				self.pvec.append(pStruct(p, motion[i][0], motion[i][1]))
+				self.pvec.append((p, motion[i][0], motion[i][1]))
 			if minp > p:
 				minp = p
 				self.minix = inx
@@ -184,25 +184,4 @@ class ApfNavigation:
 		yp = self.iy * self.reso + self.miny
 		d = np.hypot(gx - xp, gy - yp)
 
-		self.pvec = sorted(self.pvec, key=lambda pstruct: pstruct.p)
-
 		return d, xp, yp, self.curdirx, self.curdiry
-
-class pStruct:
-	def __init__(self, p=None, dirx=None, diry=None):
-		self.p = p
-		self.dirx = dirx
-		self.diry = diry
-		self.blocked = None
-
-	def __repr__(self):
-		return repr((self.p, self.dirx, self.diry, self.blocked))
-
-	def get(self):
-		return self.p, self.dirx, self.diry, self.blocked
-
-	def set(self, p, dirx, diry, blocked):
-		self.p = p
-		self.dirx = dirx
-		self.diry = diry
-		self.blocked = blocked

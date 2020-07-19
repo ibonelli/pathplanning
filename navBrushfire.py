@@ -137,7 +137,7 @@ class BrushfireNavigation:
 		for d in self.motion:
 			posx = xp + d[0] * rexplore
 			posy = yp + d[1] * rexplore
-			rawval = self.known_point(posx, posy, reval)
+			rawval = abs(self.known_point(posx, posy, reval))
 			navdataval = navData.build_info("known", rawval, navData.get_value(d[0], d[1]))
 			navData.set_value(d[0], d[1], navdataval)
 		return navData

@@ -17,6 +17,7 @@ from navLidarLimit import LidarLimit
 from navDeliverative import DeliverativeNavigation
 from navFollowPath import FollowPath
 from navBrushfire import BrushfireNavigation
+from navData import NavigationData
 
 show_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
@@ -151,16 +152,15 @@ def main():
 			aborted = True
 
 		# Debugging
-		logging.debug("Decision making values -------------------------")
-		logging.debug("\tApf vect:")
+		navData = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
 		pvec = myNavigation.get_pvec()
-		for p in pvec:
-			apf_pot, apf_dirx, apf_diry, apf_blocked = p.get()
+		for apf_pot, apf_dirx, apf_diry in pvec:
+			navdataval = navData.build_info("pmap", apf_pot, navData.get_value(apf_dirx, apf_diry))
+			navData.set_value(apf_dirx, apf_diry, navdataval)
 			apf_blocked = myLidar.lidar_limits_direction(xp, yp, (apf_dirx, apf_diry), ox, oy)
-			logging.debug("\t\t" + str((apf_pot, apf_dirx, apf_diry, apf_blocked)))
-		logging.debug("\tBrushfire known vect:")
-		known = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
-		known.print()
+			navdataval = navData.build_info("blocked", apf_blocked, navData.get_value(apf_dirx, apf_diry))
+			navData.set_value(apf_dirx, apf_diry, navdataval)
+		navData.print()
 
 		# We now check status
 		# if (stuck or path_blocked) and not aborted:

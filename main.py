@@ -143,6 +143,12 @@ def main():
 		if show_animation:
 			MyGraf.step(xp, yp, graf_delay)
 
+		if stuck:
+			# APF failed!
+			print("Step xp: " + str(xp) + " | yp: " + str(yp))
+			print("APF navigation failed... Not much more to do.")
+			aborted = True
+
 		# We now check status
 		# if (stuck or path_blocked) and not aborted:
 		# 	print("Map when switching from APF to Follow")

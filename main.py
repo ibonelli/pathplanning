@@ -22,6 +22,11 @@ show_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
 motion_model_limit = config.general['motion_model_limit']
 lidar_steps = config.general['lidar_steps']
+grid_size = config.general['grid_size']
+robot_radius = config.general['robot_radius']
+vision_limit = config.general['vision_limit']
+brushfire_radius_explore = config.general['brushfire_radius_explore']
+brushfire_radius_to_evaluate = config.general['brushfire_radius_to_evaluate']
 
 def main():
 	# Cargando el archivo de descripcion del mundo a recorrer
@@ -32,10 +37,6 @@ def main():
 		fname = sys.argv[1]
 
 	print("potential_field_planning start")
-
-	grid_size = 1  # potential grid size [m]
-	robot_radius = 5.0  # robot radius [m]
-	vision_limit = 15
 
 	ob = np.loadtxt(fname)
 	flx = ob[:, 0]  # file x position list [m]
@@ -120,7 +121,7 @@ def main():
 			myNavWave.show_map("debug")
 			col = myDeliverative.is_path_blocked()
 			if col:
-				new_dir = myDeliverative.decide_status(myNavWave.get_map())
+				new_dir = myDeliverative.decide_status(myNavWave)
 				logging.debug("===================================")
 				logging.debug("FOLLOWING WALL AND PATH BLOCKED | New direction: " + str(new_dir))
 				logging.debug("===================================")
@@ -148,6 +149,18 @@ def main():
 			print("Step xp: " + str(xp) + " | yp: " + str(yp))
 			print("APF navigation failed... Not much more to do.")
 			aborted = True
+
+		# Debugging
+		logging.debug("Decision making values -------------------------")
+		logging.debug("\tApf vect:")
+		pvec = myNavigation.get_pvec()
+		for p in pvec:
+			apf_pot, apf_dirx, apf_diry, apf_blocked = p.get()
+			apf_blocked = myLidar.lidar_limits_direction(xp, yp, (apf_dirx, apf_diry), ox, oy)
+			logging.debug("\t\t" + str((apf_pot, apf_dirx, apf_diry, apf_blocked)))
+		logging.debug("\tBrushfire known vect:")
+		known = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
+		known.print()
 
 		# We now check status
 		# if (stuck or path_blocked) and not aborted:

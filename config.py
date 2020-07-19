@@ -8,6 +8,11 @@ general = dict(
 	motion_model_limit = 3,
 	lidar_steps = 8,
 	wall_detection_threshold = 3,
+	grid_size = 1,       # potential grid size [m]
+	robot_radius = 5.0,  # robot radius [m]
+	vision_limit = 15,   # Lidar vision limit
+	brushfire_radius_explore = 15,
+	brushfire_radius_to_evaluate = 4,
 )
 
 logging.basicConfig(filename=general['logFile'],

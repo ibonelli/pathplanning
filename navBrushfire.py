@@ -4,6 +4,7 @@ import logging
 
 # Modules
 from navMap import Map
+from navData import NavigationData
 
 # START Class Map ------------------------------------------------
 class BrushfireNavigation:
@@ -25,10 +26,10 @@ class BrushfireNavigation:
 
 	def set_params(self, reso, gx, gy, ox, oy, vlimit):
 		self.reso = reso
-		self.minx = min(ox)
-		self.miny = min(oy)
-		self.maxx = max(ox)
-		self.maxy = max(oy)
+		self.minx = int(round(min(ox),0))
+		self.miny = int(round(min(oy),0))
+		self.maxx = int(round(max(ox),0))
+		self.maxy = int(round(max(oy),0))
 		if gx > self.maxx:
 			self.maxx = gx
 		if gy > self.maxy:
@@ -37,6 +38,11 @@ class BrushfireNavigation:
 		self.yw = int(round((self.maxy - self.miny) / self.reso)) + 1
 		self.vlimit = vlimit
 		self.map = None
+
+	def show_limits(self):
+		print("Limits:")
+		print("\tminx: " + str(self.minx) + " | miny: " + str(self.miny))
+		print("\tmaxx: " + str(self.maxx) + " | maxy: " + str(self.maxy))
 
 	def get_map(self):
 		return self.map
@@ -122,13 +128,56 @@ class BrushfireNavigation:
 		#self.show_map()
 		return myMap[xp][yp]
 
-	def get_motion_potentials(self, myMap, xp, yp):
+	def known_areas(self, xp, yp, rexplore, reval, navData=None):
+		if navData==None:
+			navData=NavigationData()
+		# Indices must be integers, not numpy.float64
+		xp = int(round(xp,0))
+		yp = int(round(yp,0))
+		for d in self.motion:
+			posx = xp + d[0] * rexplore
+			posy = yp + d[1] * rexplore
+			rawval = self.known_point(posx, posy, reval)
+			navdataval = navData.build_info("known", rawval, navData.get_value(d[0], d[1]))
+			navData.set_value(d[0], d[1], navdataval)
+		return navData
+
+	def known_point(self, xp, yp, radius):
+		# We get limits
+		xinf = xp - radius
+		if xinf < self.minx:
+			xinf = self.minx
+		xsup = xp + radius
+		if xsup > self.maxx:
+			xsup = self.maxx
+		yinf = yp - radius
+		if yinf > self.miny:
+			yinf = self.miny
+		ysup = yp + radius
+		if ysup > self.maxy:
+			ysup = self.maxy
+		# We stablish parameters
+		rangex = xsup - xinf
+		rangey = ysup - yinf
+		total = rangex * rangey
+		if total !=0:
+			known_points = 0
+			# Now we evaluate
+			for i in range(rangex):
+				for j in range(rangey):
+					if self.map[xinf+i][yinf+j] != 0:
+						known_points+=1
+			ret = known_points / total
+		else:
+			ret = 1
+		return ret
+
+	def get_motion_potentials(self, xp, yp):
 		pot = []
 		for d in self.motion:
 			posx = xp + d[0]
 			posy = yp + d[1]
-			pot.append((d[0], d[1], myMap[posx][posy]))
-
+			pot.append((d[0], d[1], self.map[posx][posy]))
 		return pot
 
 	def print(self, msg, mode):
@@ -136,3 +185,26 @@ class BrushfireNavigation:
 			logging.debug(msg)
 		elif mode == "console":
 			print(msg)
+
+	def get_map_params(self):
+		mapdata = {
+			"reso": self.reso,
+			"minx": self.minx,
+			"miny": self.miny,
+			"maxx": self.maxx,
+			"maxy": self.maxy,
+			"xw": self.xw,
+			"yw": self.yw,
+			"vlimit": self.vlimit,
+			}
+		return mapdata
+
+	def set_map_params(self, mapdata):
+		self.reso = mapdata["reso"]
+		self.minx = mapdata["minx"]
+		self.miny = mapdata["miny"]
+		self.maxx = mapdata["maxx"]
+		self.maxy = mapdata["maxy"]
+		self.xw = mapdata["xw"]
+		self.yw = mapdata["yw"]
+		self.vlimit = mapdata["vlimit"]

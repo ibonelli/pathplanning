@@ -11,8 +11,6 @@ from navBrushfire import BrushfireNavigation
 
 lidar_steps = config.general['lidar_steps']
 wall_detection_threshold = config.general['wall_detection_threshold']
-brushfire_radius_explore = config.general['brushfire_radius_explore']
-brushfire_radius_to_evaluate = config.general['brushfire_radius_to_evaluate']
 
 # START Class DelivNavigation --------------------------------------------
 class DeliverativeNavigation:
@@ -31,7 +29,8 @@ class DeliverativeNavigation:
 		self.path = []
 		self.dir = []
 		self.nav = []
-		self.pot = []
+		self.pot = None
+		self.nav_data = []
 		self.trap_dir = None
 		self.following_wall = None
 		self.last_apf_direction = None
@@ -50,14 +49,23 @@ class DeliverativeNavigation:
 	def get_map_obj(self):
 		return self.map
 
-	def set_step(self, step, direction, nav, pot):
+	def set_step(self, step, direction, nav, pot, pvec, navData):
 		stepx = int(round(step[0],0))
 		stepy = int(round(step[1],0))
 		self.path.append((stepx, stepy))
 		self.dir.append(direction)
 		self.nav.append(nav)
-		self.nav.append(pot)
+		for apf_pot, apf_dirx, apf_diry in pvec:
+			navdataval = navData.build_info("pmap", apf_pot, navData.get_value(apf_dirx, apf_diry))
+			navData.set_value(apf_dirx, apf_diry, navdataval)
+			myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
+			ox, oy = self.map.get_objects()
+			apf_blocked = myLidar.lidar_limits_direction(stepx, stepy, (apf_dirx, apf_diry), ox, oy)
+			navdataval = navData.build_info("blocked", apf_blocked, navData.get_value(apf_dirx, apf_diry))
+			navData.set_value(apf_dirx, apf_diry, navdataval)
+		self.nav_data.append(navData)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav))
+		navData.print()
 
 	def set_status(self, stuck, path_blocked, path_blocked_dir):
 		self.stuck = stuck

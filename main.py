@@ -83,7 +83,8 @@ def main():
 	rd, rx, ry = [d], [sx], [sy]
 	nav = "apf"
 	d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
-	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot)
+	navData = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
+	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), navData)
 	rd.append(d)
 	rx.append(xp)
 	ry.append(yp)
@@ -113,7 +114,8 @@ def main():
 			pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 			myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
-			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot)
+			navData = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
+			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), navData)
 			myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 			dirx, diry, limitx, limity, nav = myDeliverative.unblock_status(nav)
 			is_following_wall = myDeliverative.is_following_wall(myNavWave.get_map())
@@ -150,17 +152,6 @@ def main():
 			print("Step xp: " + str(xp) + " | yp: " + str(yp))
 			print("APF navigation failed... Not much more to do.")
 			aborted = True
-
-		# Debugging
-		navData = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
-		pvec = myNavigation.get_pvec()
-		for apf_pot, apf_dirx, apf_diry in pvec:
-			navdataval = navData.build_info("pmap", apf_pot, navData.get_value(apf_dirx, apf_diry))
-			navData.set_value(apf_dirx, apf_diry, navdataval)
-			apf_blocked = myLidar.lidar_limits_direction(xp, yp, (apf_dirx, apf_diry), ox, oy)
-			navdataval = navData.build_info("blocked", apf_blocked, navData.get_value(apf_dirx, apf_diry))
-			navData.set_value(apf_dirx, apf_diry, navdataval)
-		navData.print()
 
 		# We now check status
 		# if (stuck or path_blocked) and not aborted:

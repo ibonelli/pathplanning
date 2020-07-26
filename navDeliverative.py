@@ -7,6 +7,7 @@ import sys
 from navMap import Map
 from navTrapNavigation import TrapNavigation
 from navLidar import Lidar
+from navLidarLimit import LidarLimit
 from navBrushfire import BrushfireNavigation
 
 lidar_steps = config.general['lidar_steps']
@@ -49,7 +50,7 @@ class DeliverativeNavigation:
 	def get_map_obj(self):
 		return self.map
 
-	def set_step(self, step, direction, nav, pot, pvec, navData):
+	def set_step(self, step, direction, nav, pot, pvec, limits, navData):
 		stepx = int(round(step[0],0))
 		stepy = int(round(step[1],0))
 		self.path.append((stepx, stepy))
@@ -58,11 +59,12 @@ class DeliverativeNavigation:
 		for apf_pot, apf_dirx, apf_diry in pvec:
 			navdataval = navData.build_info("pmap", apf_pot, navData.get_value(apf_dirx, apf_diry))
 			navData.set_value(apf_dirx, apf_diry, navdataval)
-			myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
-			ox, oy = self.map.get_objects()
-			apf_blocked = myLidar.lidar_limits_direction(stepx, stepy, (apf_dirx, apf_diry), ox, oy)
-			navdataval = navData.build_info("blocked", apf_blocked, navData.get_value(apf_dirx, apf_diry))
-			navData.set_value(apf_dirx, apf_diry, navdataval)
+			myLimits = LidarLimit.get_all(limits)
+			print(myLimits)
+			#ox, oy = self.map.get_objects()
+			#blocked = myLidar.lidar_limits_direction(stepx, stepy, (apf_dirx, apf_diry), ox, oy)
+			#navdataval = navData.build_info("blocked", blocked, navData.get_value(apf_dirx, apf_diry))
+			#navData.set_value(apf_dirx, apf_diry, navdataval)
 		self.nav_data.append(navData)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav))
 		navData.print()

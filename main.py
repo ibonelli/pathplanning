@@ -68,7 +68,7 @@ def main():
 	pot = myNavWave.update_map(myNavWave.get_map(), sx, sy, limits)
 	trap = TrapNavigation(grid_size, robot_radius, vision_limit)
 	myDeliverative = DeliverativeNavigation(robot_radius, vision_limit, grid_size, gx, gy, myMap)
-	myDeliverative.set_map(myLimits.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
+	myDeliverative.set_map(LidarLimit.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
 	myNavFollow = FollowPath(grid_size, gx, gy)
 
 	# Start with a clean motion model
@@ -84,7 +84,7 @@ def main():
 	nav = "apf"
 	d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
 	navData = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
-	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), navData)
+	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, navData)
 	rd.append(d)
 	rx.append(xp)
 	ry.append(yp)
@@ -95,7 +95,7 @@ def main():
 
 	# Map update and trap detection
 	limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
-	myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
+	myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 	pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 	path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 	aborted = myDeliverative.check_limits(xp, yp)
@@ -115,8 +115,8 @@ def main():
 			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 			myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
 			navData = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
-			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), navData)
-			myDeliverative.set_map(myLimits.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
+			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, navData)
+			myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 			dirx, diry, limitx, limity, nav = myDeliverative.unblock_status(nav)
 			is_following_wall = myDeliverative.is_following_wall(myNavWave.get_map())
 

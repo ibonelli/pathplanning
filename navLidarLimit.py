@@ -11,7 +11,8 @@ class LidarLimit:
 		self.debug_limit_fname = "limit.png"
 
 	# From the LIDAR list we get obstacles
-	def get_limits(self, limit):
+	@staticmethod
+	def get_limits(limit):
 		oi_list = []
 
 		for l in limit:
@@ -21,7 +22,8 @@ class LidarLimit:
 		return oi_list
 
 	# From the LIDAR list we get best possible paths
-	def get_freepath(self, limit):
+	@staticmethod
+	def get_freepath(limit):
 		fp_list = []
 
 		for l in limit:
@@ -31,7 +33,8 @@ class LidarLimit:
 		return fp_list
 
 	# From the LIDAR we list all seen directions
-	def get_all(self, limit):
+	@staticmethod
+	def get_all(limit):
 		oi_list = []
 
 		for l in limit:
@@ -40,8 +43,8 @@ class LidarLimit:
 		return oi_list
 
 	# Limits to map
-	def limit2map(self, omap, limit):
-		#limit = self.get_limits(path_limit)
+	@staticmethod
+	def limit2map(omap, limit):
 		if (len(limit) >= 1):
 			for l in limit:
 				ox = int(round(l[0],0))

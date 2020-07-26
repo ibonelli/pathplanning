@@ -71,5 +71,6 @@ class NavigationData:
 		else:
 			return (2 * math.pi + ang)
 
+	# Internally we go from 0 to 2, but values go from -1 to 1
 	def dir2self(self, dirval):
 		return dirval[0]+1, dirval[1]+1

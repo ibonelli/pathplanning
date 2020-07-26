@@ -32,8 +32,7 @@ class Lidar:
 	# Fetch limits
 	def fetch_limits(self, x, y, ox, oy, mode):
 		limits = self.lidar(x, y, ox, oy, mode)
-		MyLimit = LidarLimit()
-		oi_list = MyLimit.get_limits(limits)
+		oi_list = LidarLimit.get_limits(limits)
 		p = LidarPoint()
 		oi = p.get_coord_list(oi_list)
 		return oi
@@ -41,8 +40,7 @@ class Lidar:
 	# Fetch limits
 	def fetch_all(self, x, y, ox, oy, mode):
 		limits = self.lidar(x, y, ox, oy, mode)
-		MyLimit = LidarLimit()
-		oi_list = MyLimit.get_all(limits)
+		oi_list = LidarLimit.get_all(limits)
 		p = LidarPoint()
 		oi = p.get_coords_point_data(oi_list)
 		return oi

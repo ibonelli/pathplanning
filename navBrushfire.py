@@ -3,6 +3,7 @@ import numpy as np
 import logging
 
 # Modules
+import config
 from navMap import Map
 from navData import NavigationData
 
@@ -15,14 +16,7 @@ class BrushfireNavigation:
 		self.xw = self.yw = None
 		self.vlimit = None
 		self.map = None
-		self.motion = [[1, 0],
-					  [0, 1],
-					  [-1, 0],
-					  [0, -1],
-					  [-1, -1],
-					  [-1, 1],
-					  [1, -1],
-					  [1, 1]]
+		self.motion = config.general['robot_motion_model']
 
 	def set_params(self, reso, gx, gy, ox, oy, vlimit):
 		self.reso = reso

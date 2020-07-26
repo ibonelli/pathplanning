@@ -1,9 +1,10 @@
-import config
 import math
 import numpy as np
 import logging
 import sys
 
+# Modules
+import config
 from navMap import Map
 from navTrapNavigation import TrapNavigation
 from navLidar import Lidar
@@ -59,12 +60,9 @@ class DeliverativeNavigation:
 		for apf_pot, apf_dirx, apf_diry in pvec:
 			navdataval = navData.build_info("pmap", apf_pot, navData.get_value(apf_dirx, apf_diry))
 			navData.set_value(apf_dirx, apf_diry, navdataval)
-			myLimits = LidarLimit.get_all(limits)
-			print(myLimits)
-			#ox, oy = self.map.get_objects()
-			#blocked = myLidar.lidar_limits_direction(stepx, stepy, (apf_dirx, apf_diry), ox, oy)
-			#navdataval = navData.build_info("blocked", blocked, navData.get_value(apf_dirx, apf_diry))
-			#navData.set_value(apf_dirx, apf_diry, navdataval)
+			myLimits = LidarLimit.get_limit_by_direction(limits, apf_dirx, apf_diry, 3)
+			navdataval = navData.build_info("blocked", myLimits['col'], navData.get_value(apf_dirx, apf_diry))
+			navData.set_value(apf_dirx, apf_diry, navdataval)
 		self.nav_data.append(navData)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav))
 		navData.print()

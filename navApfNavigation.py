@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import logging
 
 # Modules
+import config
 from navMap import Map
 
 class ApfNavigation:
@@ -21,7 +22,7 @@ class ApfNavigation:
 		# Define model constants
 		self.KP = 5.0  # attractive potential gain
 		self.ETA = 100.0  # repulsive potential gain
-		self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
+		self.motion = config.general['robot_motion_model']
 		# Define object properties
 		self.reso = reso
 		self.rr = rr
@@ -103,14 +104,7 @@ class ApfNavigation:
 		self.motion = motion
 
 	def reset_motion_model(self):
-		self.motion = [[1, 0],
-					  [0, 1],
-					  [-1, 0],
-					  [0, -1],
-					  [-1, -1],
-					  [-1, 1],
-					  [1, -1],
-					  [1, 1]]
+		self.motion = config.general['robot_motion_model']
 
 	def decide_status(self,rd):
 		## Checking if we get stuck...

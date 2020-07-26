@@ -3,7 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 import json
+
+# Modules
+import config
 from navLidarPoint import LidarPoint
+from navData import NavigationData
 
 # START Class navGrafLimit ----------------------------------------------
 class LidarLimit:
@@ -41,6 +45,28 @@ class LidarLimit:
 			oi_list.append(l)
 
 		return oi_list
+
+	# From the LIDAR we get a particular direction by angle
+	@staticmethod
+	def get_limit_by_angle(limit, angle, precision):
+		val = None
+
+		for l in limit:
+			angr = round(angle, precision)
+			angl = round(l['angle'], precision)
+			if angr == angl:
+				val = l
+
+		if val == None:
+			logging.error("Angle NOT found | angle: " + str(angr) + " | at: " + str(limit))
+
+		return val
+
+	# From the LIDAR we get a particular direction by angle
+	@staticmethod
+	def get_limit_by_direction(limit, dx, dy, precision):
+		angle = round(PathWindow.pangles(math.atan2(dx, dy)),precision)
+		return LidarLimit.get_limit_by_angle(limit, angle, precision)
 
 	# Limits to map
 	@staticmethod
@@ -187,13 +213,30 @@ class LidarLimit:
 			limits.append(p.from_dict(l))
 		return saved_limits["x"], saved_limits["y"], limits
 
+	@staticmethod
+	def angle2direction(angle, precision):
+		# Dictionary from ang to directions
+		ht = {}
+		val = None
+
+		for d in config.general['robot_motion_model']:
+			ang = round(PathWindow.pangles(math.atan2(d[1], d[0])),precision)
+			ht[str(ang)] = (d[0], d[1])
+
+		ang = round(angle, precision)
+		try:
+			val = ht[str(ang)]
+		except:
+			logging.error("Angle NOT found | l_ang: " + str(ang) + " | at: " + str(ht))
+
+		return val
+
 # START Class PathWindow -----------------------------------------------
 class PathWindow:
 	def __init__(self):
 		self.blocked = False
 		self.start = 0
 		self.end = 0
-
 	# From the LIDAR list we get obstacles windows
 	def print(self, mode=None):
 		msg = "\t\tBlocked: " + str(self.blocked) + " | Start: " + str(math.degrees(self.pangles(self.start))) + " | End: " + str(math.degrees(self.pangles(self.end)))
@@ -204,7 +247,8 @@ class PathWindow:
 
 	# For the logic to work we need to have positive angles
 	# But atan2() returns negatives as well
-	def pangles(self,ang):
+	@staticmethod
+	def pangles(ang):
 		if ang >= 0:
 			return ang
 		else:

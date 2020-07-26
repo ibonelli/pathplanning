@@ -2,9 +2,8 @@ import math
 import numpy as np
 import logging
 
-import config
-
 # Modules
+import config
 from navLidar import Lidar
 from navLidarLimit import LidarLimit, PathWindow
 
@@ -22,7 +21,7 @@ class TrapNavigation:
 		lidar_steps = config.general['lidar_steps']
 		self.angle_step = lidar_steps
 		# ----------------
-		self.motion = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]]
+		self.motion = config.general['robot_motion_model']
 		self.path_blocked_count = 0
 		self.path_blocked_limit = 3
 		self.path_blocked_dir = np.zeros(2)

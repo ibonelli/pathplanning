@@ -52,8 +52,8 @@ class LidarLimit:
 		val = None
 
 		for l in limit:
-			angr = round(angle, precision)
-			angl = round(l['angle'], precision)
+			angr = round(PathWindow.pangles(angle), precision)
+			angl = round(PathWindow.pangles(l['angle']), precision)
 			if angr == angl:
 				val = l
 
@@ -212,24 +212,6 @@ class LidarLimit:
 			p = LidarPoint()
 			limits.append(p.from_dict(l))
 		return saved_limits["x"], saved_limits["y"], limits
-
-	@staticmethod
-	def angle2direction(angle, precision):
-		# Dictionary from ang to directions
-		ht = {}
-		val = None
-
-		for d in config.general['robot_motion_model']:
-			ang = round(PathWindow.pangles(math.atan2(d[1], d[0])),precision)
-			ht[str(ang)] = (d[0], d[1])
-
-		ang = round(angle, precision)
-		try:
-			val = ht[str(ang)]
-		except:
-			logging.error("Angle NOT found | l_ang: " + str(ang) + " | at: " + str(ht))
-
-		return val
 
 # START Class PathWindow -----------------------------------------------
 class PathWindow:

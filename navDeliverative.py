@@ -302,7 +302,8 @@ class DeliverativeNavigation:
 				if col2:
 					new_nav = "follow"
 				else:
-					# We build direction (as 1s instead of angles)
+					# We build direction (as 1s & 0s instead of angles)
+					# This can be used as an angle2direction() method.
 					xi = int(round(math.cos(second_ang_to_check)))
 					yi = int(round(math.sin(second_ang_to_check)))
 					# We calculate new goal

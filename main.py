@@ -26,8 +26,6 @@ lidar_steps = config.general['lidar_steps']
 grid_size = config.general['grid_size']
 robot_radius = config.general['robot_radius']
 vision_limit = config.general['vision_limit']
-brushfire_radius_explore = config.general['brushfire_radius_explore']
-brushfire_radius_to_evaluate = config.general['brushfire_radius_to_evaluate']
 
 def main():
 	# Cargando el archivo de descripcion del mundo a recorrer
@@ -83,15 +81,6 @@ def main():
 	rd, rx, ry = [d], [sx], [sy]
 	nav = "apf"
 	d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, True)
-	navData = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
-	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, navData)
-	rd.append(d)
-	rx.append(xp)
-	ry.append(yp)
-	if show_animation:
-		MyGraf.draw_heatmap(myNavigation.get_pmap())
-		MyGraf.show(sx, sy, gx, gy)
-		MyGraf.step(xp, yp, graf_delay)
 
 	# Map update and trap detection
 	limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
@@ -99,6 +88,17 @@ def main():
 	pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 	path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 	aborted = myDeliverative.check_limits(xp, yp)
+
+	# We save the step
+	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, myNavWave)
+	myNavWave.show_map("debug")
+	rd.append(d)
+	rx.append(xp)
+	ry.append(yp)
+	if show_animation:
+		MyGraf.draw_heatmap(myNavigation.get_pmap())
+		MyGraf.show(sx, sy, gx, gy)
+		MyGraf.step(xp, yp, graf_delay)
 
 	# Main navigation loop
 	while d >= grid_size and not aborted:
@@ -114,14 +114,14 @@ def main():
 			pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 			myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
-			navData = myNavWave.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
-			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, navData)
 			myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
+			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, myNavWave)
+			myNavWave.show_map("debug")
 			dirx, diry, limitx, limity, nav = myDeliverative.unblock_status(nav)
 			is_following_wall = myDeliverative.is_following_wall(myNavWave.get_map())
 
 		if is_following_wall:
-			myNavWave.show_map("debug")
+			#myNavWave.show_map("debug")
 			col = myDeliverative.is_path_blocked()
 			if col:
 				new_dir = myDeliverative.decide_status(myNavWave)

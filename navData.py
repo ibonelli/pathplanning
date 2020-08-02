@@ -2,6 +2,17 @@ import logging
 import math
 import json
 
+ordered_list = [
+	(2,1), # 0
+	(2,2), # 45
+	(1,2), # 90
+	(0,2), # 135
+	(0,1), # 180
+	(0,0), # 225
+	(1,0), # 270
+	(2,0), # 315
+	]
+
 # START Class Map ------------------------------------------------
 class NavigationData:
 	def __init__(self):
@@ -46,23 +57,31 @@ class NavigationData:
 		if previous == None:
 			previous = {
 				"blocked": None,
+				"limit_pos": None,
 				"pmap": None,
 				"known": None,
+				"block_size": None,
 				}
 		if datafield == "blocked":
 			previous["blocked"] = data
+		if datafield == "limit_pos":
+			previous["limit_pos"] = data
 		if datafield == "pmap":
 			previous["pmap"] = data
 		if datafield == "known":
 			previous["known"] = data
+		if datafield == "block_size":
+			previous["block_size"] = data
 		return previous
 
 	def print(self):
 		logging.debug("navData:")
-		for j in range(self.size):
-			for i in range(self.size):
-				if not(i==1 and j==1):
-					logging.debug("\tx: " + str(i-1) + " | y: " + str(j-1) + " | dir: " + str(math.degrees(self.pangles(math.atan2(j-1,i-1)))) + " | data: " + str(self.values[i][j]))
+		#for j in range(self.size):
+		#	for i in range(self.size):
+		#		if not(i==1 and j==1):
+		#			logging.debug("\tx: " + str(i-1) + " | y: " + str(j-1) + " | dir: " + str(math.degrees(self.pangles(math.atan2(j-1,i-1)))) + " | data: " + str(self.values[i][j]))
+		for i,j in ordered_list:
+			logging.debug("\tx: " + str(i-1) + " | y: " + str(j-1) + " | dir: " + str(math.degrees(self.pangles(math.atan2(j-1,i-1)))) + " | data: " + str(self.values[i][j]))
 
 	# Using positive angles is more human readable
 	def pangles(self, ang):

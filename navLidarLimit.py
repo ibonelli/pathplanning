@@ -65,7 +65,7 @@ class LidarLimit:
 	# From the LIDAR we get a particular direction by angle
 	@staticmethod
 	def get_limit_by_direction(limit, dx, dy, precision):
-		angle = round(PathWindow.pangles(math.atan2(dx, dy)),precision)
+		angle = round(PathWindow.pangles(math.atan2(dy, dx)),precision)
 		return LidarLimit.get_limit_by_angle(limit, angle, precision)
 
 	# Limits to map

@@ -68,6 +68,7 @@ def main():
 	myDeliverative = DeliverativeNavigation(robot_radius, vision_limit, grid_size, gx, gy, myMap)
 	myDeliverative.set_map(LidarLimit.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
 	myNavFollow = FollowPath(grid_size, gx, gy)
+	myNavWave.show_map("debug")
 
 	# Start with a clean motion model
 	motion_model_count = 0

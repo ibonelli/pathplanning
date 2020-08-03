@@ -12,7 +12,7 @@ general = dict(
 	robot_radius = 5.0,  # robot radius [m]
 	vision_limit = 15,   # Lidar vision limit
 	brushfire_radius_explore = 15,
-	brushfire_radius_to_evaluate = 4,
+	brushfire_radius_to_evaluate = 5,
 	brushfire_neighbors_limit = 5,
 	robot_motion_model = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]],
 )

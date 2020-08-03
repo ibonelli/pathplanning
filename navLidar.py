@@ -67,6 +67,7 @@ class Lidar:
 			rx = x + self.sensor_radius * math.cos(p.angle)
 			ry = y + self.sensor_radius * math.sin(p.angle)
 			r = np.array([rx, ry])
+			#logging.debug("lidar_limits() Call | x: " + str(x) + " | y: " + str(y) + " | r " + str(r) + " | mode: " + mode)
 			p.col,p.r = self.lidar_limits(x, y, r, ox, oy, mode)
 			p.dist = math.sqrt(math.pow(p.r[0]-x,2)+math.pow(p.r[1]-y,2))
 			#self.print("p: " + str(p.angle) + " | x: " + str(p.r[0]-x) + " | y " + str(p.r[1]-y) + " | d: " + str(p.dist), "debug")
@@ -95,11 +96,12 @@ class Lidar:
 	#	   ob: Is the x,y position of each object along with its radius (obs)
 	def lidar_limits(self, x, y, r, ox, oy, mode):
 		oi = []
-		object_size_standard = self.grid_size/2 + 0.001
+		object_size_standard = self.grid_size/2 + 0.01
 		for obx,oby,obs in np.nditer([ox, oy, object_size_standard]):
 			if mode == "object":
 				# We get the object closest to the LIDAR looking angle.
-				intersects, limit = self.detect_collision_object(np.array([x, y]), r, np.array([obx, oby]), obs)
+				robj = np.array([round(r[0]), round(r[1])])
+				intersects, limit = self.detect_collision_object(np.array([x, y]), robj, np.array([obx, oby]), obs)
 			elif mode == "limit":
 				# We get the limit for an specific angle and return collision point.
 				intersects, limit = self.detect_collision_point(np.array([x, y]), r, np.array([obx, oby]), obs)

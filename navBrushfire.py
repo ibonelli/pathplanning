@@ -156,13 +156,13 @@ class BrushfireNavigation:
 					if self.miny <= posy and posy <= self.maxy:
 						rawval = abs(self.known_point(posx, posy, reval))
 					else:
-						rawval = 1
+						rawval = -1
 				else:
-					rawval = 1
+					rawval = -1
 				rawconn = 0
 			else:
 				limx, limy = gottendata['limit_pos']
-				logging.debug("limit_pos: (" + str(limx) + "," + str(limy) + ")")
+				#logging.debug("limit_pos: (" + str(limx) + "," + str(limy) + ")")
 				rawval = self.known_limit(xp, yp, limx, limy)
 				rawconn = self.get_neighbors(limx, limy, limit)
 
@@ -197,8 +197,8 @@ class BrushfireNavigation:
 		return known
 
 	def known_point(self, xp, yp, radius):
-		logging.error("known_point()")
-		logging.error("\txp: " + str(xp) + " | yp: " + str(yp) + " | radius: " + str(radius))
+		#logging.debug("known_point()")
+		#logging.debug("\txp: " + str(xp) + " | yp: " + str(yp) + " | radius: " + str(radius))
 		# We get limits
 		xinf = xp - radius
 		if xinf < self.minx:

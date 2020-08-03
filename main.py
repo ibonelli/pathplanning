@@ -110,13 +110,6 @@ def main():
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
 
 		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
-		# TO DELETE
-		#if (xp == 11 and yp == 11):
-		#	logging.debug("Limit error at (" + str(xp) + "," + str(yp) + ") ------------------")
-		#	logging.debug("\tlimits:")
-		#	for l in limits:
-		#		logging.debug("\t\tl: " + str(l))
-		#	logging.debug("--------- Limit error end ------------------------------------")
 
 		if myDeliverative.check_limits(xp, yp):
 			aborted = True
@@ -164,23 +157,11 @@ def main():
 			print("APF navigation failed... Not much more to do.")
 			aborted = True
 
-		# BORRAR
-		if (xp == 17 and yp == 24):
-			aborted = True
-
 		#if (xp == 35 and yp == 20):
 		#	checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
 		#	limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
 		#	myLimits.save_limit(xp, yp, limits, "limit_x35_y20.json")
 		#	aborted = True
-		#if (xp == 37 and yp == 55):
-		#	checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
-		#	limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-		#	myLimits.save_limit(xp, yp, limits, "limit_x37_y55.json")
-		#if (xp == 37 and yp == 56):
-		#	checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
-		#	limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-		#	myLimits.save_limit(xp, yp, limits, "limit_x37_y56.json")
 
 	if aborted:
 		checkMyLimits = Lidar(grid_size, vision_limit, 36)

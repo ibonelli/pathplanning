@@ -152,13 +152,7 @@ class BrushfireNavigation:
 			if gottendata['blocked'] == False:
 				posx = xp + d[0] * rexplore
 				posy = yp + d[1] * rexplore
-				if self.minx <= posx and posx <= self.maxx:
-					if self.miny <= posy and posy <= self.maxy:
-						rawval = abs(self.known_point(posx, posy, reval))
-					else:
-						rawval = -1
-				else:
-					rawval = -1
+				rawval = abs(self.known_point(posx, posy, reval))
 				rawconn = 0
 			else:
 				limx, limy = gottendata['limit_pos']
@@ -201,17 +195,10 @@ class BrushfireNavigation:
 		#logging.debug("\txp: " + str(xp) + " | yp: " + str(yp) + " | radius: " + str(radius))
 		# We get limits
 		xinf = xp - radius
-		if xinf < self.minx:
-			xinf = self.minx
 		xsup = xp + radius
-		if xsup > self.maxx:
-			xsup = self.maxx
 		yinf = yp - radius
-		if yinf < self.miny:
-			yinf = self.miny
 		ysup = yp + radius
-		if ysup > self.maxy:
-			ysup = self.maxy
+		xinf, yinf, xsup, ysup = self.fix_limits(xinf, yinf, xsup, ysup)
 		# We calculate the value and return it
 		return self.known_point_from_limits(xinf, xsup, yinf, ysup)
 
@@ -222,27 +209,22 @@ class BrushfireNavigation:
 			ysup = max([yp, yl])
 			d = int((ysup - yinf)/2)
 			xinf = xp - d
-			if xinf < self.minx:
-				xinf = self.minx
 			xsup = xp + d
-			if xsup > self.maxx:
-				xsup = self.maxx
+			xinf, yinf, xsup, ysup = self.fix_limits(xinf, yinf, xsup, ysup)
 		elif yp == yl:
 			xinf = min([xp, xl])
 			xsup = max([xp, xl])
 			d = int((xsup - xinf)/2)
 			yinf = yp - d
-			if yinf < self.miny:
-				yinf = self.miny
 			ysup = yp + d
-			if ysup < self.maxy:
-				ysup = self.maxy
+			xinf, yinf, xsup, ysup = self.fix_limits(xinf, yinf, xsup, ysup)
 		# We are in a diagonal
 		else:
 			xinf = min([xp, xl])
 			xsup = max([xp, xl])
 			yinf = min([yp, yl])
 			ysup = max([yp, yl])
+			xinf, yinf, xsup, ysup = self.fix_limits(xinf, yinf, xsup, ysup)
 		# We calculate the value and return it
 		return self.known_point_from_limits(xinf, xsup, yinf, ysup)
 
@@ -282,6 +264,17 @@ class BrushfireNavigation:
 		else:
 			to_return = 0
 		return to_return
+
+	def fix_limits(self, xinf, yinf, xsup, ysup):
+		if xinf < self.minx:
+			xinf = self.minx
+		if yinf < self.miny:
+			yinf = self.miny
+		if xsup > self.maxx:
+			xsup = self.maxx
+		if ysup > self.maxy:
+			ysup = self.maxy
+		return xinf, yinf, xsup, ysup
 
 	def get_motion_potentials(self, xp, yp):
 		pot = []

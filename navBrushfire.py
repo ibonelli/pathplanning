@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import logging
-import traceback
 
 # Modules
 import config
@@ -182,12 +181,7 @@ class BrushfireNavigation:
 		else:
 			logging.error("Wrong limits for known_point_from_limits()")
 			logging.error("\txsup: " + str(xsup) + " | xinf: " + str(xinf) + " | ysup: " + str(ysup) + " | yinf: " + str(yinf))
-			logging.error("\ttraceback: ")
-			i = 0
-			for stack in traceback.extract_stack():
-				logging.error("\t\t(" + str(i) + "): " + str(stack))
-				i += 1
-			known = None
+			known = -1
 		return known
 
 	def known_point(self, xp, yp, radius):

@@ -238,28 +238,42 @@ class BrushfireNavigation:
 		# We calculate the value and return it
 		return self.known_point_from_limits(xinf, xsup, yinf, ysup)
 
-	def get_neighbors(self, xl, yl, limit):
-		logging.debug("get_neighbors() ---------------------------------")
-		neighbors = []
-		for xy in self.motion:
-			dx, dy = xy
-			xp = xl+dx
-			yp = yl+dy
-			if self.minx >= xp and xp >= self.maxx:
-				if self.miny >= yp and yp >= self.maxy:
-					if self.map[xp][yo] == 1:
-						neighbors.append((xl+dx, yl+dy))
-		count = len(neighbors)
-		logging.debug("\tneighbors: " + str(count))
-		if count > 0:
-			for n in neighbors:
-				x, y = n
-				childs = self.get_neighbors(x, y, limit-1)
-		else:
+	def get_neighbors(self, xl, yl, limit, found=None):
+		if limit > 0:
+			#logging.debug("get_neighbors() ---------------------------------")
+			#logging.debug("\tlimit: " + str(limit))
+			neighbors = []
+			for xy in self.motion:
+				dx, dy = xy
+				xp = xl+dx
+				yp = yl+dy
+				if self.minx <= xp and xp <= self.maxx:
+					if self.miny <= yp and yp <= self.maxy:
+						if self.map[xp][yp] == 1:
+							# We need to discard prior found points
+							if found is not None:
+								if not(xp == found[0] and yp == found[1]):
+									neighbors.append((xl+dx, yl+dy))
+							else:
+								neighbors.append((xl+dx, yl+dy))
+			if found is None:
+				# This is not a child!
+				# Adding one as even if you don't have neighbors you have the explored point
+				count = len(neighbors) + 1
+			else:
+				count = len(neighbors)
+			#logging.debug("\tneighbors: " + str(count))
 			childs = 0
-		logging.debug("\tchilds: " + str(childs))
-		logging.debug("----------------------------- END get_neighbors()")
-		return count+childs
+			if count > 0:
+				for n in neighbors:
+					x, y = n
+					childs = self.get_neighbors(x, y, limit-1, (xl, yl))
+			#logging.debug("\tchilds: " + str(childs))
+			#logging.debug("----------------------------- END get_neighbors()")
+			to_return = count+childs
+		else:
+			to_return = 0
+		return to_return
 
 	def get_motion_potentials(self, xp, yp):
 		pot = []

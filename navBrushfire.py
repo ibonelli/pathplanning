@@ -152,7 +152,13 @@ class BrushfireNavigation:
 			if gottendata['blocked'] == False:
 				posx = xp + d[0] * rexplore
 				posy = yp + d[1] * rexplore
-				rawval = abs(self.known_point(posx, posy, reval))
+				if self.minx <= posx and posx <= self.maxx:
+					if self.miny <= posy and posy <= self.maxy:
+						rawval = abs(self.known_point(posx, posy, reval))
+					else:
+						rawval = 1
+				else:
+					rawval = 1
 				rawconn = 0
 			else:
 				limx, limy = gottendata['limit_pos']
@@ -180,7 +186,7 @@ class BrushfireNavigation:
 						known_points+=1
 			known = known_points / total
 		else:
-			logging.error("Wrong limits for known_point()")
+			logging.error("Wrong limits for known_point_from_limits()")
 			logging.error("\txsup: " + str(xsup) + " | xinf: " + str(xinf) + " | ysup: " + str(ysup) + " | yinf: " + str(yinf))
 			logging.error("\ttraceback: ")
 			i = 0
@@ -191,6 +197,8 @@ class BrushfireNavigation:
 		return known
 
 	def known_point(self, xp, yp, radius):
+		logging.error("known_point()")
+		logging.error("\txp: " + str(xp) + " | yp: " + str(yp) + " | radius: " + str(radius))
 		# We get limits
 		xinf = xp - radius
 		if xinf < self.minx:
@@ -199,7 +207,7 @@ class BrushfireNavigation:
 		if xsup > self.maxx:
 			xsup = self.maxx
 		yinf = yp - radius
-		if yinf > self.miny:
+		if yinf < self.miny:
 			yinf = self.miny
 		ysup = yp + radius
 		if ysup > self.maxy:

@@ -69,7 +69,7 @@ class BrushfireNavigation:
 				try:
 					msg = msg + " " + str('{0:02d}').format(int(self.map[i][int(self.maxy)-j]))
 				except:
-					self.print("Error show_map() | maxx : " + str(self.maxx) + " | maxy: " + str(self.maxy), mode)
+					self.print("Error show_map() | maxx : " + str(self.maxx) + " | maxy: " + str(self.maxy) + " | i: " + str(i) + " | j: " + str(j), mode)
 			msg = msg + " | " + str('{0:02d}').format(int(self.maxy)-j)
 			self.print(msg, mode)
 		self.print("   +----------------------------------------", mode)

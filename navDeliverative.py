@@ -24,9 +24,6 @@ class DeliverativeNavigation:
 		self.rr = robot_radius
 		self.vision_limit = vision_limit
 		self.grid_size = grid_size
-		self.stuck = False
-		self.path_blocked = False
-		self.path_blocked_dir = None
 		self.org_goal = (gx, gy)
 		self.new_goal = None
 		self.map = myMap
@@ -81,11 +78,6 @@ class DeliverativeNavigation:
 		self.nav_data.append(navData)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav))
 		navData.print()
-
-	def set_status(self, stuck, path_blocked, path_blocked_dir):
-		self.stuck = stuck
-		self.path_blocked = path_blocked
-		self.path_blocked_dir = path_blocked_dir
 
 	def check_limits(self, xp, yp):
 		abort = False

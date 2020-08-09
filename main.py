@@ -87,7 +87,6 @@ def main():
 	limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
 	myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 	pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
-	path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
 	aborted = myDeliverative.check_limits(xp, yp)
 
 	# We save the step
@@ -115,8 +114,6 @@ def main():
 			aborted = True
 		else:
 			pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
-			path_blocked, path_blocked_dir, wall_detected = trap.detect(myDeliverative.get_map_obj(), xp, yp, curdirx, curdiry, gx, gy)
-			myDeliverative.set_status(stuck, path_blocked, path_blocked_dir)
 			myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, myNavWave)
 			myNavWave.show_map("debug")

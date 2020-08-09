@@ -178,6 +178,8 @@ class BrushfireNavigation:
 					if self.map[xinf+i][yinf+j] != 0:
 						known_points+=1
 			known = known_points / total
+		elif rangex == 1 or rangey == 1:
+			known = 1
 		else:
 			logging.error("Wrong limits for known_point_from_limits()")
 			logging.error("\txsup: " + str(xsup) + " | xinf: " + str(xinf) + " | ysup: " + str(ysup) + " | yinf: " + str(yinf))

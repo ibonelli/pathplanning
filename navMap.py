@@ -13,10 +13,10 @@ class Map:
 
 	def set_params(self, reso, gx, gy, ox, oy):
 		self.reso = reso
-		self.minx = min(ox)
-		self.miny = min(oy)
-		self.maxx = max(ox)
-		self.maxy = max(oy)
+		self.minx = int(round(min(ox),0))
+		self.miny = int(round(min(oy),0))
+		self.maxx = int(round(max(ox),0))
+		self.maxy = int(round(max(oy),0))
 		if gx > self.maxx:
 			self.maxx = gx
 		if gy > self.maxy:

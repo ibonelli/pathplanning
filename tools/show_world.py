@@ -45,14 +45,14 @@ def main():
 	oy = []  # obstacle y position list [m]
 
 	ly,lx = csv.shape
-	#print("lx: " + str(lx))
-	#print("ly: " + str(ly))
+	#print("lx: " + str(lx) + " | ly: " + str(ly))
 
 	for iy,ix in np.ndindex(csv.shape):
+		#print("ix: " + str(ix) + " | iy: " + str(iy))
 		if int(csv[iy,ix]) == 1:
 			ox.append(ix)
-			oy.append(ly-iy)   # Las coordenadas arrancan en la esquina izquierda
-			output = np.vstack([output, np.array([ix, ly-iy])])
+			oy.append(ly-iy-1)   # Las coordenadas arrancan en la esquina izquierda
+			output = np.vstack([output, np.array([ix, ly-iy-1])])
 
 	# Save converted file
 	np.savetxt(fname + str(".csv"), output, fmt='%d',)

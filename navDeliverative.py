@@ -268,6 +268,7 @@ class DeliverativeNavigation:
 
 		return chosen_dir
 
+	# Can set new goal if there is a block
 	def unblock_status(self, nav):
 		new_nav = nav
 		newgx = self.org_goal[0]

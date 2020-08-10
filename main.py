@@ -121,17 +121,16 @@ def main():
 			dirx, diry, limitx, limity, nav = myDeliverative.unblock_status(nav)
 			is_following_wall = myDeliverative.is_following_wall(myNavWave.get_map())
 
-		if is_following_wall:
-			#myNavWave.show_map("debug")
-			col = myDeliverative.is_path_blocked()
-			if col:
-				new_dir = myDeliverative.decide_status(myNavWave)
-				logging.debug("===================================")
-				logging.debug("FOLLOWING WALL AND PATH BLOCKED | New direction: " + str(new_dir))
-				logging.debug("===================================")
-				if new_dir != None:
-					nav = "follow"
-					dirx, diry, limitx, limity = myDeliverative.choose_dir(xp, yp)
+		if myDeliverative.is_path_blocked():
+			new_dir = myDeliverative.decide_status_v2(myNavWave)
+			#new_dir = myDeliverative.decide_status(myNavWave)
+			logging.debug("===================================")
+			logging.debug("FOLLOWING WALL OR TRAP DETECTED AND PATH IS BLOCKED | New direction: " + str(new_dir))
+			logging.debug("===================================")
+			if new_dir != None:
+				nav = "follow"
+				dirx, diry = new_dir
+				limitx, limity = myDeliverative.get_new_limits(dirx, diry)
 
 		if nav == "follow":
 			myNavFollow.set_limit(limitx, limity)

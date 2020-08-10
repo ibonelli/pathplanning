@@ -17,6 +17,9 @@ wall_detection_threshold = config.general['wall_detection_threshold']
 brushfire_radius_explore = config.general['brushfire_radius_explore']
 brushfire_radius_to_evaluate = config.general['brushfire_radius_to_evaluate']
 brushfire_neighbors_limit = config.general['brushfire_neighbors_limit']
+known_limit = config.general['known_limit']
+block_size = config.general['block_size']
+vision_limit = config.general['vision_limit']
 
 # START Class DelivNavigation --------------------------------------------
 class DeliverativeNavigation:
@@ -51,6 +54,17 @@ class DeliverativeNavigation:
 
 	def get_map_obj(self):
 		return self.map
+
+	def get_new_limits(self, dirx, diry):
+		navData = self.nav_data[-1]
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		navdataval = navData.get_value(dirx,diry)
+		if navdataval['limit_pos'] is None:
+			xl, yl = xp+vision_limit*dirx, yp+vision_limit*diry
+		else:
+			xl, yl = navdataval['limit_pos']
+		return (xl, yl)
 
 	def set_step(self, step, direction, nav, pot, pvec, limits, navWave, navData=None):
 		if navData==None:
@@ -232,6 +246,53 @@ class DeliverativeNavigation:
 		else:
 			return True
 
+	def detect_trap(self):
+		navData = self.nav_data[-1]
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		cur_dir = self.dir[-1]
+		trap = False
+		#for x,y in navData.get_iterative():
+		#	dirVals = navData.get_value(x,y)
+		#	if dirVals['blocked'] and dirVals['known'] > known_limit and dirVals['block_size'] > block_size:
+		#		print("\t(" + str(x)  + "," + str(y) + ") -> " + str(dirVals))
+		#		trap = True
+		angle = math.atan2(cur_dir[1], cur_dir[0])
+		x1 = int(round(math.cos(angle+math.pi/4)))
+		y1 = int(round(math.sin(angle+math.pi/4)))
+		dirVals1 = navData.get_value(x1,y1)
+		if dirVals1['blocked'] and dirVals1['known'] > known_limit and dirVals1['block_size'] > block_size:
+			x2 = int(round(math.cos(angle-math.pi/4)))
+			y2 = int(round(math.sin(angle-math.pi/4)))
+			dirVals2 = navData.get_value(x2,y2)
+			if dirVals2['blocked'] and dirVals2['known'] > known_limit and dirVals2['block_size'] > block_size:
+				trap = True
+				logging.debug("====> Detect Trap Start")
+				logging.debug("\tstep: (" + str(xp) + "," + str(yp) + ") | cur_dir: " + str(cur_dir))
+				logging.debug("\t\t1.- (" + str(x1)  + "," + str(y1) + ") -> " + str(dirVals1))
+				logging.debug("\t\t2.- (" + str(x2)  + "," + str(y2) + ") -> " + str(dirVals2))
+				logging.debug("====< Detect Trap End")
+		return trap
+
+	def get_best_possible_path(self):
+		navData = self.nav_data[-1]
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		cur_dir = self.dir[-1]
+		new_dir = None
+		possible_path = []
+		gx, gy = self.org_goal
+		logging.debug("====> Possible paths Start")
+		for x,y in navData.get_iterative():
+			dirVals = navData.get_value(x,y)
+			if dirVals['blocked'] == False:
+				possible_path.append((x,y,dirVals['pmap'],dirVals['known']))
+		possible_path = sorted(possible_path, key=lambda mypath: mypath[2])
+		for path in possible_path:
+			logging.debug("\t(" + str(path[0]) + "," + str(path[1]) + ") | pot: " + str(path[2]) + " | known: " + str(path[3]))
+		logging.debug("====< Possible paths End")
+		return (possible_path[0][0], possible_path[0][1])
+
 	def decide_status(self, bMap):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
@@ -266,6 +327,28 @@ class DeliverativeNavigation:
 			elif len(possible_dir) > 1:
 					logging.error("More than one... Need to choose!")
 
+		return chosen_dir
+
+	def decide_status_v2(self, bMap):
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		# We will use all gathered information to decide what to do next
+		chosen_dir = None
+		goal_unreachable = False
+		bmap = bMap.get_map()
+		self.following_wall = self.is_following_wall(bmap)
+		path_blocked, dist_to_obstacle = self.is_path_blocked()
+		# If goal is within reach, there is no need to change direction
+		if path_blocked:
+			goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
+			trap_detected = self.detect_trap()
+		# If we have problems ahead, we need to decide what to do
+		if path_blocked and goal_unreachable and (trap_detected or self.following_wall):
+			pot = bmap[self.path[-1][0]][self.path[-1][1]]
+			# In this situation APF fails
+			self.last_apf_direction = self.dir[-1]
+			self.last_apf_dist_to_obstacle = dist_to_obstacle
+			chosen_dir = self.get_best_possible_path()
 		return chosen_dir
 
 	# Can set new goal if there is a block

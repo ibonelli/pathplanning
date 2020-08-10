@@ -13,6 +13,17 @@ ordered_list = [
 	(2,0), # 315
 	]
 
+ordered_navigation = [
+	(0,1), # 0
+	(1,1), # 45
+	(1,0), # 90
+	(1,-1), # 135
+	(0,-1), # 180
+	(-1,-1), # 225
+	(-1,0), # 270
+	(-1,1), # 315
+	]
+
 # START Class Map ------------------------------------------------
 class NavigationData:
 	def __init__(self):
@@ -52,6 +63,9 @@ class NavigationData:
 			self.values[i][j] = value
 		else:
 			logging.error("Bad navData x,y values: " + str((x, y)))
+
+	def get_iterative(self):
+		return ordered_navigation
 
 	def build_info(self, datafield, data, previous=None):
 		if previous == None:

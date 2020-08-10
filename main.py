@@ -122,8 +122,7 @@ def main():
 			is_following_wall = myDeliverative.is_following_wall(myNavWave.get_map())
 
 		if myDeliverative.is_path_blocked():
-			new_dir = myDeliverative.decide_status_v2(myNavWave)
-			#new_dir = myDeliverative.decide_status(myNavWave)
+			new_dir = myDeliverative.decide_status(myNavWave)
 			logging.debug("===================================")
 			logging.debug("FOLLOWING WALL OR TRAP DETECTED AND PATH IS BLOCKED | New direction: " + str(new_dir))
 			logging.debug("===================================")

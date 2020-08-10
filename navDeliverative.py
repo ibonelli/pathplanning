@@ -296,42 +296,6 @@ class DeliverativeNavigation:
 	def decide_status(self, bMap):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
-		# We need to know how well we know possible path areas
-		# TODO -- testing on main now...
-		# ----> known = bMap.known_areas(xp, yp, brushfire_radius_explore, brushfire_radius_to_evaluate)
-		# This part is working... (for world02)
-		chosen_dir = None
-		goal_unreachable = False
-		bmap = bMap.get_map()
-		following_wall = self.is_following_wall(bmap)
-		path_blocked, dist_to_obstacle = self.is_path_blocked()
-		if path_blocked:
-			goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
-		if following_wall and path_blocked and goal_unreachable:
-			self.following_wall = True
-			pot = bmap[self.path[-1][0]][self.path[-1][1]]
-			# In this situation APF fails
-			self.last_apf_direction = self.dir[-1]
-			self.last_apf_dist_to_obstacle = dist_to_obstacle
-			all_pot = bMap.get_motion_potentials(xp, yp)
-			possible_dir = []
-			for p in all_pot:
-				if pot == p[2]:
-					nextx = xp + p[0]
-					nexty = xp + p[1]
-					# Untraveled direction
-					if nextx != self.path[-2][0] or nexty == self.path[-2][1]:
-						possible_dir.append(p)
-			if len(possible_dir) == 1:
-				chosen_dir = (possible_dir[0][0], possible_dir[0][1])
-			elif len(possible_dir) > 1:
-					logging.error("More than one... Need to choose!")
-
-		return chosen_dir
-
-	def decide_status_v2(self, bMap):
-		xp = self.path[-1][0]
-		yp = self.path[-1][1]
 		# We will use all gathered information to decide what to do next
 		chosen_dir = None
 		goal_unreachable = False

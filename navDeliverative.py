@@ -221,10 +221,6 @@ class DeliverativeNavigation:
 				status = True
 				self.pot = pot1
 
-		# This only applies when we are following the original goal
-		if self.new_goal != None:
-			status = False
-
 		return status
 
 	def is_path_blocked(self):
@@ -324,15 +320,16 @@ class DeliverativeNavigation:
 				curdirx, curdiry = self.get_best_possible_path()
 				self.cur_nav = "follow"
 				self.new_goal = self.get_new_limits(curdirx, curdiry)
+				newgx, newgy = self.new_goal
 				decision_made = True
 				nav_changed = True
 
 		# If using follow navigation -----------------------------------
 		if decision_made == False and self.cur_nav == "follow":
-			if xp == self.new_goal[0] and yp == self.new_goal[1]:
-				logging.debug("decide_status() for NAV: follow\n")
+			if xp == self.new_goal[0] and yp == self.new_goal[1] and self.following_wall == False:
+				logging.debug("decide_status() for NAV: follow")
 				logging.debug("\tReached new goal, moving back to APF.")
-				logging.debug("\tCurrent position: " + str((xp,yp)) + " | new_goal was: " + str(self.new_goal))
+				logging.debug("\tCurrent position: " + str((xp,yp)) + " | new_goal was: " + str(self.new_goal) + " | following_wall: " + str(self.following_wall))
 				self.new_goal = None
 				self.cur_nav = "apf"
 				nav_changed = True
@@ -347,15 +344,16 @@ class DeliverativeNavigation:
 				d1 = np.hypot(r1[0] - xp, r1[1] - yp)
 
 				if d1 != self.last_apf_dist_to_obstacle:
-					logging.debug("decide_status() for NAV: follow\n")
+					logging.debug("decide_status() for NAV: follow")
 					logging.debug("\tWe are not following wall, distance has changed...")
 					logging.debug("\td1: " + str(d1) + " | last_apf_dist: " + str(self.last_apf_dist_to_obstacle))
+					self.following_wall = False
 
 				# We need to check if we reached the end of the obstacle we are following
 				current_direction_ang = math.atan2(curdiry, curdirx)
 				second_ang_to_check = (last_apf_ang + current_direction_ang) / 2
-				logging.debug("decide_status() for NAV: follow\n")
-				logging.debug("\tsecond_ang_to_check: " + str(math.degrees(second_ang_to_check)))
+				#logging.debug("decide_status() for NAV: follow")
+				#logging.debug("\tsecond_ang_to_check: " + str(math.degrees(second_ang_to_check)))
 				rx = xp + self.vision_limit * math.cos(second_ang_to_check)
 				ry = yp + self.vision_limit * math.sin(second_ang_to_check)
 				myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
@@ -364,6 +362,12 @@ class DeliverativeNavigation:
 
 				if col2:
 					self.cur_nav = "follow"
+					if self.following_wall:
+						self.new_goal = self.get_new_limits(curdirx, curdiry)
+						newgx, newgy = self.new_goal
+						logging.debug("decide_status() for NAV: follow")
+						logging.debug("\tThe blocking object remains, extending the limit.")
+						logging.debug("\tWe have a new goal: (" + str(newgx) + "," + str(newgy) + ")")
 				else:
 					# We reached the limit of the obstacle
 					# We build direction (as 1s & 0s instead of angles)
@@ -376,7 +380,7 @@ class DeliverativeNavigation:
 					newgy = yp + self.last_apf_dist_to_obstacle * yi
 					curdirx = xi
 					curdiry = yi
-					logging.debug("decide_status() for NAV: follow\n")
+					logging.debug("decide_status() for NAV: follow")
 					logging.debug("\txi: " + str(xi) + " | yi: " + str(yi))
 					logging.debug("\tlast_apf_dist_to_obstacle: " + str(self.last_apf_dist_to_obstacle))
 					logging.debug("\tWe have a new goal: (" + str(newgx) + "," + str(newgy) + ")")

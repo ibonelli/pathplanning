@@ -248,28 +248,44 @@ class DeliverativeNavigation:
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
 		cur_dir = self.dir[-1]
-		trap = False
+		trap = 0
+
+		# -- Does not seem to require all directions
+		#
 		#for x,y in navData.get_iterative():
 		#	dirVals = navData.get_value(x,y)
 		#	if dirVals['blocked'] and dirVals['known'] > known_limit and dirVals['block_size'] > block_size:
 		#		print("\t(" + str(x)  + "," + str(y) + ") -> " + str(dirVals))
 		#		trap = True
-		angle = math.atan2(cur_dir[1], cur_dir[0])
-		x1 = int(round(math.cos(angle+math.pi/4)))
-		y1 = int(round(math.sin(angle+math.pi/4)))
-		dirVals1 = navData.get_value(x1,y1)
-		if dirVals1['blocked'] and dirVals1['known'] > known_limit and dirVals1['block_size'] > block_size:
-			x2 = int(round(math.cos(angle-math.pi/4)))
-			y2 = int(round(math.sin(angle-math.pi/4)))
-			dirVals2 = navData.get_value(x2,y2)
-			if dirVals2['blocked'] and dirVals2['known'] > known_limit and dirVals2['block_size'] > block_size:
-				trap = True
-				logging.debug("====> Detect Trap Start")
-				logging.debug("\tstep: (" + str(xp) + "," + str(yp) + ") | cur_dir: " + str(cur_dir))
-				logging.debug("\t\t1.- (" + str(x1)  + "," + str(y1) + ") -> " + str(dirVals1))
-				logging.debug("\t\t2.- (" + str(x2)  + "," + str(y2) + ") -> " + str(dirVals2))
-				logging.debug("====< Detect Trap End")
+		# --
+
+		st_p45 = self.direction_status(cur_dir, math.pi/4, navData)
+		st_n45 = self.direction_status(cur_dir, -math.pi/4, navData)
+		# If we are blocked at front and 45 degree deviations
+		if st_p45 == True and st_n45 == True:
+			trap = 1
+			# If we are blocked at front, 45 degree deviations and 90 degree
+			st_p90 = self.direction_status(cur_dir, math.pi/2, navData)
+			st_n90 = self.direction_status(cur_dir, -math.pi/2, navData)
+			if st_p90 == True and st_n90 == True:
+				trap = 2
+		# Reporting...
+		if trap != 0:
+			logging.debug("====> Trap Detected")
+			logging.debug("\tstep: (" + str(xp) + "," + str(yp) + ") | cur_dir: " + str(cur_dir) + " | type: " + str(trap))
+			logging.debug("====< Detect Trap End")
+
 		return trap
+
+	def direction_status(self, cur_dir, ang, navData):
+		cur_ang = math.atan2(cur_dir[1], cur_dir[0])
+		x = int(round(math.cos(cur_ang+ang)))
+		y = int(round(math.sin(cur_ang+ang)))
+		dirVals = navData.get_value(x,y)
+		status = False
+		if dirVals['blocked'] and dirVals['known'] > known_limit and dirVals['block_size'] > block_size:
+			status = True
+		return status
 
 	def get_best_possible_path(self):
 		navData = self.nav_data[-1]
@@ -299,20 +315,23 @@ class DeliverativeNavigation:
 		bmap = bMap.get_map()
 		self.following_wall = self.is_following_wall(bmap)
 		path_blocked, dist_to_obstacle = self.is_path_blocked()
+		trap_detected = self.detect_trap()
+
+		# If we find a trap type 2 -------------------------------------
+		if path_blocked and trap_detected == 2:
+			logging.debug("TRAP TYPE 2 DETECTED... Should be moving backwards now!")
 
 		# If using apf navigation --------------------------------------
 		if self.cur_nav == "apf":
 			# If goal is within reach, there is no need to change direction
 			if path_blocked:
 				goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
-				trap_detected = self.detect_trap()
-
 				logging.debug("decide_status() for NAV: apf")
 				logging.debug("\tpath_blocked: " + str(path_blocked) + " | goal_unreachable: " + str(goal_unreachable))
 				logging.debug("\ttrap_detected: " + str(trap_detected) + " | following_wall: " + str(self.following_wall))
 
 			# If we have problems ahead, we need to decide what to do
-			if path_blocked and goal_unreachable and (trap_detected or self.following_wall):
+			if path_blocked and goal_unreachable and (trap_detected == 1 or self.following_wall):
 				pot = bmap[self.path[-1][0]][self.path[-1][1]]
 				# In this situation APF fails
 				self.last_apf_direction = self.dir[-1]

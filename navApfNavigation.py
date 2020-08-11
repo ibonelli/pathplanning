@@ -109,7 +109,7 @@ class ApfNavigation:
 	def decide_status(self,rd):
 		## Checking if we get stuck...
 		dif = rd[-2] - rd[-1]
-		logging.debug("decide_status() | dif: " + str(dif))
+		#logging.debug("decide_status() | dif: " + str(dif))
 		# Si aumento la distancia al objetivo
 		if dif < 0 and self.scount == 0:
 			self.scount = 1

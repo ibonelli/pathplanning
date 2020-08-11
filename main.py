@@ -118,24 +118,20 @@ def main():
 			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, myNavWave)
 			myNavWave.show_map("debug")
 			logging.debug("====================================== NEXT STEP ======================================")
-			dirx, diry, limitx, limity, nav = myDeliverative.unblock_status(nav)
-			is_following_wall = myDeliverative.is_following_wall(myNavWave.get_map())
 
-		if myDeliverative.is_path_blocked():
-			new_dir = myDeliverative.decide_status(myNavWave)
-			logging.debug("===================================")
-			logging.debug("FOLLOWING WALL OR TRAP DETECTED AND PATH IS BLOCKED | New direction: " + str(new_dir))
-			logging.debug("===================================")
-			if new_dir != None:
-				nav = "follow"
-				dirx, diry = new_dir
-				limitx, limity = myDeliverative.get_new_limits(dirx, diry)
+		nav_changed, dirx, diry, limitx, limity, newnav = myDeliverative.decide_status(myNavWave)
 
-		if nav == "follow":
-			myNavFollow.set_limit(limitx, limity)
-		elif nav == "apf":
-			myNavigation.set_cur_pos(xp, yp)
-			myNavigation.set_motion_model(trap.reset_motion_model())
+		if nav_changed:
+			logging.debug("===================================")
+			logging.debug("decide_status() has chosen a new direction: " + str((dirx, diry)))
+			logging.debug("\tNew limit: " + str((limitx, limity)) + " | newnav: " + str(newnav))
+			logging.debug("===================================")
+			nav = newnav
+			if nav == "follow":
+				myNavFollow.set_limit(limitx, limity)
+			if nav == "apf":
+				myNavigation.set_cur_pos(xp, yp)
+				myNavigation.set_motion_model(trap.reset_motion_model())
 
 		# if stuck and is_following_wall:
 		# 	aborted = True

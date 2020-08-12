@@ -35,7 +35,7 @@ class DeliverativeNavigation:
 		self.maxx = self.maxy = None
 		self.path = []
 		self.dir = []
-		self.pot = None
+		self.pot = []
 		self.nav = []
 		self.nav_type = []
 		self.nav_data = []
@@ -76,6 +76,7 @@ class DeliverativeNavigation:
 		self.path.append((stepx, stepy))
 		self.dir.append(direction)
 		self.nav.append(nav)
+		self.pot.append(pot)
 		self.nav_type.append(nav_type)
 		for apf_pot, apf_dirx, apf_diry in pvec:
 			# Building APF information
@@ -194,7 +195,7 @@ class DeliverativeNavigation:
 			limity = posY + self.vision_limit * diry
 		return dirx, diry, limitx, limity
 
-	def is_following_wall(self, bmap):
+	def is_following_wall(self):
 		# TODO --- Make this flexible and dependent on wall_detection_threshold
 		#	   --- Now it is not flexible. Below is a starting point...
 		#
@@ -211,18 +212,28 @@ class DeliverativeNavigation:
 		#				
 		#			if pot[0] == pot[1] and pot[1] == pot3:
 
-		status = False
+		status = None
+
 		if len(self.path) > wall_detection_threshold:
-			pot1 = bmap[self.path[-1][0]][self.path[-1][1]]
-			pot2 = bmap[self.path[-2][0]][self.path[-2][1]]
-			pot3 = bmap[self.path[-3][0]][self.path[-3][1]]
-			if pot1 == pot2 and pot2 == pot3:
+			if self.pot[-1] == self.pot[-2]:
+				status = True
+			else:
+				status = False
+
+			for i in range(wall_detection_threshold-2):
+				if self.pot[-2-i] == self.pot[-3-i]:
+					status = status and True
+				else:
+					status = status and False
+
+			if status:
 				logging.debug("===================================")
 				logging.debug("We are following an equipotential line!")
-				logging.debug("\tCurrent potential: " + str(pot1))
+				logging.debug("\tCurrent potential: " + str(self.pot[-1]))
 				logging.debug("===================================")
-				status = True
-				self.pot = pot1
+
+		if status is None:
+			status = False
 
 		return status
 
@@ -274,9 +285,8 @@ class DeliverativeNavigation:
 				trap = 2
 		# Reporting...
 		if trap != 0:
-			logging.debug("====> Trap Detected")
+			logging.debug("==== Trap Detected")
 			logging.debug("\tstep: (" + str(xp) + "," + str(yp) + ") | cur_dir: " + str(cur_dir) + " | type: " + str(trap))
-			logging.debug("====< Detect Trap End")
 
 		return trap
 
@@ -293,7 +303,7 @@ class DeliverativeNavigation:
 	def get_best_possible_path(self):
 		navData = self.nav_data[-1]
 		possible_path = []
-		logging.debug("====> Possible paths Start")
+		logging.debug("==== Possible paths")
 		for x,y in navData.get_iterative():
 			dirVals = navData.get_value(x,y)
 			if dirVals['blocked'] == False:
@@ -301,7 +311,6 @@ class DeliverativeNavigation:
 		possible_path = sorted(possible_path, key=lambda mypath: mypath[2])
 		for path in possible_path:
 			logging.debug("\t(" + str(path[0]) + "," + str(path[1]) + ") | pot: " + str(path[2]) + " | known: " + str(path[3]))
-		logging.debug("====< Possible paths End")
 		return (possible_path[0][0], possible_path[0][1])
 
 	def decide_status(self, bMap):
@@ -318,7 +327,7 @@ class DeliverativeNavigation:
 		cur_nav = self.nav[-1]
 		nav_type = self.nav_type[-1]
 		bmap = bMap.get_map()
-		self.following_wall = self.is_following_wall(bmap)
+		self.following_wall = self.is_following_wall()
 		path_blocked, dist_to_obstacle = self.is_path_blocked()
 		trap_detected = self.detect_trap()
 		goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
@@ -336,6 +345,7 @@ class DeliverativeNavigation:
 				curdirx, curdiry = self.get_best_possible_path()
 				cur_nav = "follow"
 				self.new_goal = self.get_new_limits(curdirx, curdiry)
+				newgx, newgy = self.new_goal
 				decision_made = True
 				nav_changed = True
 				nav_type = "deliverative"

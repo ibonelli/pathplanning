@@ -196,22 +196,6 @@ class DeliverativeNavigation:
 		return dirx, diry, limitx, limity
 
 	def is_following_wall(self):
-		# TODO --- Make this flexible and dependent on wall_detection_threshold
-		#	   --- Now it is not flexible. Below is a starting point...
-		#
-		#		status = False
-		#		if len(self.path) > wall_detection_threshold:
-		#			pot_cur = pot_prev = None
-		#			all_equal = True
-		#			for i in range(wall_detection_threshold):
-		#				idx = -1
-		#				if i == 0:
-		#					pot_prev = bmap[self.path[-i][0]][self.path[-i][1]]
-		#				else:
-		#					pot_cur = bmap[self.path[-i][0]][self.path[-i][1]]
-		#				
-		#			if pot[0] == pot[1] and pot[1] == pot3:
-
 		status = None
 
 		if len(self.path) > wall_detection_threshold:

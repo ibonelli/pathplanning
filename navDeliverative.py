@@ -318,8 +318,19 @@ class DeliverativeNavigation:
 		trap_detected = self.detect_trap()
 
 		# If we find a trap type 2 -------------------------------------
+		if path_blocked and trap_detected == 1:
+			logging.debug("TRAP TYPE 1 DETECTED... Should be moving backwards now!")
+
 		if path_blocked and trap_detected == 2:
 			logging.debug("TRAP TYPE 2 DETECTED... Should be moving backwards now!")
+			self.last_apf_direction = self.dir[-1]
+			self.last_apf_dist_to_obstacle = dist_to_obstacle
+			curdirx, curdiry = self.get_best_possible_path()
+			self.cur_nav = "follow"
+			self.new_goal = self.get_new_limits(curdirx, curdiry)
+			newgx, newgy = self.new_goal
+			decision_made = True
+			nav_changed = True
 
 		# If using apf navigation --------------------------------------
 		if self.cur_nav == "apf":
@@ -331,79 +342,97 @@ class DeliverativeNavigation:
 				logging.debug("\ttrap_detected: " + str(trap_detected) + " | following_wall: " + str(self.following_wall))
 
 			# If we have problems ahead, we need to decide what to do
-			if path_blocked and goal_unreachable and (trap_detected == 1 or self.following_wall):
-				pot = bmap[self.path[-1][0]][self.path[-1][1]]
-				# In this situation APF fails
-				self.last_apf_direction = self.dir[-1]
-				self.last_apf_dist_to_obstacle = dist_to_obstacle
-				curdirx, curdiry = self.get_best_possible_path()
-				self.cur_nav = "follow"
-				self.new_goal = self.get_new_limits(curdirx, curdiry)
-				newgx, newgy = self.new_goal
-				decision_made = True
-				nav_changed = True
+			if path_blocked and goal_unreachable and self.following_wall:
+				# Only if we don't know enough from current direction
+				if self.direction_status((curdirx, curdiry), 0, self.nav_data[-1]):
+					pot = bmap[self.path[-1][0]][self.path[-1][1]]
+					# In this situation APF fails
+					self.last_apf_direction = self.dir[-1]
+					self.last_apf_dist_to_obstacle = dist_to_obstacle
+					curdirx, curdiry = self.get_best_possible_path()
+					self.cur_nav = "follow"
+					self.new_goal = self.get_new_limits(curdirx, curdiry)
+					newgx, newgy = self.new_goal
+					decision_made = True
+					nav_changed = True
+				else:
+					logging.debug("Path is blocked but we'll continue in this direction for a bit more...")
+					logging.debug("\tNeed to know more about it. | navData: " + str(self.nav_data[-1].get_value(curdirx, curdiry)))
 
 		# If using follow navigation -----------------------------------
 		if decision_made == False and self.cur_nav == "follow":
-			if xp == self.new_goal[0] and yp == self.new_goal[1] and self.following_wall == False:
+			nav_changed, curdirx, curdiry, newgx, newgy, self.cur_nav = self.follow_wall_navigation()
+
+		return nav_changed, curdirx, curdiry, newgx, newgy, self.cur_nav
+
+	def follow_wall_navigation(self):
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		newgx = self.org_goal[0]
+		newgy = self.org_goal[1]
+		curdirx = self.dir[-1][0]
+		curdiry = self.dir[-1][1]
+		nav_changed = False
+
+		if xp == self.new_goal[0] and yp == self.new_goal[1] and self.following_wall == False:
+			logging.debug("decide_status() for NAV: follow")
+			logging.debug("\tReached new goal, moving back to APF.")
+			logging.debug("\tCurrent position: " + str((xp,yp)) + " | new_goal was: " + str(self.new_goal) + " | following_wall: " + str(self.following_wall))
+			self.new_goal = None
+			self.cur_nav = "apf"
+			nav_changed = True
+		else:
+			ox, oy = self.map.get_objects()
+
+			last_apf_ang = math.atan2(self.last_apf_direction[1], self.last_apf_direction[0])
+			rx = xp + self.vision_limit * self.last_apf_direction[0]
+			ry = yp + self.vision_limit * self.last_apf_direction[1]
+			myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
+			col1,r1 = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
+			d1 = np.hypot(r1[0] - xp, r1[1] - yp)
+
+			if d1 != self.last_apf_dist_to_obstacle:
 				logging.debug("decide_status() for NAV: follow")
-				logging.debug("\tReached new goal, moving back to APF.")
-				logging.debug("\tCurrent position: " + str((xp,yp)) + " | new_goal was: " + str(self.new_goal) + " | following_wall: " + str(self.following_wall))
-				self.new_goal = None
-				self.cur_nav = "apf"
-				nav_changed = True
-			else:
-				ox, oy = self.map.get_objects()
+				logging.debug("\tWe are not following wall, distance has changed...")
+				logging.debug("\td1: " + str(d1) + " | last_apf_dist: " + str(self.last_apf_dist_to_obstacle))
+				self.following_wall = False
 
-				last_apf_ang = math.atan2(self.last_apf_direction[1], self.last_apf_direction[0])
-				rx = xp + self.vision_limit * self.last_apf_direction[0]
-				ry = yp + self.vision_limit * self.last_apf_direction[1]
-				myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
-				col1,r1 = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
-				d1 = np.hypot(r1[0] - xp, r1[1] - yp)
+			# We need to check if we reached the end of the obstacle we are following
+			current_direction_ang = math.atan2(curdiry, curdirx)
+			second_ang_to_check = (last_apf_ang + current_direction_ang) / 2
+			#logging.debug("decide_status() for NAV: follow")
+			#logging.debug("\tsecond_ang_to_check: " + str(math.degrees(second_ang_to_check)))
+			rx = xp + self.vision_limit * math.cos(second_ang_to_check)
+			ry = yp + self.vision_limit * math.sin(second_ang_to_check)
+			myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
+			col2,r2 = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
+			d2 = np.hypot(r2[0] - xp, r2[1] - yp)
 
-				if d1 != self.last_apf_dist_to_obstacle:
+			if col2:
+				self.cur_nav = "follow"
+				if self.following_wall:
+					self.new_goal = self.get_new_limits(curdirx, curdiry)
+					newgx, newgy = self.new_goal
 					logging.debug("decide_status() for NAV: follow")
-					logging.debug("\tWe are not following wall, distance has changed...")
-					logging.debug("\td1: " + str(d1) + " | last_apf_dist: " + str(self.last_apf_dist_to_obstacle))
-					self.following_wall = False
-
-				# We need to check if we reached the end of the obstacle we are following
-				current_direction_ang = math.atan2(curdiry, curdirx)
-				second_ang_to_check = (last_apf_ang + current_direction_ang) / 2
-				#logging.debug("decide_status() for NAV: follow")
-				#logging.debug("\tsecond_ang_to_check: " + str(math.degrees(second_ang_to_check)))
-				rx = xp + self.vision_limit * math.cos(second_ang_to_check)
-				ry = yp + self.vision_limit * math.sin(second_ang_to_check)
-				myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
-				col2,r2 = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
-				d2 = np.hypot(r2[0] - xp, r2[1] - yp)
-
-				if col2:
-					self.cur_nav = "follow"
-					if self.following_wall:
-						self.new_goal = self.get_new_limits(curdirx, curdiry)
-						newgx, newgy = self.new_goal
-						logging.debug("decide_status() for NAV: follow")
-						logging.debug("\tThe blocking object remains, extending the limit.")
-						logging.debug("\tWe have a new goal: (" + str(newgx) + "," + str(newgy) + ")")
-				else:
-					# We reached the limit of the obstacle
-					# We build direction (as 1s & 0s instead of angles)
-					# This can be used as an angle2direction() method.
-					xi = int(round(math.cos(second_ang_to_check)))
-					yi = int(round(math.sin(second_ang_to_check)))
-					# We calculate new goal
-					self.cur_nav = "follow"
-					newgx = xp + self.last_apf_dist_to_obstacle * xi
-					newgy = yp + self.last_apf_dist_to_obstacle * yi
-					curdirx = xi
-					curdiry = yi
-					logging.debug("decide_status() for NAV: follow")
-					logging.debug("\txi: " + str(xi) + " | yi: " + str(yi))
-					logging.debug("\tlast_apf_dist_to_obstacle: " + str(self.last_apf_dist_to_obstacle))
+					logging.debug("\tThe blocking object remains, extending the limit.")
 					logging.debug("\tWe have a new goal: (" + str(newgx) + "," + str(newgy) + ")")
-					self.new_goal = (newgx, newgy)
-					nav_changed = True
+			else:
+				# We reached the limit of the obstacle
+				# We build direction (as 1s & 0s instead of angles)
+				# This can be used as an angle2direction() method.
+				xi = int(round(math.cos(second_ang_to_check)))
+				yi = int(round(math.sin(second_ang_to_check)))
+				# We calculate new goal
+				self.cur_nav = "follow"
+				newgx = xp + self.last_apf_dist_to_obstacle * xi
+				newgy = yp + self.last_apf_dist_to_obstacle * yi
+				curdirx = xi
+				curdiry = yi
+				logging.debug("decide_status() for NAV: follow")
+				logging.debug("\txi: " + str(xi) + " | yi: " + str(yi))
+				logging.debug("\tlast_apf_dist_to_obstacle: " + str(self.last_apf_dist_to_obstacle))
+				logging.debug("\tWe have a new goal: (" + str(newgx) + "," + str(newgy) + ")")
+				self.new_goal = (newgx, newgy)
+				nav_changed = True
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, self.cur_nav

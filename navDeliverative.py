@@ -41,7 +41,7 @@ class DeliverativeNavigation:
 		self.nav_data = []
 		self.trap_dir = None
 		self.following_wall = None
-		self.last_reactive_direction = None
+		self.blocked_direction_to_overcome = None
 		self.last_reactive_dist_to_obstacle = None
 
 	def set_map(self, Map):
@@ -224,13 +224,18 @@ class DeliverativeNavigation:
 	def is_path_blocked(self):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
-		ox, oy = self.map.get_objects()
-		rx = xp + self.vision_limit * self.dir[-1][0]
-		ry = yp + self.vision_limit * self.dir[-1][1]
-		myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
-		col,r = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
-		d = np.hypot(r[0] - xp, r[1] - yp)
-		return col, d
+		navData = self.nav_data[-1]
+		dirx = self.dir[-1][0]
+		diry = self.dir[-1][1]
+		dirVals = navData.get_value(dirx,diry)
+		if dirVals['blocked'] == True:
+			r = dirVals['limit_pos']
+			d = np.hypot(r[0] - xp, r[1] - yp)
+			b = dirVals['block_size']
+		else:
+			d = float("inf")
+			b = 0
+		return dirVals['blocked'], d, b
 
 	def is_goal_unreachable(self, dist_to_obstacle):
 		xp = self.path[-1][0]
@@ -297,6 +302,9 @@ class DeliverativeNavigation:
 			logging.debug("\t(" + str(path[0]) + "," + str(path[1]) + ") | pot: " + str(path[2]) + " | known: " + str(path[3]))
 		return (possible_path[0][0], possible_path[0][1])
 
+	def get_blocked_direction_to_overcome(self):
+		return None
+
 	def decide_status(self, bMap):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
@@ -312,11 +320,11 @@ class DeliverativeNavigation:
 		nav_type = self.nav_type[-1]
 		bmap = bMap.get_map()
 		self.following_wall = self.is_following_wall()
-		path_blocked, dist_to_obstacle = self.is_path_blocked()
+		path_blocked, dist_to_obstacle, limit_size = self.is_path_blocked()
 		trap_detected = self.detect_trap()
 		goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
 
-		if nav_type == "deliverative" and cur_nav == "follow":
+		if nav_type == "deliverative" and cur_nav == "follow" and self.is_following_wall():
 			logging.debug("Now running on deliverative... Should check to get back to reactive.")
 			nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type = self.follow_wall_navigation()
 			if nav_changed:
@@ -324,7 +332,7 @@ class DeliverativeNavigation:
 		else:
 			# If we find a trap type 2 -------------------------------------
 			if path_blocked and (trap_detected == 1 or trap_detected == 2) and goal_unreachable:
-				self.last_reactive_direction = self.dir[-1]
+				self.blocked_direction_to_overcome = self.dir[-1]
 				self.last_reactive_dist_to_obstacle = dist_to_obstacle
 				curdirx, curdiry = self.get_best_possible_path()
 				cur_nav = "follow"
@@ -349,7 +357,7 @@ class DeliverativeNavigation:
 		#		if self.direction_status((curdirx, curdiry), 0, self.nav_data[-1]):
 		#			pot = bmap[self.path[-1][0]][self.path[-1][1]]
 		#			# In this situation APF fails
-		#			self.last_reactive_direction = self.dir[-1]
+		#			self.blocked_direction_to_overcome = self.dir[-1]
 		#			self.last_reactive_dist_to_obstacle = dist_to_obstacle
 		#			curdirx, curdiry = self.get_best_possible_path()
 		#			cur_nav = "follow"
@@ -386,9 +394,9 @@ class DeliverativeNavigation:
 		else:
 			ox, oy = self.map.get_objects()
 
-			last_reactive_ang = math.atan2(self.last_reactive_direction[1], self.last_reactive_direction[0])
-			rx = xp + self.vision_limit * self.last_reactive_direction[0]
-			ry = yp + self.vision_limit * self.last_reactive_direction[1]
+			last_reactive_ang = math.atan2(self.blocked_direction_to_overcome[1], self.blocked_direction_to_overcome[0])
+			rx = xp + self.vision_limit * self.blocked_direction_to_overcome[0]
+			ry = yp + self.vision_limit * self.blocked_direction_to_overcome[1]
 			myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
 			col1,r1 = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
 			d1 = np.hypot(r1[0] - xp, r1[1] - yp)

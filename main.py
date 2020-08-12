@@ -129,7 +129,7 @@ def main():
 		if nav_changed:
 			logging.debug("===================================")
 			logging.debug("decide_status() has chosen a new direction: " + str((dirx, diry)))
-			logging.debug("\tNew limit: " + str((limitx, limity)) + " | newnav: " + str(newnav))
+			logging.debug("\tNew limit: " + str((limitx, limity)) + " | newnav: " + str(newnav) + " | navtype: " + str(nav_type))
 			logging.debug("===================================")
 			nav = newnav
 			if nav == "follow":
@@ -167,18 +167,15 @@ def main():
 	else:
 		print("Goal!!")
 
+	# We save navigation data files
+	fbase=fname[0:-4] # We cut the extension
 	myMap.set_map(myDeliverative.get_map())
-	myMap.save_map("map.json")
-	MyGraf.save("path.json")
+	myMap.save_map(fbase + "_map.json")
+	MyGraf.save(fbase)
+	myMap.draw(fbase + "_objs.png")
 
 	if brushfire_map_debug:
 		myNavWave.show_map("console")
-
-	#if show_animation:
-	#	# We save to a file
-	#	base=os.path.basename(fname)
-	#	plt.savefig(os.path.splitext(base)[0] + "_nav.png")
-	#	plt.show()
 
 if __name__ == '__main__':
 	print(__file__ + " start!!")

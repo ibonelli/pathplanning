@@ -9,7 +9,6 @@ class Map:
 		self.maxx = self.maxy = None
 		self.xw = self.yw = None
 		self.map = None
-		self.debug_map_fname = "map.png"
 
 	def set_params(self, reso, gx, gy, ox, oy):
 		self.reso = reso
@@ -24,7 +23,6 @@ class Map:
 		self.xw = int(round((self.maxx - self.minx) / self.reso)) + 1
 		self.yw = int(round((self.maxy - self.miny) / self.reso)) + 1
 		self.map = None
-		self.debug_map_fname = "map.png"
 
 	def create(self):
 		# calc each potential
@@ -102,7 +100,7 @@ class Map:
 	def set_yw(self, yw):
 		self.yw = yw
 
-	def draw(self):
+	def draw(self, fname):
 		plt.cla()
 		for j in range(self.yw):
 			for i in range(self.xw):
@@ -112,7 +110,7 @@ class Map:
 		plt.grid(True)
 		plt.title("Map")
 		plt.ginput()
-		plt.savefig(self.debug_map_fname)
+		plt.savefig(fname)
 
 	def get_objects(self):
 		ox = []

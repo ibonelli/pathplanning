@@ -29,7 +29,7 @@ class ShowNavigation:
 		plt.plot(xp, yp, ".r")
 		plt.pause(delay)
 
-	def save(self, filename):
+	def save(self, fname):
 		navdata = {
 			"heatmap": self.heatmap,
 			"start": self.start,
@@ -37,9 +37,12 @@ class ShowNavigation:
 			"path": self.path,
 			}
 		nav2save = json.JSONEncoder().encode(navdata)
+		filename = fname + "_path.json"
 		with open(filename, 'w') as json_file:
 			json.dump(nav2save, json_file)
 		json_file.close()
+		filename = fname + "_nav.png"
+		plt.savefig(filename)
 
 	def load(self, filename):
 		with open(filename) as json_data:

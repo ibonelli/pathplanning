@@ -109,7 +109,7 @@ class Map:
 		plt.axis("equal")
 		plt.grid(True)
 		plt.title("Map")
-		plt.ginput()
+		#plt.ginput()
 		plt.savefig(fname)
 
 	def get_objects(self):

@@ -27,6 +27,7 @@ grid_size = config.general['grid_size']
 robot_radius = config.general['robot_radius']
 vision_limit = config.general['vision_limit']
 brushfire_map_debug = config.general['brushfire_map_debug']
+saveResults = config.general['saveResults']
 
 def main():
 	# Cargando el archivo de descripcion del mundo a recorrer
@@ -167,12 +168,13 @@ def main():
 	else:
 		print("Goal!!")
 
-	# We save navigation data files
-	fbase=fname[0:-4] # We cut the extension
-	myMap.set_map(myDeliverative.get_map())
-	myMap.save_map(fbase + "_map.json")
-	MyGraf.save(fbase)
-	myMap.draw(fbase + "_objs.png")
+	if saveResults:
+		# We save navigation data files
+		fbase=fname[0:-4] # We cut the extension
+		myMap.set_map(myDeliverative.get_map())
+		myMap.save_map(fbase + "_map.json")
+		MyGraf.save(fbase)
+		myMap.draw(fbase + "_objs.png")
 
 	if brushfire_map_debug:
 		myNavWave.show_map("console")

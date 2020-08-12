@@ -16,6 +16,7 @@ general = dict(
 	brushfire_neighbors_limit = 5,
 	brushfire_map_debug = False,
 	navData_debug = False,
+	saveResults = True,
 	robot_motion_model = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]],
 	known_limit = 0.8,
 	block_size = 4,

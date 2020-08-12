@@ -88,9 +88,10 @@ def main():
 	myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 	pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 	aborted = myDeliverative.check_limits(xp, yp)
+	nav_type = "reactive"
 
 	# We save the step
-	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, myNavWave)
+	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
 	myNavWave.show_map("debug")
 	rd.append(d)
 	rx.append(xp)
@@ -115,11 +116,11 @@ def main():
 		else:
 			pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 			myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
-			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, pot, myNavigation.get_pvec(), limits, myNavWave)
+			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
 			myNavWave.show_map("debug")
 			logging.debug("====================================== NEXT STEP ======================================")
 
-		nav_changed, dirx, diry, limitx, limity, newnav = myDeliverative.decide_status(myNavWave)
+		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave)
 
 		if nav_changed:
 			logging.debug("===================================")

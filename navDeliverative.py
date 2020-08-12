@@ -34,9 +34,9 @@ class DeliverativeNavigation:
 		self.maxx = self.maxy = None
 		self.path = []
 		self.dir = []
-		self.nav = []
 		self.pot = None
-		self.cur_nav = "apf"
+		self.nav = []
+		self.nav_type = []
 		self.nav_data = []
 		self.trap_dir = None
 		self.following_wall = None
@@ -67,7 +67,7 @@ class DeliverativeNavigation:
 			xl, yl = navdataval['limit_pos']
 		return (xl, yl)
 
-	def set_step(self, step, direction, nav, pot, pvec, limits, navWave, navData=None):
+	def set_step(self, step, direction, nav, nav_type, pot, pvec, limits, navWave, navData=None):
 		if navData==None:
 			navData=NavigationData()
 		stepx = int(round(step[0],0))
@@ -75,6 +75,7 @@ class DeliverativeNavigation:
 		self.path.append((stepx, stepy))
 		self.dir.append(direction)
 		self.nav.append(nav)
+		self.nav_type.append(nav_type)
 		for apf_pot, apf_dirx, apf_diry in pvec:
 			# Building APF information
 			navdataval = navData.build_info("pmap", apf_pot, navData.get_value(apf_dirx, apf_diry))
@@ -91,7 +92,7 @@ class DeliverativeNavigation:
 		# Building brushfire information
 		navData = navWave.known_areas(stepx, stepy, brushfire_radius_explore, brushfire_radius_to_evaluate, brushfire_neighbors_limit, navData)
 		self.nav_data.append(navData)
-		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav))
+		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav) + " | mode: " + str(nav_type))
 		navData.print()
 
 	def check_limits(self, xp, yp):
@@ -312,6 +313,8 @@ class DeliverativeNavigation:
 		decision_made = False
 		goal_unreachable = False
 		nav_changed = False
+		cur_nav = self.nav[-1]
+		nav_type = self.nav_type[-1]
 		bmap = bMap.get_map()
 		self.following_wall = self.is_following_wall(bmap)
 		path_blocked, dist_to_obstacle = self.is_path_blocked()
@@ -326,14 +329,16 @@ class DeliverativeNavigation:
 			self.last_apf_direction = self.dir[-1]
 			self.last_apf_dist_to_obstacle = dist_to_obstacle
 			curdirx, curdiry = self.get_best_possible_path()
-			self.cur_nav = "follow"
+			cur_nav = "follow"
 			self.new_goal = self.get_new_limits(curdirx, curdiry)
 			newgx, newgy = self.new_goal
+			nav_changed, curdirx, curdiry, newgx, newgy, cur_nav = self.follow_wall_navigation()
 			decision_made = True
 			nav_changed = True
+			nav_type = "deliverative"
 
 		# If using apf navigation --------------------------------------
-		if self.cur_nav == "apf":
+		if cur_nav == "apf":
 			# If goal is within reach, there is no need to change direction
 			if path_blocked:
 				goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
@@ -350,20 +355,21 @@ class DeliverativeNavigation:
 					self.last_apf_direction = self.dir[-1]
 					self.last_apf_dist_to_obstacle = dist_to_obstacle
 					curdirx, curdiry = self.get_best_possible_path()
-					self.cur_nav = "follow"
+					cur_nav = "follow"
 					self.new_goal = self.get_new_limits(curdirx, curdiry)
 					newgx, newgy = self.new_goal
 					decision_made = True
 					nav_changed = True
+					nav_type = "deliverative"
 				else:
 					logging.debug("Path is blocked but we'll continue in this direction for a bit more...")
 					logging.debug("\tNeed to know more about it. | navData: " + str(self.nav_data[-1].get_value(curdirx, curdiry)))
 
 		# If using follow navigation -----------------------------------
-		if decision_made == False and self.cur_nav == "follow":
-			nav_changed, curdirx, curdiry, newgx, newgy, self.cur_nav = self.follow_wall_navigation()
+		if decision_made == False and cur_nav == "follow":
+			nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type = self.follow_wall_navigation()
 
-		return nav_changed, curdirx, curdiry, newgx, newgy, self.cur_nav
+		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
 
 	def follow_wall_navigation(self):
 		xp = self.path[-1][0]
@@ -373,13 +379,15 @@ class DeliverativeNavigation:
 		curdirx = self.dir[-1][0]
 		curdiry = self.dir[-1][1]
 		nav_changed = False
+		cur_nav = self.nav[-1]
+		nav_type = self.nav_type[-1]
 
 		if xp == self.new_goal[0] and yp == self.new_goal[1] and self.following_wall == False:
 			logging.debug("decide_status() for NAV: follow")
 			logging.debug("\tReached new goal, moving back to APF.")
 			logging.debug("\tCurrent position: " + str((xp,yp)) + " | new_goal was: " + str(self.new_goal) + " | following_wall: " + str(self.following_wall))
 			self.new_goal = None
-			self.cur_nav = "apf"
+			cur_nav = "apf"
 			nav_changed = True
 		else:
 			ox, oy = self.map.get_objects()
@@ -409,7 +417,7 @@ class DeliverativeNavigation:
 			d2 = np.hypot(r2[0] - xp, r2[1] - yp)
 
 			if col2:
-				self.cur_nav = "follow"
+				cur_nav = "follow"
 				if self.following_wall:
 					self.new_goal = self.get_new_limits(curdirx, curdiry)
 					newgx, newgy = self.new_goal
@@ -423,7 +431,7 @@ class DeliverativeNavigation:
 				xi = int(round(math.cos(second_ang_to_check)))
 				yi = int(round(math.sin(second_ang_to_check)))
 				# We calculate new goal
-				self.cur_nav = "follow"
+				cur_nav = "follow"
 				newgx = xp + self.last_apf_dist_to_obstacle * xi
 				newgy = yp + self.last_apf_dist_to_obstacle * yi
 				curdirx = xi
@@ -434,5 +442,6 @@ class DeliverativeNavigation:
 				logging.debug("\tWe have a new goal: (" + str(newgx) + "," + str(newgy) + ")")
 				self.new_goal = (newgx, newgy)
 				nav_changed = True
+				nav_type = "deliverative"
 
-		return nav_changed, curdirx, curdiry, newgx, newgy, self.cur_nav
+		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type

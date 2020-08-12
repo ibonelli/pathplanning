@@ -40,8 +40,8 @@ class DeliverativeNavigation:
 		self.nav_data = []
 		self.trap_dir = None
 		self.following_wall = None
-		self.last_apf_direction = None
-		self.last_apf_dist_to_obstacle = None
+		self.last_reactive_direction = None
+		self.last_reactive_dist_to_obstacle = None
 
 	def set_map(self, Map):
 		self.map.set_map(Map)
@@ -326,9 +326,8 @@ class DeliverativeNavigation:
 
 		if path_blocked and trap_detected == 2:
 			logging.debug("TRAP TYPE 2 DETECTED... Should be moving backwards now!")
-			self.last_apf_direction = self.dir[-1]
-			self.last_apf_dist_to_obstacle = dist_to_obstacle
-			curdirx, curdiry = self.get_best_possible_path()
+			self.last_reactive_direction = self.dir[-1]
+			self.last_reactive_dist_to_obstacle = dist_to_obstacle
 			cur_nav = "follow"
 			self.new_goal = self.get_new_limits(curdirx, curdiry)
 			newgx, newgy = self.new_goal
@@ -352,8 +351,8 @@ class DeliverativeNavigation:
 				if self.direction_status((curdirx, curdiry), 0, self.nav_data[-1]):
 					pot = bmap[self.path[-1][0]][self.path[-1][1]]
 					# In this situation APF fails
-					self.last_apf_direction = self.dir[-1]
-					self.last_apf_dist_to_obstacle = dist_to_obstacle
+					self.last_reactive_direction = self.dir[-1]
+					self.last_reactive_dist_to_obstacle = dist_to_obstacle
 					curdirx, curdiry = self.get_best_possible_path()
 					cur_nav = "follow"
 					self.new_goal = self.get_new_limits(curdirx, curdiry)
@@ -392,22 +391,22 @@ class DeliverativeNavigation:
 		else:
 			ox, oy = self.map.get_objects()
 
-			last_apf_ang = math.atan2(self.last_apf_direction[1], self.last_apf_direction[0])
-			rx = xp + self.vision_limit * self.last_apf_direction[0]
-			ry = yp + self.vision_limit * self.last_apf_direction[1]
+			last_reactive_ang = math.atan2(self.last_reactive_direction[1], self.last_reactive_direction[0])
+			rx = xp + self.vision_limit * self.last_reactive_direction[0]
+			ry = yp + self.vision_limit * self.last_reactive_direction[1]
 			myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
 			col1,r1 = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
 			d1 = np.hypot(r1[0] - xp, r1[1] - yp)
 
-			if d1 != self.last_apf_dist_to_obstacle:
+			if d1 != self.last_reactive_dist_to_obstacle:
 				logging.debug("decide_status() for NAV: follow")
 				logging.debug("\tWe are not following wall, distance has changed...")
-				logging.debug("\td1: " + str(d1) + " | last_apf_dist: " + str(self.last_apf_dist_to_obstacle))
+				logging.debug("\td1: " + str(d1) + " | last_reactive_dist: " + str(self.last_reactive_dist_to_obstacle))
 				self.following_wall = False
 
 			# We need to check if we reached the end of the obstacle we are following
 			current_direction_ang = math.atan2(curdiry, curdirx)
-			second_ang_to_check = (last_apf_ang + current_direction_ang) / 2
+			second_ang_to_check = (last_reactive_ang + current_direction_ang) / 2
 			#logging.debug("decide_status() for NAV: follow")
 			#logging.debug("\tsecond_ang_to_check: " + str(math.degrees(second_ang_to_check)))
 			rx = xp + self.vision_limit * math.cos(second_ang_to_check)
@@ -432,13 +431,13 @@ class DeliverativeNavigation:
 				yi = int(round(math.sin(second_ang_to_check)))
 				# We calculate new goal
 				cur_nav = "follow"
-				newgx = xp + self.last_apf_dist_to_obstacle * xi
-				newgy = yp + self.last_apf_dist_to_obstacle * yi
+				newgx = xp + self.last_reactive_dist_to_obstacle * xi
+				newgy = yp + self.last_reactive_dist_to_obstacle * yi
 				curdirx = xi
 				curdiry = yi
 				logging.debug("decide_status() for NAV: follow")
 				logging.debug("\txi: " + str(xi) + " | yi: " + str(yi))
-				logging.debug("\tlast_apf_dist_to_obstacle: " + str(self.last_apf_dist_to_obstacle))
+				logging.debug("\tlast_reactive_dist_to_obstacle: " + str(self.last_reactive_dist_to_obstacle))
 				logging.debug("\tWe have a new goal: (" + str(newgx) + "," + str(newgy) + ")")
 				self.new_goal = (newgx, newgy)
 				nav_changed = True

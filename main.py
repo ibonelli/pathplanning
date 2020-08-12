@@ -26,6 +26,7 @@ lidar_steps = config.general['lidar_steps']
 grid_size = config.general['grid_size']
 robot_radius = config.general['robot_radius']
 vision_limit = config.general['vision_limit']
+brushfire_map_debug = config.general['brushfire_map_debug']
 
 def main():
 	# Cargando el archivo de descripcion del mundo a recorrer
@@ -68,7 +69,8 @@ def main():
 	myDeliverative = DeliverativeNavigation(robot_radius, vision_limit, grid_size, gx, gy, myMap)
 	myDeliverative.set_map(LidarLimit.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
 	myNavFollow = FollowPath(grid_size, gx, gy)
-	myNavWave.show_map("debug")
+	if brushfire_map_debug:
+		myNavWave.show_map("debug")
 
 	# Start with a clean motion model
 	motion_model_count = 0
@@ -92,7 +94,8 @@ def main():
 
 	# We save the step
 	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
-	myNavWave.show_map("debug")
+	if brushfire_map_debug:
+		myNavWave.show_map("debug")
 	rd.append(d)
 	rx.append(xp)
 	ry.append(yp)
@@ -117,7 +120,8 @@ def main():
 			pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 			myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
-			myNavWave.show_map("debug")
+			if brushfire_map_debug:
+				myNavWave.show_map("debug")
 			logging.debug("====================================== NEXT STEP ======================================")
 
 		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave)
@@ -167,7 +171,8 @@ def main():
 	myMap.save_map("map.json")
 	MyGraf.save("path.json")
 
-	myNavWave.show_map("console")
+	if brushfire_map_debug:
+		myNavWave.show_map("console")
 
 	#if show_animation:
 	#	# We save to a file

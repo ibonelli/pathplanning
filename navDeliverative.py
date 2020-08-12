@@ -20,6 +20,7 @@ brushfire_neighbors_limit = config.general['brushfire_neighbors_limit']
 known_limit = config.general['known_limit']
 block_size = config.general['block_size']
 vision_limit = config.general['vision_limit']
+navData_debug = config.general['navData_debug']
 
 # START Class DelivNavigation --------------------------------------------
 class DeliverativeNavigation:
@@ -93,7 +94,8 @@ class DeliverativeNavigation:
 		navData = navWave.known_areas(stepx, stepy, brushfire_radius_explore, brushfire_radius_to_evaluate, brushfire_neighbors_limit, navData)
 		self.nav_data.append(navData)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav) + " | mode: " + str(nav_type))
-		navData.print()
+		if navData_debug:
+			navData.print()
 
 	def check_limits(self, xp, yp):
 		abort = False
@@ -319,54 +321,52 @@ class DeliverativeNavigation:
 		self.following_wall = self.is_following_wall(bmap)
 		path_blocked, dist_to_obstacle = self.is_path_blocked()
 		trap_detected = self.detect_trap()
+		goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
 
-		# If we find a trap type 2 -------------------------------------
-		if path_blocked and trap_detected == 1:
-			logging.debug("TRAP TYPE 1 DETECTED... Should be moving backwards now!")
-
-		if path_blocked and trap_detected == 2:
-			logging.debug("TRAP TYPE 2 DETECTED... Should be moving backwards now!")
-			self.last_reactive_direction = self.dir[-1]
-			self.last_reactive_dist_to_obstacle = dist_to_obstacle
-			cur_nav = "follow"
-			self.new_goal = self.get_new_limits(curdirx, curdiry)
-			newgx, newgy = self.new_goal
-			nav_changed, curdirx, curdiry, newgx, newgy, cur_nav = self.follow_wall_navigation()
-			decision_made = True
-			nav_changed = True
-			nav_type = "deliverative"
-
-		# If using apf navigation --------------------------------------
-		if cur_nav == "apf":
-			# If goal is within reach, there is no need to change direction
-			if path_blocked:
-				goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
-				logging.debug("decide_status() for NAV: apf")
-				logging.debug("\tpath_blocked: " + str(path_blocked) + " | goal_unreachable: " + str(goal_unreachable))
-				logging.debug("\ttrap_detected: " + str(trap_detected) + " | following_wall: " + str(self.following_wall))
-
-			# If we have problems ahead, we need to decide what to do
-			if path_blocked and goal_unreachable and self.following_wall:
-				# Only if we don't know enough from current direction
-				if self.direction_status((curdirx, curdiry), 0, self.nav_data[-1]):
-					pot = bmap[self.path[-1][0]][self.path[-1][1]]
-					# In this situation APF fails
-					self.last_reactive_direction = self.dir[-1]
-					self.last_reactive_dist_to_obstacle = dist_to_obstacle
-					curdirx, curdiry = self.get_best_possible_path()
-					cur_nav = "follow"
-					self.new_goal = self.get_new_limits(curdirx, curdiry)
-					newgx, newgy = self.new_goal
-					decision_made = True
-					nav_changed = True
-					nav_type = "deliverative"
-				else:
-					logging.debug("Path is blocked but we'll continue in this direction for a bit more...")
-					logging.debug("\tNeed to know more about it. | navData: " + str(self.nav_data[-1].get_value(curdirx, curdiry)))
-
-		# If using follow navigation -----------------------------------
-		if decision_made == False and cur_nav == "follow":
+		if nav_type == "deliverative" and cur_nav == "follow":
+			logging.debug("Now running on deliverative... Should check to get back to reactive.")
 			nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type = self.follow_wall_navigation()
+			if nav_changed:
+				decision_made == True 
+		else:
+			# If we find a trap type 2 -------------------------------------
+			if path_blocked and (trap_detected == 1 or trap_detected == 2) and goal_unreachable:
+				self.last_reactive_direction = self.dir[-1]
+				self.last_reactive_dist_to_obstacle = dist_to_obstacle
+				curdirx, curdiry = self.get_best_possible_path()
+				cur_nav = "follow"
+				self.new_goal = self.get_new_limits(curdirx, curdiry)
+				decision_made = True
+				nav_changed = True
+				nav_type = "deliverative"
+
+		## If using apf navigation --------------------------------------
+		#if cur_nav == "apf":
+		#	# If goal is within reach, there is no need to change direction
+		#	if path_blocked:
+		#		goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
+		#		#logging.debug("decide_status() for NAV: apf")
+		#		#logging.debug("\tpath_blocked: " + str(path_blocked) + " | goal_unreachable: " + str(goal_unreachable))
+		#		#logging.debug("\ttrap_detected: " + str(trap_detected) + " | following_wall: " + str(self.following_wall))
+		#
+		#	# If we have problems ahead, we need to decide what to do
+		#	if path_blocked and goal_unreachable and self.following_wall:
+		#		# Only if we don't know enough from current direction
+		#		if self.direction_status((curdirx, curdiry), 0, self.nav_data[-1]):
+		#			pot = bmap[self.path[-1][0]][self.path[-1][1]]
+		#			# In this situation APF fails
+		#			self.last_reactive_direction = self.dir[-1]
+		#			self.last_reactive_dist_to_obstacle = dist_to_obstacle
+		#			curdirx, curdiry = self.get_best_possible_path()
+		#			cur_nav = "follow"
+		#			self.new_goal = self.get_new_limits(curdirx, curdiry)
+		#			newgx, newgy = self.new_goal
+		#			decision_made = True
+		#			nav_changed = True
+		#			nav_type = "deliverative"
+		#		else:
+		#			logging.debug("Path is blocked but we'll continue in this direction for a bit more...")
+		#			logging.debug("\tNeed to know more about it. | navData: " + str(self.nav_data[-1].get_value(curdirx, curdiry)))
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
 
@@ -387,6 +387,7 @@ class DeliverativeNavigation:
 			logging.debug("\tCurrent position: " + str((xp,yp)) + " | new_goal was: " + str(self.new_goal) + " | following_wall: " + str(self.following_wall))
 			self.new_goal = None
 			cur_nav = "apf"
+			nav_type = "reactive"
 			nav_changed = True
 		else:
 			ox, oy = self.map.get_objects()
@@ -431,6 +432,8 @@ class DeliverativeNavigation:
 				yi = int(round(math.sin(second_ang_to_check)))
 				# We calculate new goal
 				cur_nav = "follow"
+				nav_type = "deliverative"
+				self.following_wall = False
 				newgx = xp + self.last_reactive_dist_to_obstacle * xi
 				newgy = yp + self.last_reactive_dist_to_obstacle * yi
 				curdirx = xi
@@ -441,6 +444,5 @@ class DeliverativeNavigation:
 				logging.debug("\tWe have a new goal: (" + str(newgx) + "," + str(newgy) + ")")
 				self.new_goal = (newgx, newgy)
 				nav_changed = True
-				nav_type = "deliverative"
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type

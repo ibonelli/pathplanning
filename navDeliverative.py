@@ -43,7 +43,10 @@ class DeliverativeNavigation:
 		self.following_wall = None
 		self.blocked_direction_to_overcome = None
 		self.last_reactive_dist_to_obstacle = None
+		self.last_dist_to_obstacle = None
 		self.wall_overcome = False
+		self.avoiding_trap = False
+		self.avoiding_trap_type = 0
 
 	def set_map(self, Map):
 		self.map.set_map(Map)
@@ -362,37 +365,47 @@ class DeliverativeNavigation:
 		trap_detected = self.detect_trap()
 		goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
 
-		if nav_type == "deliverative" and cur_nav == "follow" and self.is_following_wall():
-			logging.debug("Now running on deliverative... Should check to get back to reactive.")
-			nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type = self.follow_wall_navigation()
-			if nav_changed:
-				decision_made == True 
-		elif nav_type == "deliverative" and cur_nav == "follow" and self.wall_overcome == True:
-			if xp == self.new_goal[0] and yp == self.new_goal[1]:
-				nav_changed = True
-				self.new_goal = None
-				curdirx, curdiry = None, None
-				newgx, newgy = self.org_goal
-				decision_made = True
-				cur_nav = "apf"
-				nav_type = "reactive"
-		else:
-			# If we find a trap type 2 -------------------------------------
-			if path_blocked and (trap_detected == 1 or trap_detected == 2) and goal_unreachable:
-				if trap_detected == 1:
-					self.blocked_direction_to_overcome = self.dir[-1]
-				elif trap_detected == 2:
-					self.blocked_direction_to_overcome = self.get_unblock_type2_direction()
-				logging.debug("\tblocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome))
+		if nav_type == "deliverative" and cur_nav == "follow":
+			if self.avoiding_trap:
+				logging.debug("Avoding trap...")
+				unblock, curdirx, curdiry, newgx, newgy = self.block_check()
+				if unblock:
+					decision_made == True 
+					logging.debug("Moving back from a trap status! | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
+					nav_changed = True
+					cur_nav = "follow"
+					nav_type = "deliverative"
+					self.avoiding_trap = False
+					self.new_goal = (newgx, newgy)
+			else:
+				logging.debug("Checking if we reached new goal...")
+				if xp == self.new_goal[0] and yp == self.new_goal[1]:
+					nav_changed = True
+					self.new_goal = None
+					curdirx, curdiry = None, None
+					newgx, newgy = self.org_goal
+					decision_made = True
+					cur_nav = "apf"
+					nav_type = "reactive"
 
-				self.last_reactive_dist_to_obstacle = dist_to_obstacle
-				curdirx, curdiry = self.get_best_possible_path()
-				cur_nav = "follow"
-				self.new_goal = self.get_new_limits(curdirx, curdiry)
-				newgx, newgy = self.new_goal
-				decision_made = True
-				nav_changed = True
-				nav_type = "deliverative"
+		# If we find a trap -------------------------------------
+		if path_blocked and cur_nav == "apf" and (trap_detected == 1 or trap_detected == 2) and goal_unreachable:
+			self.avoiding_trap = True
+			self.avoiding_trap_type = trap_detected
+			if trap_detected == 1:
+				self.blocked_direction_to_overcome = self.dir[-1]
+			elif trap_detected == 2:
+				self.blocked_direction_to_overcome = self.get_unblock_type2_direction()
+			logging.debug("\tblocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome))
+
+			self.last_reactive_dist_to_obstacle = dist_to_obstacle
+			curdirx, curdiry = self.get_best_possible_path()
+			cur_nav = "follow"
+			self.new_goal = self.get_new_limits(curdirx, curdiry)
+			newgx, newgy = self.new_goal
+			decision_made = True
+			nav_changed = True
+			nav_type = "deliverative"
 
 
 		## If using apf navigation --------------------------------------
@@ -425,6 +438,47 @@ class DeliverativeNavigation:
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
 
+	def block_check(self):
+		ox, oy = self.map.get_objects()
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		curdirx = self.dir[-1][0]
+		curdiry = self.dir[-1][1]
+
+		if self.avoiding_trap_type == 1:
+			blocked_ang = math.atan2(self.blocked_direction_to_overcome[1], self.blocked_direction_to_overcome[0])
+			current_direction_ang = math.atan2(curdiry, curdirx)
+			ang_to_check = (blocked_ang + current_direction_ang) / 2
+			dirx = int(round(math.cos(ang_to_check)))
+			diry = int(round(math.sin(ang_to_check)))
+		elif self.avoiding_trap_type == 2:
+			dirx = self.blocked_direction_to_overcome[0]
+			diry = self.blocked_direction_to_overcome[1]
+
+		rx = xp + self.vision_limit * dirx
+		ry = yp + self.vision_limit * diry
+		myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
+		col,r = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
+		d = np.hypot(r[0] - xp, r[1] - yp)
+
+		if col == True:
+			unblock = False
+			self.last_dist_to_obstacle = d
+			newgx = self.org_goal[0]
+			newgy = self.org_goal[1]
+			newdirx = curdirx
+			newdiry = curdiry
+		else:
+			unblock = True
+			self.wall_overcome = True
+			newdirx = dirx
+			newdiry = diry
+			newgx = xp + self.last_reactive_dist_to_obstacle * newdirx
+			newgy = yp + self.last_reactive_dist_to_obstacle * newdiry
+			logging.debug("We cleared the obstacle limit!")
+
+		return unblock, newdirx, newdiry, newgx, newgy
+
 	def follow_wall_navigation(self):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
@@ -454,11 +508,11 @@ class DeliverativeNavigation:
 			col1,r1 = myLidar.lidar_limits(xp, yp, (rx, ry), ox, oy, "object")
 			d1 = np.hypot(r1[0] - xp, r1[1] - yp)
 
-			if d1 != self.last_reactive_dist_to_obstacle:
-				logging.debug("decide_status() for NAV: follow")
-				logging.debug("\tWe are not following wall, distance has changed...")
-				logging.debug("\td1: " + str(d1) + " | last_reactive_dist: " + str(self.last_reactive_dist_to_obstacle))
-				self.following_wall = False
+			#if d1 != self.last_reactive_dist_to_obstacle:
+			#	logging.debug("decide_status() for NAV: follow")
+			#	logging.debug("\tWe are not following wall, distance has changed...")
+			#	logging.debug("\td1: " + str(d1) + " | last_reactive_dist: " + str(self.last_reactive_dist_to_obstacle))
+			#	self.following_wall = False
 
 			# We need to check if we reached the end of the obstacle we are following
 			current_direction_ang = math.atan2(curdiry, curdirx)

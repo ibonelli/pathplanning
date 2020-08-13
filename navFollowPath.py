@@ -35,6 +35,7 @@ class FollowPath:
 		# Llegamos al objetivo?
 		if d_limit < self.reso:
 			self.limit = True
+
 		# Verificamos no superar el limite
 		if int(self.limitx) == int(xs):
 			self.limit = True
@@ -42,6 +43,13 @@ class FollowPath:
 			self.limit = True
 
 		return d, xs, ys, curdirx, curdiry, self.limit
+
+	def decide_status(self, xp, yp, ox, oy):
+		stuck = False
+		for obx,oby in np.nditer([ox, oy]):
+			if obx == xp and oby == yp:
+				stuck = True
+		return stuck
 
 	def follow_wall(self, xp, yp, curdirx, curdiry, obsx, obsy):
 		# TODO -- Mantenerme siempre a la distancia actual del

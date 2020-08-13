@@ -332,11 +332,11 @@ class DeliverativeNavigation:
 
 		x1 = int(round(math.cos(cur_ang+math.pi*3/4)))
 		y1 = int(round(math.sin(cur_ang+math.pi*3/4)))
-		dirVals1 = navData.get_value(x,y)
+		dirVals1 = navData.get_value(x1,y1)
 
 		x2 = int(round(math.cos(cur_ang-math.pi*3/4)))
 		y2 = int(round(math.sin(cur_ang-math.pi*3/4)))
-		dirVals2 = navData.get_value(x,y)
+		dirVals2 = navData.get_value(x2,y2)
 
 		if dirVals1['pmap'] < dirVals2['pmap']:
 			return x1, y1
@@ -383,6 +383,7 @@ class DeliverativeNavigation:
 					self.blocked_direction_to_overcome = self.dir[-1]
 				elif trap_detected == 2:
 					self.blocked_direction_to_overcome = self.get_unblock_type2_direction()
+				logging.debug("\tblocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome))
 
 				self.last_reactive_dist_to_obstacle = dist_to_obstacle
 				curdirx, curdiry = self.get_best_possible_path()

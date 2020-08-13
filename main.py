@@ -112,6 +112,7 @@ def main():
 			stuck = myNavigation.decide_status(rd)
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
+			stuck = myNavFollow.decide_status(xp, yp, ox, oy)
 
 		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
 

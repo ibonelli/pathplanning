@@ -327,7 +327,9 @@ class DeliverativeNavigation:
 	#
 	#	return neighbors
 
-	def get_unblock_type2_direction(self):
+	def get_unblock_type2_direction(self, bMap):
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
 		navData = self.nav_data[-1]
 		cur_dir = self.dir[-1]
 		cur_ang = math.atan2(cur_dir[1], cur_dir[0])
@@ -335,12 +337,27 @@ class DeliverativeNavigation:
 		x1 = int(round(math.cos(cur_ang+math.pi*3/4)))
 		y1 = int(round(math.sin(cur_ang+math.pi*3/4)))
 		dirVals1 = navData.get_value(x1,y1)
+		logging.debug("\tEscape dir1 | direction: " + str((x1, y1)) + " | PMAP: " + str(dirVals1['pmap']))
 
 		x2 = int(round(math.cos(cur_ang-math.pi*3/4)))
 		y2 = int(round(math.sin(cur_ang-math.pi*3/4)))
 		dirVals2 = navData.get_value(x2,y2)
+		logging.debug("\tEscape dir2 | direction: " + str((x2, y2)) + " | PMAP: " + str(dirVals2['pmap']))
 
-		if dirVals1['pmap'] < dirVals2['pmap']:
+		if round(dirVals1['pmap'],2) == round(dirVals2['pmap'],2):
+			xk1 = xp + x1 * self.vision_limit
+			yk1 = yp + y1 * self.vision_limit
+			known1 = bMap.known_point(xk1, yk1, 3)
+			logging.debug("\t\tKnown | direction: " + str((x1, y1)) + " | Known: " + str(known1))
+			xk2 = xp + x2 * self.vision_limit
+			yk2 = yp + y2 * self.vision_limit
+			known2 = bMap.known_point(xk2, yk2, 3)
+			logging.debug("\t\tKnown | direction: " + str((x2, y2)) + " | Known: " + str(known2))
+			if known1 < known2:
+				return x1, y1
+			else:
+				return x2, y2
+		elif dirVals1['pmap'] < dirVals2['pmap']:
 			return x1, y1
 		else:
 			return x2, y2
@@ -395,7 +412,7 @@ class DeliverativeNavigation:
 			if trap_detected == 1:
 				self.blocked_direction_to_overcome = self.dir[-1]
 			elif trap_detected == 2:
-				self.blocked_direction_to_overcome = self.get_unblock_type2_direction()
+				self.blocked_direction_to_overcome = self.get_unblock_type2_direction(bMap)
 			logging.debug("\tblocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome))
 
 			curdirx, curdiry = self.get_best_possible_path()

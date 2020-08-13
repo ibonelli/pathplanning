@@ -261,6 +261,42 @@ class BrushfireNavigation:
 			to_return = 0
 		return to_return
 
+	def get_neighbors_list(self, xl, yl, limit, found=None):
+		neighbors = []
+		siblings = []
+
+		if limit > 0:
+			#logging.debug("get_neighbors() ---------------------------------")
+			#logging.debug("\tlimit: " + str(limit))
+			for xy in self.motion:
+				dx, dy = xy
+				xp = xl+dx
+				yp = yl+dy
+				if self.minx <= xp and xp <= self.maxx:
+					if self.miny <= yp and yp <= self.maxy:
+						if self.map[xp][yp] == 1:
+							# We need to discard prior found points
+							if found is not None:
+								if not(xp == found[0] and yp == found[1]):
+									neighbors.append((xl+dx, yl+dy))
+							else:
+								neighbors.append((xl+dx, yl+dy))
+			if found is None:
+				# This is not a child!
+				# Adding one as even if you don't have neighbors you have the explored point
+				count = len(neighbors) + 1
+			else:
+				count = len(neighbors)
+			#logging.debug("\tneighbors: " + str(count))
+			if count > 0:
+				for n in neighbors:
+					x, y = n
+					siblings = self.get_neighbors_list(x, y, limit-1, (xl, yl))
+			#logging.debug("\tchilds: " + str(childs))
+			#logging.debug("----------------------------- END get_neighbors()")
+
+		return neighbors + siblings
+
 	def fix_limits(self, xinf, yinf, xsup, ysup):
 		if xinf < self.minx:
 			xinf = self.minx

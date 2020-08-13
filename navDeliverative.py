@@ -43,6 +43,7 @@ class DeliverativeNavigation:
 		self.following_wall = None
 		self.blocked_direction_to_overcome = None
 		self.last_reactive_dist_to_obstacle = None
+		self.wall_overcome = False
 
 	def set_map(self, Map):
 		self.map.set_map(Map)
@@ -233,9 +234,10 @@ class DeliverativeNavigation:
 			d = np.hypot(r[0] - xp, r[1] - yp)
 			b = dirVals['block_size']
 		else:
+			r = (float("inf"), float("inf"))
 			d = float("inf")
 			b = 0
-		return dirVals['blocked'], d, b
+		return dirVals['blocked'], d, b, r
 
 	def is_goal_unreachable(self, dist_to_obstacle):
 		xp = self.path[-1][0]
@@ -302,8 +304,44 @@ class DeliverativeNavigation:
 			logging.debug("\t(" + str(path[0]) + "," + str(path[1]) + ") | pot: " + str(path[2]) + " | known: " + str(path[3]))
 		return (possible_path[0][0], possible_path[0][1])
 
-	def get_blocked_direction_to_overcome(self):
-		return None
+	#def get_blocked_direction_to_overcome(self, bMap):
+	#	xp = self.path[-1][0]
+	#	yp = self.path[-1][1]
+	#	navData = self.nav_data[-1]
+	#	dirx = self.dir[-1][0]
+	#	diry = self.dir[-1][1]
+	#	dirVals = navData.get_value(dirx,diry)
+	#
+	#	neighbors = None
+	#	if dirVals['blocked'] == True:
+	#		if dirVals['block_size'] > 2:
+	#			xl, yl = dirVals['limit_pos']
+	#			neighbors = bMap.get_neighbors_list(xl, yl, 3)
+	#
+	#	if neighbors is not None:
+	#		logging.debug("\t=======================================")
+	#		logging.debug("\t\tNeighbors: " + str(neighbors))
+	#		logging.debug("\t=======================================")
+	#
+	#	return neighbors
+
+	def get_unblock_type2_direction(self):
+		navData = self.nav_data[-1]
+		cur_dir = self.dir[-1]
+		cur_ang = math.atan2(cur_dir[1], cur_dir[0])
+
+		x1 = int(round(math.cos(cur_ang+math.pi*3/4)))
+		y1 = int(round(math.sin(cur_ang+math.pi*3/4)))
+		dirVals1 = navData.get_value(x,y)
+
+		x2 = int(round(math.cos(cur_ang-math.pi*3/4)))
+		y2 = int(round(math.sin(cur_ang-math.pi*3/4)))
+		dirVals2 = navData.get_value(x,y)
+
+		if dirVals1['pmap'] < dirVals2['pmap']:
+			return x1, y1
+		else:
+			return x2, y2
 
 	def decide_status(self, bMap):
 		xp = self.path[-1][0]
@@ -320,7 +358,7 @@ class DeliverativeNavigation:
 		nav_type = self.nav_type[-1]
 		bmap = bMap.get_map()
 		self.following_wall = self.is_following_wall()
-		path_blocked, dist_to_obstacle, limit_size = self.is_path_blocked()
+		path_blocked, dist_to_obstacle, limit_size, limit_pos = self.is_path_blocked()
 		trap_detected = self.detect_trap()
 		goal_unreachable = self.is_goal_unreachable(dist_to_obstacle)
 
@@ -329,10 +367,23 @@ class DeliverativeNavigation:
 			nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type = self.follow_wall_navigation()
 			if nav_changed:
 				decision_made == True 
+		elif nav_type == "deliverative" and cur_nav == "follow" and self.wall_overcome == True:
+			if xp == self.new_goal[0] and yp == self.new_goal[1]:
+				nav_changed = True
+				self.new_goal = None
+				curdirx, curdiry = None, None
+				newgx, newgy = self.org_goal
+				decision_made = True
+				cur_nav = "apf"
+				nav_type = "reactive"
 		else:
 			# If we find a trap type 2 -------------------------------------
 			if path_blocked and (trap_detected == 1 or trap_detected == 2) and goal_unreachable:
-				self.blocked_direction_to_overcome = self.dir[-1]
+				if trap_detected == 1:
+					self.blocked_direction_to_overcome = self.dir[-1]
+				elif trap_detected == 2:
+					self.blocked_direction_to_overcome = self.get_unblock_type2_direction()
+
 				self.last_reactive_dist_to_obstacle = dist_to_obstacle
 				curdirx, curdiry = self.get_best_possible_path()
 				cur_nav = "follow"
@@ -341,6 +392,7 @@ class DeliverativeNavigation:
 				decision_made = True
 				nav_changed = True
 				nav_type = "deliverative"
+
 
 		## If using apf navigation --------------------------------------
 		#if cur_nav == "apf":
@@ -438,6 +490,7 @@ class DeliverativeNavigation:
 				self.following_wall = False
 				newgx = xp + self.last_reactive_dist_to_obstacle * xi
 				newgy = yp + self.last_reactive_dist_to_obstacle * yi
+				self.wall_overcome = True
 				curdirx = xi
 				curdiry = yi
 				logging.debug("decide_status() for NAV: follow")

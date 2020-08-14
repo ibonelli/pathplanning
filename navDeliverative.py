@@ -23,6 +23,7 @@ known_limit = config.general['known_limit']
 block_size = config.general['block_size']
 vision_limit = config.general['vision_limit']
 navData_debug = config.general['navData_debug']
+show_Astar_animation = config.general['show_Astar_animation']
 
 # START Class DelivNavigation --------------------------------------------
 class DeliverativeNavigation:
@@ -386,10 +387,7 @@ class DeliverativeNavigation:
 		robot_radius = self.rr
 		ox, oy = self.map.get_objects()
 
-		# TODO -- REMOVE!!!
-		show_animation = True
-
-		if show_animation:  # pragma: no cover
+		if show_Astar_animation:
 			plt.cla()
 			plt.plot(ox, oy, ".k")
 			plt.plot(sx, sy, "og")
@@ -398,12 +396,16 @@ class DeliverativeNavigation:
 			plt.axis("equal")
 
 		a_star = AStarPlanner(ox, oy, grid_size, robot_radius, bMap)
-		rx, ry = a_star.planning(sx, sy, gx, gy)
+		rx, ry, newgx, newgy = a_star.planning(sx, sy, gx, gy)
 
-		if show_animation:  # pragma: no cover
+		logging.debug("APF New Goal = (" + str(newgx) + "," + str(newgy) + ")")
+
+		if show_Astar_animation:
 			plt.plot(rx, ry, "-r")
 			plt.pause(0.001)
 			plt.show()
+
+		return newgx, newgy
 
 	def get_best_possible_path(self):
 		navData = self.nav_data[-1]
@@ -520,6 +522,13 @@ class DeliverativeNavigation:
 					else:
 						logging.debug("All known! Need new strategy...")
 						self.new_goal = self.get_next_unknown_goal(bMap)
+						nav_changed = True
+						self.new_goal = None
+						curdirx, curdiry = None, None
+						newgx, newgy = self.org_goal
+						decision_made = True
+						cur_nav = "apf"
+						nav_type = "deliverative"
 			else:
 				logging.debug("Checking if we reached new goal...")
 				if xp == self.new_goal[0] and yp == self.new_goal[1]:

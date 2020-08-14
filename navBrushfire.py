@@ -200,7 +200,7 @@ class BrushfireNavigation:
 			logging.error("Wrong limits for known_point_from_limits()")
 			logging.error("\txsup: " + str(xsup) + " | xinf: " + str(xinf) + " | ysup: " + str(ysup) + " | yinf: " + str(yinf))
 			known = -1
-		logging.debug("known: " + str(known) + " | known_points: " + str(known_points) + " | total: " + str(total))
+		#logging.debug("known: " + str(known) + " | known_points: " + str(known_points) + " | total: " + str(total))
 		return known
 
 	def known_point(self, xp, yp, radius):

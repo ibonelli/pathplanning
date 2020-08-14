@@ -22,6 +22,7 @@ general = dict(
 	robot_motion_model = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]],
 	known_limit = 0.8,
 	block_size = 4,
+	show_Astar_animation = False,
 )
 
 logging.basicConfig(filename=general['logFile'],

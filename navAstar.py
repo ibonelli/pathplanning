@@ -12,9 +12,10 @@ Original work by:
 import math
 import matplotlib.pyplot as plt
 
+import config
 from navBrushfire import BrushfireNavigation
 
-show_animation = True
+show_animation = config.general['show_Astar_animation']
 
 class AStarPlanner:
 	def __init__(self, ox, oy, resolution, rr, bMap):
@@ -38,15 +39,10 @@ class AStarPlanner:
 		# Importing information from bMap
 		self.bMap = bMap
 		limits = bMap.get_limits()
-		print("Limits: " +str(limits))
 		self.min_x = limits['minx']
-		print("self.min_x: " +str(self.min_x))
 		self.min_y = limits['miny']
-		print("self.min_y: " +str(self.min_y))
 		self.max_x = limits['maxx']
-		print("self.max_x: " +str(self.max_x))
 		self.max_y = limits['maxy']
-		print("self.max_y: " +str(self.max_y))
 		self.x_width = round((self.max_x - self.min_x) / self.resolution)
 		self.y_width = round((self.max_y - self.min_y) / self.resolution)
 
@@ -56,6 +52,10 @@ class AStarPlanner:
 		ox.append(limits['maxx'])
 		oy.append(limits['maxy'])
 		self.calc_obstacle_map(ox, oy)
+
+		# New goal to follow
+		self.last_x = None
+		self.last_y = None
 
 	class Node:
 		def __init__(self, x, y, cost, parent_index):
@@ -121,13 +121,14 @@ class AStarPlanner:
 				break
 
 			# In my usecase it is also useful to finish when it got to an unknown spot
-			print("current.x : " + str(current.x) + " | current.y : " + str(current.y))
-			#known = self.bMap.known_point(current.x, current.y, 5)
-			#if known < 0.2:
-			#	print("Found a new position to follow")
-			#	goal_node.parent_index = current.parent_index
-			#	goal_node.cost = current.cost
-			#	break
+			#print("current.x : " + str(current.x) + " | current.y : " + str(current.y))
+			known = self.bMap.known_point(current.x, current.y, 5)
+			if known < 0.2:
+				goal_node.parent_index = current.parent_index
+				goal_node.cost = current.cost
+				self.last_x = current.x
+				self.last_y = current.y
+				break
 
 			# Remove the item from the open set
 			del open_set[c_id]
@@ -144,18 +145,12 @@ class AStarPlanner:
 
 				# If the node is not safe, do nothing
 				if not self.verify_node(node):
-					print("Node is not safe! | node.x : " + str(node.x) + " | node.y : " + str(node.y))
 					continue
-				else:
-					print("Safe node | node.x : " + str(node.x) + " | node.y : " + str(node.y))
-
 
 				if n_id in closed_set:
-					print("\tThis node is in the closed_set | node.x : " + str(node.x) + " | node.y : " + str(node.y))
 					continue
 
 				if n_id not in open_set:
-					print("\tAdding node to open_set | node.x : " + str(node.x) + " | node.y : " + str(node.y))
 					open_set[n_id] = node  # discovered a new node
 				else:
 					if open_set[n_id].cost > node.cost:
@@ -165,7 +160,7 @@ class AStarPlanner:
 		# Once finished, we calculate the path
 		rx, ry = self.calc_final_path(goal_node, closed_set)
 
-		return rx, ry
+		return rx, ry, self.last_x, self.last_y
 
 	def calc_final_path(self, goal_node, closed_set):
 		# generate final course
@@ -206,27 +201,20 @@ class AStarPlanner:
 	def verify_node(self, node):
 		px = self.calc_grid_position(node.x, self.min_x)
 		py = self.calc_grid_position(node.y, self.min_y)
-		print("verify_node() | px : " + str(px) + " | py : " + str(py))
 
 		if px < self.min_x:
-			print("self.min_x: " +str(self.min_x))
 			return False
 		elif py < self.min_y:
-			print("self.min_y: " +str(self.min_y))
 			return False
 		elif px >= self.max_x:
-			print("self.max_x: " +str(self.max_x))
 			return False
 		elif py >= self.max_y:
-			print("self.max_y: " +str(self.max_y))
 			return False
 
 		# collision check
 		if self.obstacle_map[node.x][node.y]:
-			print("obstacle_map[" + str(node.x) + "," + str(node.y) + "): " + str(self.obstacle_map[node.x][node.y]))
 			return False
 
-		print("verify_node() | All good, returning True.")
 		return True
 
 	def calc_obstacle_map(self, ox, oy):

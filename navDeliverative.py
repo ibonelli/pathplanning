@@ -44,8 +44,10 @@ class DeliverativeNavigation:
 		self.blocked_direction_to_overcome = None
 		self.last_dist_to_obstacle = None
 		self.wall_overcome = False
+		self.before_trap_pos = False
 		self.avoiding_trap = False
 		self.avoiding_trap_type = 0
+		self.finding_unknown = False
 
 	def set_map(self, Map):
 		self.map.set_map(Map)
@@ -257,15 +259,6 @@ class DeliverativeNavigation:
 		cur_dir = self.dir[-1]
 		trap = 0
 
-		# -- Does not seem to require all directions
-		#
-		#for x,y in navData.get_iterative():
-		#	dirVals = navData.get_value(x,y)
-		#	if dirVals['blocked'] and dirVals['known'] > known_limit and dirVals['block_size'] > block_size:
-		#		print("\t(" + str(x)  + "," + str(y) + ") -> " + str(dirVals))
-		#		trap = True
-		# --
-
 		st_p45 = self.direction_status(cur_dir, math.pi/4, navData)
 		st_n45 = self.direction_status(cur_dir, -math.pi/4, navData)
 		# If we are blocked at front and 45 degree deviations
@@ -288,6 +281,35 @@ class DeliverativeNavigation:
 		if dirVals['blocked'] and dirVals['known'] > known_limit and dirVals['block_size'] > block_size:
 			status = True
 		return status
+
+	def explore_unknown(self):
+		navData = self.nav_data[-1]
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		cur_dir = self.dir[-1]
+		possible_path = []
+
+		logging.debug("=========================================================")
+		logging.debug("\tChecking least known areas...")
+
+		for x,y in navData.get_iterative():
+			dirVals = navData.get_value(x,y)
+			if dirVals['known'] < known_limit and dirVals['block_size'] < block_size:
+				logging.debug("\t(" + str(x)  + "," + str(y) + ") -> " + str(dirVals))
+				possible_path.append((x, y, dirVals['pmap'], dirVals['known']))
+
+		# We will choose least know area with lower pmap
+		if len(possible_path) > 0:
+			possible_path = sorted(possible_path, key=lambda mypath: mypath[2])
+			best_dir = (possible_path[0][0], possible_path[0][1])
+			found = True
+		else:
+			best_dir = None
+			found = False
+
+		logging.debug("=========================================================")
+
+		return found, best_dir
 
 	def get_best_possible_path(self):
 		navData = self.nav_data[-1]
@@ -389,6 +411,20 @@ class DeliverativeNavigation:
 					nav_type = "deliverative"
 					self.avoiding_trap = False
 					self.new_goal = (newgx, newgy)
+				elif path_blocked:
+					logging.debug("Current exploring path has failed us!")
+					got_dir, curdir = self.explore_unknown()
+					if got_dir:
+						nav_changed = True
+						curdirx, curdiry = curdir
+						cur_nav = "follow"
+						nav_type = "deliverative"
+						self.new_goal = self.get_new_limits(curdirx, curdiry)
+						newgx, newgy = self.new_goal
+						self.finding_unknown = True
+						logging.debug("\tLeast known direction found... | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
+					else:
+						logging.debug("All known! Need new strategy...")
 			else:
 				logging.debug("Checking if we reached new goal...")
 				if xp == self.new_goal[0] and yp == self.new_goal[1]:
@@ -412,6 +448,7 @@ class DeliverativeNavigation:
 				self.blocked_direction_to_overcome = self.get_unblock_type2_direction(bMap)
 
 			logging.debug("\tblocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome))
+			self.before_trap_pos = (xp, yp)
 			curdirx, curdiry = self.get_best_possible_path()
 			cur_nav = "follow"
 			self.new_goal = self.get_new_limits(curdirx, curdiry)

@@ -276,10 +276,6 @@ class DeliverativeNavigation:
 			st_n90 = self.direction_status(cur_dir, -math.pi/2, navData)
 			if st_p90 == True and st_n90 == True:
 				trap = 2
-		# Reporting...
-		if trap != 0:
-			logging.debug("==== Trap Detected")
-			logging.debug("\tstep: (" + str(xp) + "," + str(yp) + ") | cur_dir: " + str(cur_dir) + " | type: " + str(trap))
 
 		return trap
 
@@ -409,12 +405,13 @@ class DeliverativeNavigation:
 			self.avoiding_trap = True
 			self.avoiding_trap_type = trap_detected
 			self.wall_overcome = False
+
 			if trap_detected == 1:
 				self.blocked_direction_to_overcome = self.dir[-1]
 			elif trap_detected == 2:
 				self.blocked_direction_to_overcome = self.get_unblock_type2_direction(bMap)
-			logging.debug("\tblocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome))
 
+			logging.debug("\tblocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome))
 			curdirx, curdiry = self.get_best_possible_path()
 			cur_nav = "follow"
 			self.new_goal = self.get_new_limits(curdirx, curdiry)
@@ -422,6 +419,7 @@ class DeliverativeNavigation:
 			decision_made = True
 			nav_changed = True
 			nav_type = "deliverative"
+			logging.debug("\tstep: (" + str(xp) + "," + str(yp) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected))
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
 

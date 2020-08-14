@@ -129,10 +129,10 @@ def main():
 		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave)
 
 		if nav_changed:
-			logging.debug("===================================")
+			logging.debug("================= MAIN START =================")
 			logging.debug("decide_status() has chosen a new direction: " + str((dirx, diry)))
 			logging.debug("\tNew limit: " + str((limitx, limity)) + " | newnav: " + str(newnav) + " | navtype: " + str(nav_type))
-			logging.debug("===================================")
+			logging.debug("================== MAIN END ==================")
 			nav = newnav
 			if nav == "follow":
 				myNavFollow.set_limit(limitx, limity)

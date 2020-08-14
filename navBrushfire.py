@@ -56,7 +56,7 @@ class BrushfireNavigation:
 	def set_yw(self, yw):
 		self.yw = yw
 
-	def show_map(self, mode="debug"):
+	def show_map(self, xp, yp, mode="debug"):
 		self.print("Map+--------------------------------------", mode)
 		msg_xruler = "    "
 		for i in range(self.xw):
@@ -67,7 +67,11 @@ class BrushfireNavigation:
 			msg = str('{0:02d}').format(int(self.maxy)-j) + " |"
 			for i in range(self.xw):
 				try:
-					msg = msg + " " + str('{0:02d}').format(int(self.map[i][int(self.maxy)-j]))
+					yi = int(self.maxy)-j
+					if i == xp and yi == yp:
+						msg = msg + " **"
+					else:
+						msg = msg + " " + str('{0:02d}').format(int(self.map[i][yi]))
 				except:
 					self.print("Error show_map() | maxx : " + str(self.maxx) + " | maxy: " + str(self.maxy) + " | i: " + str(i) + " | j: " + str(j), mode)
 			msg = msg + " | " + str('{0:02d}').format(int(self.maxy)-j)

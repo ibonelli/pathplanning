@@ -71,7 +71,7 @@ def main():
 	myDeliverative.set_map(LidarLimit.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
 	myNavFollow = FollowPath(grid_size, gx, gy)
 	if brushfire_map_debug:
-		myNavWave.show_map("debug")
+		myNavWave.show_map(sx, sy, "debug")
 
 	# Start with a clean motion model
 	motion_model_count = 0
@@ -96,7 +96,7 @@ def main():
 	# We save the step
 	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
 	if brushfire_map_debug:
-		myNavWave.show_map("debug")
+		myNavWave.show_map(xp, yp, "debug")
 	rd.append(d)
 	rx.append(xp)
 	ry.append(yp)
@@ -123,7 +123,7 @@ def main():
 			myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
 			if brushfire_map_debug:
-				myNavWave.show_map("debug")
+				myNavWave.show_map(xp, yp, "debug")
 			logging.debug("====================================== NEXT STEP ======================================")
 
 		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave)
@@ -178,7 +178,7 @@ def main():
 		myMap.draw(fbase + "_objs.png")
 
 	if brushfire_map_debug:
-		myNavWave.show_map("console")
+		myNavWave.show_map(xp, yp, "console")
 
 if __name__ == '__main__':
 	print(__file__ + " start!!")

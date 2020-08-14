@@ -311,6 +311,71 @@ class DeliverativeNavigation:
 
 		return found, best_dir
 
+	def get_next_unknown_goal(self, bMap):
+		xp, yp = self.before_trap_pos
+		ox, oy = self.map.get_objects()
+		possible_path = []
+
+		myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
+		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
+		logging.debug("=========================================================")
+		logging.debug("\tLimits for (" + str(xp) + "," + str(yp) + ")")
+
+		i=0
+		for l in limits:
+			logging.debug("\tLimit[" + str(i) + "]: " + str(l))
+			i+=1
+			if l['col'] == False:
+				xi = int(l['rx'])
+				yi = int(l['ry'])
+				known = bMap.known_point(xi, yi, 5)
+				logging.debug("\t=========================================================")
+				logging.debug("\t\tKnown for (" + str(xi) + "," + str(yi) + "): " + str(known))
+
+		#logging.debug("=========================================================")
+		#logging.debug("\tChecking least known area...")
+		#
+		#
+		#if round(dirVals1['pmap'],2) == round(dirVals2['pmap'],2):
+		#	xk1 = xp + x1 * self.vision_limit
+		#	yk1 = yp + y1 * self.vision_limit
+		#	known1 = bMap.known_point(xk1, yk1, 3)
+		#	logging.debug("\t\tKnown | direction: " + str((x1, y1)) + " | Known: " + str(known1))
+		#	xk2 = xp + x2 * self.vision_limit
+		#	yk2 = yp + y2 * self.vision_limit
+		#	known2 = bMap.known_point(xk2, yk2, 3)
+		#	logging.debug("\t\tKnown | direction: " + str((x2, y2)) + " | Known: " + str(known2))
+		#	if known1 < known2:
+		#		return x1, y1
+		#	else:
+		#		return x2, y2
+		#elif dirVals1['pmap'] < dirVals2['pmap']:
+		#	return x1, y1
+		#else:
+		#	return x2, y2
+		#
+		#
+		#for x,y in navData.get_iterative():
+		#	dirVals = navData.get_value(x,y)
+		#
+		#	if dirVals['known'] < known_limit and dirVals['block_size'] < block_size:
+		#		logging.debug("\t(" + str(x)  + "," + str(y) + ") -> " + str(dirVals))
+		#		possible_path.append((x, y, dirVals['pmap'], dirVals['known']))
+		#
+		## We will choose least know area with lower pmap
+		#if len(possible_path) > 0:
+		#	possible_path = sorted(possible_path, key=lambda mypath: mypath[2])
+		#	best_dir = (possible_path[0][0], possible_path[0][1])
+		#	found = True
+		#else:
+		#	best_dir = None
+		#	found = False
+		#
+		#logging.debug("=========================================================")
+		#
+		#return found, best_dir
+		return None
+
 	def get_best_possible_path(self):
 		navData = self.nav_data[-1]
 		possible_path = []
@@ -425,6 +490,7 @@ class DeliverativeNavigation:
 						logging.debug("\tLeast known direction found... | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
 					else:
 						logging.debug("All known! Need new strategy...")
+						self.new_goal = self.get_next_unknown_goal(bMap)
 			else:
 				logging.debug("Checking if we reached new goal...")
 				if xp == self.new_goal[0] and yp == self.new_goal[1]:

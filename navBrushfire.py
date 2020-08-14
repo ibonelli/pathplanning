@@ -174,13 +174,15 @@ class BrushfireNavigation:
 		rangex = xsup - xinf
 		rangey = ysup - yinf
 		total = rangex * rangey
+		known_points = 0
 		if total !=0:
-			known_points = 0
 			# Now we evaluate
 			for i in range(rangex):
 				for j in range(rangey):
 					if self.map[xinf+i][yinf+j] != 0:
 						known_points+=1
+						if self.map[xinf+i][yinf+j] == 1:
+							logging.error("NEED TO TAKE INTO ACCOUNT WALLS!!!")
 			known = known_points / total
 		elif rangex == 1 or rangey == 1:
 			known = 1
@@ -188,6 +190,7 @@ class BrushfireNavigation:
 			logging.error("Wrong limits for known_point_from_limits()")
 			logging.error("\txsup: " + str(xsup) + " | xinf: " + str(xinf) + " | ysup: " + str(ysup) + " | yinf: " + str(yinf))
 			known = -1
+		logging.debug("known: " + str(known) + " | known_points: " + str(known_points) + " | total: " + str(total))
 		return known
 
 	def known_point(self, xp, yp, radius):

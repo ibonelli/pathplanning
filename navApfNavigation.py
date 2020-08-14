@@ -5,7 +5,7 @@ Potential Field based path planner
 Ref:
 	https://www.cs.cmu.edu/~motionplanning/lecture/Chap4-Potential-Field_howie.pdf
 Original work by:
-	https://github.com/AtsushiSakai/PythonRobotics#rapidly-exploring-random-trees-rrt
+	https://github.com/AtsushiSakai/PythonRobotics
 
 """
 

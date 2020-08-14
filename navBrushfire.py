@@ -38,6 +38,15 @@ class BrushfireNavigation:
 		print("\tminx: " + str(self.minx) + " | miny: " + str(self.miny))
 		print("\tmaxx: " + str(self.maxx) + " | maxy: " + str(self.maxy))
 
+	def get_limits(self):
+		limits = {
+			"minx": self.minx,
+			"miny": self.miny,
+			"maxx": self.maxx,
+			"maxy": self.maxy,
+			}
+		return limits
+
 	def get_map(self):
 		return self.map
 
@@ -181,8 +190,9 @@ class BrushfireNavigation:
 				for j in range(rangey):
 					if self.map[xinf+i][yinf+j] != 0:
 						known_points+=1
-						if self.map[xinf+i][yinf+j] == 1:
-							logging.error("NEED TO TAKE INTO ACCOUNT WALLS!!!")
+						#if self.map[xinf+i][yinf+j] == 1:
+						#	logging.error("NEED TO TAKE INTO ACCOUNT WALLS!!!")
+						#	NEW METHOD WITH DIRECTION INFO TO DO THIS
 			known = known_points / total
 		elif rangex == 1 or rangey == 1:
 			known = 1

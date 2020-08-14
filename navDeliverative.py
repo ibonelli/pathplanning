@@ -2,6 +2,7 @@ import math
 import numpy as np
 import logging
 import sys
+import matplotlib.pyplot as plt
 
 # Modules
 import config
@@ -11,6 +12,7 @@ from navLidar import Lidar
 from navLidarLimit import LidarLimit
 from navBrushfire import BrushfireNavigation
 from navData import NavigationData
+from navAstar import AStarPlanner
 
 lidar_steps = config.general['lidar_steps']
 wall_detection_threshold = config.general['wall_detection_threshold']
@@ -311,7 +313,7 @@ class DeliverativeNavigation:
 
 		return found, best_dir
 
-	def get_next_unknown_goal(self, bMap):
+	def get_next_unknown_goal_v1(self, bMap):
 		xp, yp = self.before_trap_pos
 		ox, oy = self.map.get_objects()
 		possible_path = []
@@ -375,6 +377,33 @@ class DeliverativeNavigation:
 		#
 		#return found, best_dir
 		return None
+
+	def get_next_unknown_goal(self, bMap):
+		# start and goal position
+		sx, sy = self.before_trap_pos
+		gx, gy = self.org_goal
+		grid_size = self.grid_size
+		robot_radius = self.rr
+		ox, oy = self.map.get_objects()
+
+		# TODO -- REMOVE!!!
+		show_animation = True
+
+		if show_animation:  # pragma: no cover
+			plt.cla()
+			plt.plot(ox, oy, ".k")
+			plt.plot(sx, sy, "og")
+			plt.plot(gx, gy, "xb")
+			plt.grid(True)
+			plt.axis("equal")
+
+		a_star = AStarPlanner(ox, oy, grid_size, robot_radius, bMap)
+		rx, ry = a_star.planning(sx, sy, gx, gy)
+
+		if show_animation:  # pragma: no cover
+			plt.plot(rx, ry, "-r")
+			plt.pause(0.001)
+			plt.show()
 
 	def get_best_possible_path(self):
 		navData = self.nav_data[-1]
@@ -513,6 +542,12 @@ class DeliverativeNavigation:
 			elif trap_detected == 2:
 				self.blocked_direction_to_overcome = self.get_unblock_type2_direction(bMap)
 
+			# TODO - Not properly calculated!!!
+			if abs(self.dir[-1][0]) == abs(self.dir[-1][1]):
+				self.last_dist_to_obstacle = limit_size * math.sqrt(2)
+			else:
+				self.last_dist_to_obstacle = limit_size
+
 			logging.debug("\tblocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome))
 			self.before_trap_pos = (xp, yp)
 			curdirx, curdiry = self.get_best_possible_path()
@@ -549,14 +584,15 @@ class DeliverativeNavigation:
 		dirVals = navData.get_value(dirx,diry)
 
 		if dirVals['blocked'] == True:
+			logging.debug("block_check() path unblock: False")
 			unblock = False
 			rx, ry = dirVals['limit_pos']
-			self.last_dist_to_obstacle = np.hypot(rx - xp, ry - yp)
 			newgx = self.org_goal[0]
 			newgy = self.org_goal[1]
 			newdirx = curdirx
 			newdiry = curdiry
 		else:
+			logging.debug("block_check() path unblock: True")
 			unblock = True
 			self.wall_overcome = True
 			newdirx = dirx

@@ -524,10 +524,11 @@ class DeliverativeNavigation:
 						logging.debug("All known! Need new strategy...")
 						self.new_goal = self.get_next_unknown_goal(bMap)
 						nav_changed = True
-						self.new_goal = None
 						curdirx, curdiry = None, None
 						newgx, newgy = self.org_goal
 						decision_made = True
+						trap_detected = 0
+						self.avoiding_trap = False
 						cur_nav = "apf"
 						nav_type = "deliverative"
 			else:

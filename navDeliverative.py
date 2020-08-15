@@ -441,40 +441,81 @@ class DeliverativeNavigation:
 	#
 	#	return neighbors
 
-	def get_unblock_type2_direction(self, bMap):
+	def get_unblock_direction(self, bMap, btype):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
 		navData = self.nav_data[-1]
-		cur_dir = self.dir[-1]
-		cur_ang = math.atan2(cur_dir[1], cur_dir[0])
+		newdirx, newdiry = self.get_best_possible_path()
 
-		x1 = int(round(math.cos(cur_ang+math.pi*3/4)))
-		y1 = int(round(math.sin(cur_ang+math.pi*3/4)))
-		dirVals1 = navData.get_value(x1,y1)
-		logging.debug("\tEscape dir1 | direction: " + str((x1, y1)) + " | PMAP: " + str(dirVals1['pmap']))
+		if btype == 1:
+			new_ang = math.atan2(newdiry, newdirx)
+			logging.debug("get_unblock_direction() | btype == 1 | newdir: " + str((newdirx,newdiry)) + "| newang: " + str(math.degrees(new_ang)))
 
-		x2 = int(round(math.cos(cur_ang-math.pi*3/4)))
-		y2 = int(round(math.sin(cur_ang-math.pi*3/4)))
-		dirVals2 = navData.get_value(x2,y2)
-		logging.debug("\tEscape dir2 | direction: " + str((x2, y2)) + " | PMAP: " + str(dirVals2['pmap']))
+			ang1 = math.pi/2
+			x1 = int(round(math.cos(new_ang+ang1)))
+			y1 = int(round(math.sin(new_ang+ang1)))
+			dirVals1 = navData.get_value(x1,y1)
+			logging.debug("\tEscape dir1 | direction: " + str((x1, y1)) + " | PMAP: " + str(dirVals1['pmap']) + " | Blocked: " + str(dirVals1['blocked']))
 
-		if round(dirVals1['pmap'],2) == round(dirVals2['pmap'],2):
-			xk1 = xp + x1 * self.vision_limit
-			yk1 = yp + y1 * self.vision_limit
-			known1 = bMap.known_point(xk1, yk1, 3)
-			logging.debug("\t\tKnown | direction: " + str((x1, y1)) + " | Known: " + str(known1))
-			xk2 = xp + x2 * self.vision_limit
-			yk2 = yp + y2 * self.vision_limit
-			known2 = bMap.known_point(xk2, yk2, 3)
-			logging.debug("\t\tKnown | direction: " + str((x2, y2)) + " | Known: " + str(known2))
-			if known1 < known2:
-				return x1, y1
+			ang2 = -math.pi/2
+			x2 = int(round(math.cos(new_ang+ang2)))
+			y2 = int(round(math.sin(new_ang+ang2)))
+			dirVals2 = navData.get_value(x2,y2)
+			logging.debug("\tEscape dir2 | direction: " + str((x2, y2)) + " | PMAP: " + str(dirVals2['pmap']) + " | Blocked: " + str(dirVals2['blocked']))
+
+			if dirVals1['blocked']:
+				bang = new_ang+ang1/2
 			else:
-				return x2, y2
-		elif dirVals1['pmap'] < dirVals2['pmap']:
-			return x1, y1
+				bang = new_ang+ang2/2
+
+			x = int(round(math.cos(bang)))
+			y = int(round(math.sin(bang)))
+			logging.debug("\tEscape dir | direction: " + str((x, y)) + " | bang: " + str(bang))
+
+		elif btype == 2:
+			logging.debug("get_unblock_direction() | btype == 2")
+			cur_dir = self.dir[-1]
+			cur_ang = math.atan2(cur_dir[1], cur_dir[0])
+
+			x1 = int(round(math.cos(cur_ang+math.pi*3/4)))
+			y1 = int(round(math.sin(cur_ang+math.pi*3/4)))
+			dirVals1 = navData.get_value(x1,y1)
+			logging.debug("\tEscape dir1 | direction: " + str((x1, y1)) + " | PMAP: " + str(dirVals1['pmap']))
+
+			x2 = int(round(math.cos(cur_ang-math.pi*3/4)))
+			y2 = int(round(math.sin(cur_ang-math.pi*3/4)))
+			dirVals2 = navData.get_value(x2,y2)
+			logging.debug("\tEscape dir2 | direction: " + str((x2, y2)) + " | PMAP: " + str(dirVals2['pmap']))
+
+			if round(dirVals1['pmap'],2) == round(dirVals2['pmap'],2):
+				xk1 = xp + x1 * self.vision_limit
+				yk1 = yp + y1 * self.vision_limit
+				known1 = bMap.known_point(xk1, yk1, 3)
+				logging.debug("\t\tKnown | direction: " + str((x1, y1)) + " | Known: " + str(known1))
+				xk2 = xp + x2 * self.vision_limit
+				yk2 = yp + y2 * self.vision_limit
+				known2 = bMap.known_point(xk2, yk2, 3)
+				logging.debug("\t\tKnown | direction: " + str((x2, y2)) + " | Known: " + str(known2))
+				if known1 < known2:
+					x = x1
+					y = y1
+				else:
+					x = x2
+					y = y2
+			elif dirVals1['pmap'] < dirVals2['pmap']:
+				x = x1
+				y = y1
+			else:
+				x = x2
+				y = y2
+
 		else:
-			return x2, y2
+			logging.error("Wrong type given: " + str(btype))
+
+		dirVals = navData.get_value(x,y)
+		logging.debug("\tEscape dirVals | direction: " + str((x, y)) + " | PMAP: " + str(dirVals2['pmap']) + " | Blocked: " + str(dirVals2['blocked']) + " | limit_pos: " + str(dirVals2['limit_pos']))
+		d = np.hypot(xp - dirVals['limit_pos'][0], yp - dirVals['limit_pos'][1])
+		return (x,y), (newdirx, newdiry), d
 
 	def decide_status(self, bMap):
 		xp = self.path[-1][0]
@@ -545,28 +586,16 @@ class DeliverativeNavigation:
 			self.avoiding_trap = True
 			self.avoiding_trap_type = trap_detected
 			self.wall_overcome = False
-
-			if trap_detected == 1:
-				self.blocked_direction_to_overcome = self.dir[-1]
-			elif trap_detected == 2:
-				self.blocked_direction_to_overcome = self.get_unblock_type2_direction(bMap)
-
-			# TODO - Not properly calculated!!!
-			if abs(self.dir[-1][0]) == abs(self.dir[-1][1]):
-				self.last_dist_to_obstacle = limit_size * math.sqrt(2)
-			else:
-				self.last_dist_to_obstacle = limit_size
-
-			logging.debug("\tblocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome))
+			self.blocked_direction_to_overcome, newdir, self.last_dist_to_obstacle = self.get_unblock_direction(bMap, trap_detected)
 			self.before_trap_pos = (xp, yp)
-			curdirx, curdiry = self.get_best_possible_path()
+			curdirx, curdiry = newdir
 			cur_nav = "follow"
 			self.new_goal = self.get_new_limits(curdirx, curdiry)
 			newgx, newgy = self.new_goal
 			decision_made = True
 			nav_changed = True
 			nav_type = "deliverative"
-			logging.debug("\tstep: (" + str(xp) + "," + str(yp) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected))
+			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
 
@@ -578,18 +607,9 @@ class DeliverativeNavigation:
 		curdiry = self.dir[-1][1]
 		navData = self.nav_data[-1]
 
-		if self.avoiding_trap_type == 1:
-			# The angle to check is the composition of the blocked and current direction
-			blocked_ang = math.atan2(self.blocked_direction_to_overcome[1], self.blocked_direction_to_overcome[0])
-			current_direction_ang = math.atan2(curdiry, curdirx)
-			ang_to_check = (blocked_ang + current_direction_ang) / 2
-			dirx = int(round(math.cos(ang_to_check)))
-			diry = int(round(math.sin(ang_to_check)))
-		elif self.avoiding_trap_type == 2:
-			# The angle we found is the one to check
-			dirx = self.blocked_direction_to_overcome[0]
-			diry = self.blocked_direction_to_overcome[1]
-
+		# The angle we found is the one to check
+		dirx = self.blocked_direction_to_overcome[0]
+		diry = self.blocked_direction_to_overcome[1]
 		dirVals = navData.get_value(dirx,diry)
 
 		if dirVals['blocked'] == True:
@@ -604,11 +624,11 @@ class DeliverativeNavigation:
 			logging.debug("block_check() path unblock: True")
 			unblock = True
 			self.wall_overcome = True
-			newdirx = dirx
-			newdiry = diry
+			newdirx = self.blocked_direction_to_overcome[0]
+			newdiry = self.blocked_direction_to_overcome[1]
 			newgx = int(round(xp + self.last_dist_to_obstacle * newdirx))
 			newgy = int(round(yp + self.last_dist_to_obstacle * newdiry))
-			logging.debug("We cleared the obstacle limit!")
+			logging.debug("We cleared the obstacle limit! | newdir: " + str((newdirx,newdiry)) + " | newgoal: " + str((newgx,newgy)))
 
 		return unblock, newdirx, newdiry, newgx, newgy
 

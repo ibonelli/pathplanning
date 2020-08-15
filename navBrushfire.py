@@ -215,6 +215,12 @@ class BrushfireNavigation:
 		# We calculate the value and return it
 		return self.known_point_from_limits(xinf, xsup, yinf, ysup)
 
+	def known_point_direction(self, xp, yp, dirx, diry, limit):
+		logging.debug("known_point_direction()")
+		logging.debug("\tpoint: " + str((xp,yp)) + " | dir: " + str((dirx,diry)) + " | limit: " + str(limit))
+		# We get arc
+		return 0
+
 	def known_limit(self, xp, yp, xl, yl):
 		# If we are in vertical or horizontal lines
 		if xp == xl:

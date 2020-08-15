@@ -163,46 +163,6 @@ class DeliverativeNavigation:
 			motion_model_progression.append(m)
 		return motion_model_progression
 
-	def checked_path_blocked_dir(self, posX, posY):
-		# TODO --- This is not working as it should...
-		#          NEED TO ADD DEBUGGING AND FIGURE IT OUT WHAT'S WRONG!!!
-		myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
-		ox, oy = self.map.get_objects()
-		col,r = myLidar.lidar_limits(posX, posY, self.trap_dir, ox, oy, "object")
-		if col:
-			# Bisector angle of two vectors in 2D
-			# First we get each angle from original directions
-			theta_u = math.atan2(self.trap_dir[0], self.trap_dir[1])
-			theta_v = math.atan2(self.dir[-1][0], self.dir[-1][1])
-			# Then we create a new vector with the average angle
-			middle_theta = (theta_u+theta_v)/2
-			m_dir = (math.cos(middle_theta), math.sin(middle_theta))
-			# We now check if there is a block in that direction as well
-			col,r = myLidar.lidar_limits(posX, posY, m_dir, ox, oy, "object")
-			if col:
-				# We keep original direction and set a new limit
-				dirx = self.dir[-1][0]
-				diry = self.dir[-1][1]
-				limitx = posX + self.vision_limit * dirx
-				limity = posY + self.vision_limit * diry
-			else:
-				# We set a new goal and limit it
-				dirx = m_dir[0]
-				diry = m_dir[1]
-				limitx = posX + self.vision_limit * dirx
-				limity = posY + self.vision_limit * diry
-			logging.debug("\t----------------------")
-			logging.debug("\tChosen direction:")
-			logging.debug("\tdirx = " + str(dirx) + " | diry = " + str(diry) + " | limitx = " + str(limitx) + " | limity = " + str(limity))
-			logging.debug("\t----------------------")
-		else:
-			# We keep original direction and set a new limit
-			dirx = self.dir[-1][0]
-			diry = self.dir[-1][1]
-			limitx = posX + self.vision_limit * dirx
-			limity = posY + self.vision_limit * diry
-		return dirx, diry, limitx, limity
-
 	def is_following_wall(self):
 		status = None
 
@@ -626,8 +586,11 @@ class DeliverativeNavigation:
 			self.wall_overcome = True
 			newdirx = self.blocked_direction_to_overcome[0]
 			newdiry = self.blocked_direction_to_overcome[1]
-			newgx = int(round(xp + self.last_dist_to_obstacle * newdirx))
-			newgy = int(round(yp + self.last_dist_to_obstacle * newdiry))
+			ang = math.atan2(newdiry, newdirx)
+			# Es la distancia al obstaculo, pero debemos superarlo para que APF vuelva a funcionar (por eso el segundo termino)
+			newgx = int(round(xp + self.last_dist_to_obstacle * math.cos(ang))) + int(round(math.cos(ang)))
+			newgy = int(round(yp + self.last_dist_to_obstacle * math.sin(ang))) + int(round(math.sin(ang)))
+
 			logging.debug("We cleared the obstacle limit! | newdir: " + str((newdirx,newdiry)) + " | newgoal: " + str((newgx,newgy)))
 
 		return unblock, newdirx, newdiry, newgx, newgy

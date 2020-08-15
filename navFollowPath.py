@@ -55,7 +55,14 @@ class FollowPath:
 		# TODO -- Mantenerme siempre a la distancia actual del
 		#			path_blocked_dir para evitar nuevo
 		#			escenario descripto en WorldBuilder.ods
-		# VER middle_theta algo in checked_path_blocked_dir()
+		# VER el siguiente código
+		#	# Bisector angle of two vectors in 2D
+		#	# First we get each angle from original directions
+		#	theta_u = math.atan2(self.trap_dir[0], self.trap_dir[1])
+		#	theta_v = math.atan2(self.dir[-1][0], self.dir[-1][1])
+		#	# Then we create a new vector with the average angle
+		#	middle_theta = (theta_u+theta_v)/2
+		#	m_dir = (math.cos(middle_theta), math.sin(middle_theta))
 		xs = xp + curdirx * self.reso
 		ys = yp + curdiry * self.reso
 		d = np.hypot(self.gx - xs, self.gy - ys)

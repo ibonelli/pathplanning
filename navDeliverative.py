@@ -423,7 +423,7 @@ class DeliverativeNavigation:
 			dirVals2 = navData.get_value(x2,y2)
 			logging.debug("\tEscape dir2 | direction: " + str((x2, y2)) + " | PMAP: " + str(dirVals2['pmap']) + " | Blocked: " + str(dirVals2['blocked']))
 
-			if dirVals1['blocked']:
+			if dirVals1['pmap'] < dirVals2['pmap']:
 				bang = new_ang+ang1/2
 			else:
 				bang = new_ang+ang2/2

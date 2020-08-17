@@ -7,7 +7,7 @@ import config
 from navMap import Map
 from navData import NavigationData
 
-known_point_direction_debug = True
+known_point_direction_debug = False
 
 # START Class Map ------------------------------------------------
 class BrushfireNavigation:
@@ -229,7 +229,8 @@ class BrushfireNavigation:
 		if known_point_direction_debug:
 			logging.debug("known_point_direction()")
 		if known_point_direction_debug:
-			logging.debug("\tpoint: " + str((xp,yp)) + " | dir: " + str((dirx,diry)) + " | limit: " + str(limit))
+			ang = math.atan2(diry, dirx)
+			logging.debug("\tpoint: " + str((xp,yp)) + " | dir: " + str((dirx,diry)) + " | ang: " + str(math.degrees(ang)) + " | limit: " + str(limit))
 		if self.map[xp][yp] != 0:
 			known_point = 1
 			if known_point_direction_debug:
@@ -250,7 +251,7 @@ class BrushfireNavigation:
 		own_level = level+1
 		if own_level < limit:
 			total+=1
-			new_ang = math.atan2(dirx, diry) + ang
+			new_ang = math.atan2(diry, dirx) + ang
 			new_dirx = int(round(math.cos(new_ang)))
 			new_diry = int(round(math.sin(new_ang)))
 			xi, yi = xp+new_dirx, yp+new_diry

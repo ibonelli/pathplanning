@@ -108,10 +108,16 @@ def main():
 		MyGraf.show(sx, sy, gx, gy)
 		MyGraf.step(xp, yp, graf_delay)
 
+	apf_reset = False
 	# Main navigation loop
 	while (d >= grid_size or secondary_goal) and not aborted:
+		logging.debug("====================================== NEXT STEP ======================================")
 		if nav == "apf":
-			d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+			if not apf_reset:
+				d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+			else:
+				d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(xp, yp, gx, gy, ox, oy, True)
+				apf_reset = False
 			logging.debug("<MAIN> -- Navigation APF -- d:" + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)))
 			stuck = myNavigation.decide_status(rd)
 		elif nav == "follow":
@@ -129,7 +135,6 @@ def main():
 			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
 			if brushfire_map_debug:
 				myNavWave.show_map(xp, yp, "debug")
-			logging.debug("====================================== NEXT STEP ======================================")
 
 		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave)
 
@@ -140,8 +145,10 @@ def main():
 			if nav == "follow":
 				myNavFollow.set_limit(limitx, limity)
 			if nav == "apf":
+				logging.debug("<MAIN> -- We require an APF reset.")
 				myNavigation.set_cur_pos(xp, yp)
 				myNavigation.set_motion_model(trap.reset_motion_model())
+				apf_reset = True
 			if limitx != org_gx or limity != org_gy:
 				secondary_goal = True
 				logging.debug("<MAIN> -- Secondary goal is True.")

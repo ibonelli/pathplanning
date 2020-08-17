@@ -12,6 +12,7 @@ Original work by:
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
+import time
 
 # Modules
 import config
@@ -134,6 +135,9 @@ class ApfNavigation:
 
 	def potential_field_planning(self, sx, sy, gx, gy, ox, oy, start):
 		if start:
+			print("<APF> -- calc_potential_field() processing has started.")
+			t0c=time.clock()
+			t0t=time.time()
 			self.pmap, self.minx, self.miny = self.calc_potential_field(gx, gy, ox, oy)
 			# search path
 			d = np.hypot(sx - gx, sy - gy)
@@ -148,6 +152,11 @@ class ApfNavigation:
 			self.scount = 0
 			self.rcheck = None
 			self.stuck = False
+			t1c = time.clock()
+			t1t = time.time()
+			msg = "<APF> -- Processing finished. Wall time spent: " + str(round(t1t-t0t,2)) + " | CPU time: " + str(round(t1c-t0c,2))
+			logging.debug(msg)
+			print(msg)
 
 		motion = self.get_motion_model()
 

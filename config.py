@@ -16,14 +16,14 @@ general = dict(
 	brushfire_radius_explore = 15,
 	brushfire_radius_to_evaluate = 5,
 	brushfire_neighbors_limit = 5,
-	brushfire_map_debug = False,
-	navData_debug = False,
+	brushfire_map_debug = True,
+	navData_debug = True,
 	saveResults = True,
 	robot_motion_model = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]],
 	known_limit = 0.8,
 	block_size = 4,
 	astar_known_explore_range = 3,
-	astar_known_limit = 0.5,
+	astar_known_limit = 0.2,
 	show_Astar_animation = False,
 )
 

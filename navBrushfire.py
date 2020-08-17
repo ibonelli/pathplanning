@@ -7,6 +7,8 @@ import config
 from navMap import Map
 from navData import NavigationData
 
+known_point_direction_debug = True
+
 # START Class Map ------------------------------------------------
 class BrushfireNavigation:
 	def __init__(self):
@@ -50,6 +52,13 @@ class BrushfireNavigation:
 
 	def get_map(self):
 		return self.map
+
+	def get_map_value(self, xp, yp):
+		known = -1
+		if self.minx <= xp and xp <= self.maxx:
+			if self.miny <= yp and yp <= self.maxy:
+				known = self.map[xp][yp]
+		return known
 
 	def set_map(self, exmap):
 		self.map = exmap
@@ -217,51 +226,66 @@ class BrushfireNavigation:
 		return self.known_point_from_limits(xinf, xsup, yinf, ysup)
 
 	def known_point_direction(self, xp, yp, dirx, diry, limit):
-		logging.debug("known_point_direction()")
-		logging.debug("\tpoint: " + str((xp,yp)) + " | dir: " + str((dirx,diry)) + " | limit: " + str(limit))
-		total = limit ** 2  # pow(x,2)
+		if known_point_direction_debug:
+			logging.debug("known_point_direction()")
+		if known_point_direction_debug:
+			logging.debug("\tpoint: " + str((xp,yp)) + " | dir: " + str((dirx,diry)) + " | limit: " + str(limit))
 		if self.map[xp][yp] != 0:
-			known_points = 1
-			logging.debug("\t\t(0) Position " + str((xp,yp)) + " is known.")
+			known_point = 1
+			if known_point_direction_debug:
+				logging.debug("\t\t(0) Position " + str((xp,yp)) + " is known.")
 		else:
-			known_points = 0
-			logging.debug("\t\t(0) Position " + str((xp,yp)) + " not known.")
-		known_points += self.known_point_direction_ang(xp, yp, dirx, diry, limit)
-		known = known_points/total
-		logging.debug("\tknown points: " + str(known_points) + " | total: " + str(total) + " | known: " + str(known))
+			known_point = 0
+			if known_point_direction_debug:
+				logging.debug("\t\t(0) Position " + str((xp,yp)) + " not known.")
+		known_points, total = self.known_point_direction_ang(xp, yp, dirx, diry, limit, 1)
+		known = (known_point+known_points)/total
+		if known_point_direction_debug:
+			logging.debug("\tknown points: " + str(known_point+known_points) + " | total: " + str(total) + " | known: " + str(known))
 		return known
 
-	def known_point_direction_ang(self, xp, yp, dirx, diry, limit, ang=0, level=0):
+	def known_point_direction_ang(self, xp, yp, dirx, diry, limit, total, ang=0, level=0):
 		self.recursion+=1
 		known_points = 0
 		own_level = level+1
 		if own_level < limit:
+			total+=1
 			new_ang = math.atan2(dirx, diry) + ang
 			new_dirx = int(round(math.cos(new_ang)))
 			new_diry = int(round(math.sin(new_ang)))
 			xi, yi = xp+new_dirx, yp+new_diry
-			# What's current point status?
-			if self.map[xi][yi] != 0:
-				known_points += 1
-				logging.debug("\t\t(" + str(own_level) + ") Position " + str((xi,yi)) + " is known.")
-			else:
-				logging.debug("\t\t(" + str(own_level) + ") Position " + str((xi,yi)) + " not known.")
-			# Shall we continue?
-			if self.map[xi][yi] != 1:
-				#logging.debug("\t\tNo block, so we explore next level.")
-				if ang == 0:
-					known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, 0, own_level)
-					#logging.debug("\t\t\t\tknown_points (1) for: " + str((xi,yi)) + " | own_level: " + str(own_level) + " | ang: " + str(math.degrees(ang)) + " | known_points: " + str(known_points))
-					known_points += self.known_point_direction_ang(xp, yp, dirx, diry, limit, math.pi/4, level)
-					known_points += self.known_point_direction_ang(xp, yp, dirx, diry, limit, -math.pi/4, level)
+			val = self.get_map_value(xi, yi)
+			if val != -1:
+				# What's current point status?
+				if val != 0:
+					known_points += 1
+					if known_point_direction_debug:
+						logging.debug("\t\t(" + str(own_level) + ") Position " + str((xi,yi)) + " is known | Total: " + str(total))
 				else:
-					known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, ang, own_level)
-					#logging.debug("\t\t\t\tknown_points (2) for: " + str((xi,yi)) + " | own_level: " + str(own_level) + " | ang: " + str(math.degrees(ang)) + " | known_points: " + str(known_points))
+					if known_point_direction_debug:
+						logging.debug("\t\t(" + str(own_level) + ") Position " + str((xi,yi)) + " not known | Total: " + str(total))
+
+				# Shall we continue?
+				if val != 1:
+					if ang == 0:
+						known_points_ret, total = self.known_point_direction_ang(xi, yi, dirx, diry, limit, total, 0, own_level)
+						known_points += known_points_ret
+						known_points_ret, total = self.known_point_direction_ang(xp, yp, dirx, diry, limit, total, math.pi/4, level)
+						known_points += known_points_ret
+						known_points_ret, total = self.known_point_direction_ang(xp, yp, dirx, diry, limit, total, -math.pi/4, level)
+						known_points += known_points_ret
+					else:
+						known_points_ret, total = self.known_point_direction_ang(xi, yi, dirx, diry, limit, total, ang, own_level)
+						known_points += known_points_ret
+				else:
+					if known_point_direction_debug:
+						logging.debug("\t\tWe found a wall.")
 			else:
-				logging.debug("\t\tWe found a wall.")
+				logging.error("Wrong map value for : " + str((xi, yi)))
 		else:
-			logging.debug("\t\t\t(" + str(own_level) + ") Limit reached!")
-		return known_points
+			if known_point_direction_debug:
+				logging.debug("\t\t\t(" + str(own_level) + ") Limit reached!")
+		return known_points, total
 
 	def known_limit(self, xp, yp, xl, yl):
 		# If we are in vertical or horizontal lines

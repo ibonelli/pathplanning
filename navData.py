@@ -74,6 +74,7 @@ class NavigationData:
 				"limit_pos": None,
 				"pmap": None,
 				"known": None,
+				"known_dir": None,
 				"block_size": None,
 				}
 		if datafield == "blocked":
@@ -84,6 +85,8 @@ class NavigationData:
 			previous["pmap"] = data
 		if datafield == "known":
 			previous["known"] = data
+		if datafield == "known_dir":
+			previous["known_dir"] = data
 		if datafield == "block_size":
 			previous["block_size"] = data
 		return previous

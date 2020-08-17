@@ -101,6 +101,11 @@ class DeliverativeNavigation:
 			navData.set_value(apf_dirx, apf_diry, navdataval)
 		# Building brushfire information
 		navData = navWave.known_areas(stepx, stepy, brushfire_radius_explore, brushfire_radius_to_evaluate, brushfire_neighbors_limit, navData)
+		# Checking known points in the chosen direction
+		known_dir = navWave.known_point_direction(stepx, stepy, apf_dirx, apf_diry, 5)
+		navdataval = navData.build_info("known_dir", known_dir, navData.get_value(apf_dirx, apf_diry))
+		navData.set_value(apf_dirx, apf_diry, navdataval)
+		# We save the data of the step
 		self.nav_data.append(navData)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav) + " | mode: " + str(nav_type))
 		if navData_debug:
@@ -274,71 +279,6 @@ class DeliverativeNavigation:
 
 		return found, best_dir
 
-	def get_next_unknown_goal_v1(self, bMap):
-		xp, yp = self.before_trap_pos
-		ox, oy = self.map.get_objects()
-		possible_path = []
-
-		myLidar = Lidar(self.grid_size, self.vision_limit, lidar_steps)
-		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
-		logging.debug("=========================================================")
-		logging.debug("\tLimits for (" + str(xp) + "," + str(yp) + ")")
-
-		i=0
-		for l in limits:
-			logging.debug("\tLimit[" + str(i) + "]: " + str(l))
-			i+=1
-			if l['col'] == False:
-				xi = int(l['rx'])
-				yi = int(l['ry'])
-				known = bMap.known_point(xi, yi, 5)
-				logging.debug("\t=========================================================")
-				logging.debug("\t\tKnown for (" + str(xi) + "," + str(yi) + "): " + str(known))
-
-		#logging.debug("=========================================================")
-		#logging.debug("\tChecking least known area...")
-		#
-		#
-		#if round(dirVals1['pmap'],2) == round(dirVals2['pmap'],2):
-		#	xk1 = xp + x1 * self.vision_limit
-		#	yk1 = yp + y1 * self.vision_limit
-		#	known1 = bMap.known_point(xk1, yk1, 3)
-		#	logging.debug("\t\tKnown | direction: " + str((x1, y1)) + " | Known: " + str(known1))
-		#	xk2 = xp + x2 * self.vision_limit
-		#	yk2 = yp + y2 * self.vision_limit
-		#	known2 = bMap.known_point(xk2, yk2, 3)
-		#	logging.debug("\t\tKnown | direction: " + str((x2, y2)) + " | Known: " + str(known2))
-		#	if known1 < known2:
-		#		return x1, y1
-		#	else:
-		#		return x2, y2
-		#elif dirVals1['pmap'] < dirVals2['pmap']:
-		#	return x1, y1
-		#else:
-		#	return x2, y2
-		#
-		#
-		#for x,y in navData.get_iterative():
-		#	dirVals = navData.get_value(x,y)
-		#
-		#	if dirVals['known'] < known_limit and dirVals['block_size'] < block_size:
-		#		logging.debug("\t(" + str(x)  + "," + str(y) + ") -> " + str(dirVals))
-		#		possible_path.append((x, y, dirVals['pmap'], dirVals['known']))
-		#
-		## We will choose least know area with lower pmap
-		#if len(possible_path) > 0:
-		#	possible_path = sorted(possible_path, key=lambda mypath: mypath[2])
-		#	best_dir = (possible_path[0][0], possible_path[0][1])
-		#	found = True
-		#else:
-		#	best_dir = None
-		#	found = False
-		#
-		#logging.debug("=========================================================")
-		#
-		#return found, best_dir
-		return None
-
 	def get_next_unknown_goal(self, bMap):
 		# start and goal position
 		sx, sy = self.before_trap_pos
@@ -358,7 +298,7 @@ class DeliverativeNavigation:
 		a_star = AStarPlanner(ox, oy, grid_size, robot_radius, bMap)
 		rx, ry, newgx, newgy = a_star.planning(sx, sy, gx, gy)
 
-		logging.debug("APF New Goal = (" + str(newgx) + "," + str(newgy) + ")")
+		logging.debug("Astar produced an APF New Goal = (" + str(newgx) + "," + str(newgy) + ")")
 
 		if show_Astar_animation:
 			plt.plot(rx, ry, "-r")
@@ -509,9 +449,11 @@ class DeliverativeNavigation:
 					self.avoiding_trap = False
 					self.new_goal = (newgx, newgy)
 				elif path_blocked:
-					logging.debug("Current exploring path has failed us!")
+					known_level = bMap.known_point(xp, yp, 5)
 					got_dir, curdir = self.explore_unknown()
-					if got_dir:
+					logging.debug("Known level: " + str(known_level) + " | got_dir: " + str(got_dir) + " | curdir: " + str(curdir))
+					if (known_level < known_limit) and got_dir:
+						logging.debug("Current exploring path has failed us!")
 						nav_changed = True
 						curdirx, curdiry = curdir
 						cur_nav = "follow"

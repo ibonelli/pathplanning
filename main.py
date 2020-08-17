@@ -155,7 +155,7 @@ def main():
 			print("APF navigation failed... Not much more to do.")
 			aborted = True
 
-		#if (xp == 36 and yp == 30):
+		#if (xp == 9 and yp == 50):
 		#	checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
 		#	limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
 		#	myLimits.save_limit(xp, yp, limits, "limit_x35_y20.json")

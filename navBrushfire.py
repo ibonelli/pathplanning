@@ -218,8 +218,107 @@ class BrushfireNavigation:
 	def known_point_direction(self, xp, yp, dirx, diry, limit):
 		logging.debug("known_point_direction()")
 		logging.debug("\tpoint: " + str((xp,yp)) + " | dir: " + str((dirx,diry)) + " | limit: " + str(limit))
-		# We get arc
-		return 0
+		total = (limit+1) ** 2  # pow(x,2)
+		known_points = self.known_point_direction_ang(xp, yp, dirx, diry, limit)
+		return known_points/total
+
+	def known_point_direction_ang(self, xp, yp, dirx, diry, limit, ang=0, level=0):
+		known_points = 0
+		own_level = level+1
+		if own_level < limit:
+			new_ang = math.atan2(dirx, diry) + ang
+			new_dirx = int(round(math.cos(new_ang)))
+			new_diry = int(round(math.sin(new_ang)))
+			xi, yi = xp+new_dirx, yp+new_diry
+			if self.map[xi][yi] != 0:
+				known_points += 1
+				if self.map[xi][yi] != 1:
+					if ang == 0:
+						known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, 0, own_level)
+						known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, math.pi/4, level)
+						known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, -math.pi/4, level)
+					else:
+						known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, ang, own_level)
+			logging.debug("\t\tknown_points for: " + str((xi,yi)) + " | limit: " + str(limit) + " | ang: " + str(ang) + " | own_level: " + str(own_level))
+		return known_points
+
+	#def known_point_direction_axis_center(self, xp, yp, dirx, diry, limit, level=0):
+	#	known_points = 0
+	#	own_level = level+1
+	#	if own_level != limit:
+	#		# center iteration
+	#
+	#		# edge iteration +45
+	#
+	#		# edge iteration -45
+	#
+	#
+	#		# center iteration
+	#		xi, yi = xp+dirx, yp+diry
+	#		if self.map[xi][yi] != 0:
+	#			known_points += 1
+	#			if self.map[xi][yi] != 1:
+	#				known_points += known_point_direction_axis_center(xi, yi, dirx, diry, limit, own_level)
+	#		# edge iteration
+	#		if dirx == 0:
+	#			xi, yi = xp+1, yp+diry
+	#			if self.map[xi][yi] != 0:
+	#				known_points += 1
+	#				if self.map[xi][yi] != 1:
+	#					known_points += known_point_direction_axis_edge(xi, yi, dirx, diry, limit, own_level)
+	#			xi, yi = xp-1, yp+diry
+	#			if self.map[xi][yi] != 0:
+	#				known_points += 1
+	#				if self.map[xi][yi] != 1:
+	#					known_points += known_point_direction_axis_edge(xi, yi, dirx, diry, limit, own_level)
+	#		else:
+	#			xi, yi = xp+dirx, yp+1
+	#			if self.map[xi][yi] != 0:
+	#				known_points += 1
+	#				if self.map[xi][yi] != 1:
+	#					known_points += known_point_direction_axis_edge(xi, yi, dirx, diry, limit, own_level)
+	#			xi, yi = xp+dirx, yp+-1
+	#			if self.map[xi][yi] != 0:
+	#				known_points += 1
+	#				if self.map[xi][yi] != 1:
+	#					known_points += known_point_direction_axis_edge(xi, yi, dirx, diry, limit, own_level)
+	#	else:
+	#		return 0
+	#	return known
+	#
+	#def known_point_direction_axis_edge_p45(self, xp, yp, dirx, diry, limit):
+	#	known_points = 0
+	#	own_level = level+1
+	#	if own_level != limit:
+	#		ang = math.atan2(dirx, diry) + math.pi/4
+	#		new_dirx = int(round(math.cos(ang)))
+	#		new_diry = int(round(math.sin(ang)))
+	#		xi, yi = xp+new_dirx, yp+new_diry
+	#		if self.map[xi][yi] != 0:
+	#			known_points += 1
+	#			if self.map[xi][yi] != 1:
+	#				known_points += known_point_direction_axis_center(xi, yi, dirx, diry, limit, own_level)
+	#	return known_points
+	#
+	#def known_point_direction_axis_edge_n45(self, xp, yp, dirx, diry, limit):
+	#	known_points = 0
+	#	own_level = level+1
+	#	if own_level != limit:
+	#		ang = math.atan2(dirx, diry) - math.pi/4
+	#		x = int(round(math.cos(ang)))
+	#		y = int(round(math.sin(ang)))
+	#		new_dirx = int(round(math.cos(ang)))
+	#		new_diry = int(round(math.sin(ang)))
+	#		xi, yi = xp+new_dirx, yp+new_diry
+	#		if self.map[xi][yi] != 0:
+	#			known_points += 1
+	#			if self.map[xi][yi] != 1:
+	#				known_points += known_point_direction_axis_center(xi, yi, dirx, diry, limit, own_level)
+	#	return known_points
+	#
+	#def known_point_direction_axis_center(self, xp, yp, dirx, diry, limit, level, texplore):
+	#
+	#	return 0
 
 	def known_limit(self, xp, yp, xl, yl):
 		# If we are in vertical or horizontal lines

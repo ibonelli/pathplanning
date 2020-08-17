@@ -23,7 +23,8 @@ def main():
 
 	myMap = Map()
 	myMap.load_map(fname)
-	myMap.draw()
+	fbase=fname[0:-4] # We cut the extension
+	myMap.draw(fbase + "_objs.png")
 
 if __name__ == '__main__':
 	main()

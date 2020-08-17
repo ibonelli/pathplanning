@@ -134,9 +134,7 @@ class ApfNavigation:
 
 	def potential_field_planning(self, sx, sy, gx, gy, ox, oy, start):
 		if start:
-			# calc potential field (only the first time)
-			if self.pmap == None:
-				self.pmap, self.minx, self.miny = self.calc_potential_field(gx, gy, ox, oy)
+			self.pmap, self.minx, self.miny = self.calc_potential_field(gx, gy, ox, oy)
 			# search path
 			d = np.hypot(sx - gx, sy - gy)
 			# Search variables

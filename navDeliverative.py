@@ -238,6 +238,9 @@ class DeliverativeNavigation:
 			if st_p90 == True and st_n90 == True:
 				trap = 2
 
+		if trap !=0:
+			logging.debug("\Trap type " + str(trap) + " detected.")
+
 		return trap
 
 	def direction_status(self, cur_dir, ang, navData):
@@ -262,7 +265,7 @@ class DeliverativeNavigation:
 
 		for x,y in navData.get_iterative():
 			dirVals = navData.get_value(x,y)
-			if dirVals['known'] < known_limit and dirVals['block_size'] < block_size:
+			if dirVals['known_dir'] < known_limit and dirVals['block_size'] < block_size:
 				logging.debug("\t(" + str(x)  + "," + str(y) + ") -> " + str(dirVals))
 				possible_path.append((x, y, dirVals['pmap'], dirVals['known']))
 
@@ -448,31 +451,38 @@ class DeliverativeNavigation:
 					nav_type = "deliverative"
 					self.avoiding_trap = False
 					self.new_goal = (newgx, newgy)
-				elif path_blocked:
-					known_level = bMap.known_point(xp, yp, 5)
-					got_dir, curdir = self.explore_unknown()
-					logging.debug("Known level: " + str(known_level) + " | got_dir: " + str(got_dir) + " | curdir: " + str(curdir))
-					if (known_level < known_limit) and got_dir:
-						logging.debug("Current exploring path has failed us!")
+				else:
+					if path_blocked:
+						known_level = bMap.known_point(xp, yp, 5)
+						got_dir, curdir = self.explore_unknown()
+						logging.debug("Known level: " + str(known_level) + " | got_dir: " + str(got_dir) + " | curdir: " + str(curdir))
+						if (known_level < known_limit) and got_dir:
+							logging.debug("Current exploring path has failed us!")
+							nav_changed = True
+							curdirx, curdiry = curdir
+							cur_nav = "follow"
+							nav_type = "deliverative"
+							self.new_goal = self.get_new_limits(curdirx, curdiry)
+							newgx, newgy = self.new_goal
+							self.finding_unknown = True
+							logging.debug("\tLeast known direction found... | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
+						else:
+							logging.debug("All known! Need new strategy...")
+							self.new_goal = self.get_next_unknown_goal(bMap)
+							newgx, newgy = self.new_goal
+							nav_changed = True
+							curdirx, curdiry = None, None
+							decision_made = True
+							trap_detected = 0
+							self.avoiding_trap = False
+							cur_nav = "apf"
+							nav_type = "deliverative"
+					else:
+						# If we are following and there is no block, we update the goal
 						nav_changed = True
-						curdirx, curdiry = curdir
-						cur_nav = "follow"
-						nav_type = "deliverative"
 						self.new_goal = self.get_new_limits(curdirx, curdiry)
 						newgx, newgy = self.new_goal
-						self.finding_unknown = True
-						logging.debug("\tLeast known direction found... | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
-					else:
-						logging.debug("All known! Need new strategy...")
-						self.new_goal = self.get_next_unknown_goal(bMap)
-						nav_changed = True
-						curdirx, curdiry = None, None
-						#newgx, newgy = self.org_goal
-						newgx, newgy = self.new_goal
-						decision_made = True
-						trap_detected = 0
-						self.avoiding_trap = False
-						cur_nav = "apf"
+						cur_nav = "follow"
 						nav_type = "deliverative"
 			else:
 				logging.debug("Checking if we reached new goal...")

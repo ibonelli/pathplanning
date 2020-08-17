@@ -99,12 +99,12 @@ class DeliverativeNavigation:
 			navdataval = navData.build_info("blocked", myLimits['col'], navData.get_value(apf_dirx, apf_diry))
 			navdataval = navData.build_info("limit_pos", limit_pos, navData.get_value(apf_dirx, apf_diry))
 			navData.set_value(apf_dirx, apf_diry, navdataval)
+			# Checking known points in the chosen direction
+			known_dir = navWave.known_point_direction(stepx, stepy, apf_dirx, apf_diry, 5)
+			navdataval = navData.build_info("known_dir", known_dir, navData.get_value(apf_dirx, apf_diry))
+			navData.set_value(apf_dirx, apf_diry, navdataval)
 		# Building brushfire information
 		navData = navWave.known_areas(stepx, stepy, brushfire_radius_explore, brushfire_radius_to_evaluate, brushfire_neighbors_limit, navData)
-		# Checking known points in the chosen direction
-		known_dir = navWave.known_point_direction(stepx, stepy, apf_dirx, apf_diry, 5)
-		navdataval = navData.build_info("known_dir", known_dir, navData.get_value(apf_dirx, apf_diry))
-		navData.set_value(apf_dirx, apf_diry, navdataval)
 		# We save the data of the step
 		self.nav_data.append(navData)
 		logging.debug("step: " + str(step) + " | direction: " + str(direction) + " | navigation: " + str(nav) + " | mode: " + str(nav_type))

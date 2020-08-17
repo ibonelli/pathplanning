@@ -17,6 +17,7 @@ class BrushfireNavigation:
 		self.vlimit = None
 		self.map = None
 		self.motion = config.general['robot_motion_model']
+		self.recursion = 0
 
 	def set_params(self, reso, gx, gy, ox, oy, vlimit):
 		self.reso = reso
@@ -219,10 +220,20 @@ class BrushfireNavigation:
 		logging.debug("known_point_direction()")
 		logging.debug("\tpoint: " + str((xp,yp)) + " | dir: " + str((dirx,diry)) + " | limit: " + str(limit))
 		total = (limit+1) ** 2  # pow(x,2)
-		known_points = self.known_point_direction_ang(xp, yp, dirx, diry, limit)
-		return known_points/total
+		if self.map[xp][yp] != 0:
+			known_points = 1
+			logging.debug("\t\t(0) Position " + str((xp,yp)) + " is known.")
+		else:
+			known_points = 0
+			logging.debug("\t\t(0) Position " + str((xp,yp)) + " not known.")
+		known_points += self.known_point_direction_ang(xp, yp, dirx, diry, limit)
+		known = known_points/total
+		logging.debug("\tknown points: " + str(known_points) + " | total: " + str(total) + " | known: " + str(known))
+		return known
 
 	def known_point_direction_ang(self, xp, yp, dirx, diry, limit, ang=0, level=0):
+		logging.debug("\t\tRecursion is: " + str(self.recursion))
+		self.recursion+=1
 		known_points = 0
 		own_level = level+1
 		if own_level < limit:
@@ -232,14 +243,25 @@ class BrushfireNavigation:
 			xi, yi = xp+new_dirx, yp+new_diry
 			if self.map[xi][yi] != 0:
 				known_points += 1
+				logging.debug("\t\t\t(" + str(own_level) + ") Position " + str((xi,yi)) + " is known.")
 				if self.map[xi][yi] != 1:
+					#logging.debug("\t\tNo block, so we explore next level.")
 					if ang == 0:
 						known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, 0, own_level)
-						known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, math.pi/4, level)
-						known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, -math.pi/4, level)
+						logging.debug("\t\t\t\tknown_points (1) for: " + str((xi,yi)) + " | own_level: " + str(own_level) + " | ang: " + str(math.degrees(ang)) + " | known_points: " + str(known_points))
+						known_points += self.known_point_direction_ang(xp, yp, dirx, diry, limit, math.pi/4, level)
+						known_points += self.known_point_direction_ang(xp, yp, dirx, diry, limit, -math.pi/4, level)
+						#known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, math.pi/4, own_level)
+						#known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, -math.pi/4, own_level)
 					else:
 						known_points += self.known_point_direction_ang(xi, yi, dirx, diry, limit, ang, own_level)
-			logging.debug("\t\tknown_points for: " + str((xi,yi)) + " | limit: " + str(limit) + " | ang: " + str(ang) + " | own_level: " + str(own_level))
+						logging.debug("\t\t\t\tknown_points (2) for: " + str((xi,yi)) + " | own_level: " + str(own_level) + " | ang: " + str(math.degrees(ang)) + " | known_points: " + str(known_points))
+				else:
+					logging.debug("\t\tWe found a wall.")
+			else:
+				logging.debug("\t\t\t(" + str(own_level) + ") Position " + str((xi,yi)) + " not known.")
+		else:
+			logging.debug("\t\t\t(" + str(own_level) + ") Limit reached!")
 		return known_points
 
 	#def known_point_direction_axis_center(self, xp, yp, dirx, diry, limit, level=0):

@@ -17,6 +17,8 @@ from navBrushfire import BrushfireNavigation
 
 show_animation = config.general['show_Astar_animation']
 known_limit = config.general['known_limit']
+astar_known_explore_range = config.general['astar_known_explore_range']
+astar_known_limit = config.general['astar_known_limit']
 
 class AStarPlanner:
 	def __init__(self, ox, oy, resolution, rr, bMap):
@@ -123,8 +125,8 @@ class AStarPlanner:
 
 			# In my usecase it is also useful to finish when it got to an unknown spot
 			#print("current.x : " + str(current.x) + " | current.y : " + str(current.y))
-			known = self.bMap.known_point(current.x, current.y, 5)
-			if known < (1-known_limit):
+			known = self.bMap.known_point(current.x, current.y, astar_known_explore_range)
+			if known < astar_known_limit:
 				goal_node.parent_index = current.parent_index
 				goal_node.cost = current.cost
 				self.last_x = current.x

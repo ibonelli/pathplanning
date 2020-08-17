@@ -163,7 +163,7 @@ class AStarPlanner:
 		# Once finished, we calculate the path
 		rx, ry = self.calc_final_path(goal_node, closed_set)
 
-		return rx, ry, self.last_x, self.last_y
+		return rx, ry, self.last_x, self.last_y, known
 
 	def calc_final_path(self, goal_node, closed_set):
 		# generate final course

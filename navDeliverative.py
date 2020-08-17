@@ -296,9 +296,9 @@ class DeliverativeNavigation:
 			plt.axis("equal")
 
 		a_star = AStarPlanner(ox, oy, grid_size, robot_radius, bMap)
-		rx, ry, newgx, newgy = a_star.planning(sx, sy, gx, gy)
+		rx, ry, newgx, newgy, known = a_star.planning(sx, sy, gx, gy)
 
-		logging.debug("Astar produced an APF New Goal = (" + str(newgx) + "," + str(newgy) + ")")
+		logging.debug("Astar produced an APF New Goal = (" + str(newgx) + "," + str(newgy) + ") with a known value of: " + str(known))
 
 		if show_Astar_animation:
 			plt.plot(rx, ry, "-r")
@@ -467,7 +467,8 @@ class DeliverativeNavigation:
 						self.new_goal = self.get_next_unknown_goal(bMap)
 						nav_changed = True
 						curdirx, curdiry = None, None
-						newgx, newgy = self.org_goal
+						#newgx, newgy = self.org_goal
+						newgx, newgy = self.new_goal
 						decision_made = True
 						trap_detected = 0
 						self.avoiding_trap = False

@@ -49,6 +49,9 @@ def main():
 	ox = flx[2:]   # obstacle x position list [m]
 	oy = fly[2:]   # obstacle y position list [m]
 
+	secondary_goal = False
+	org_gx, org_gy = gx, gy
+
 	if show_animation:
 		MyGraf = ShowNavigation()
 
@@ -106,12 +109,14 @@ def main():
 		MyGraf.step(xp, yp, graf_delay)
 
 	# Main navigation loop
-	while d >= grid_size and not aborted:
+	while (d >= grid_size or secondary_goal) and not aborted:
 		if nav == "apf":
 			d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
+			logging.debug("<MAIN> -- Navigation APF -- d:" + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)))
 			stuck = myNavigation.decide_status(rd)
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
+			logging.debug("<MAIN> -- Navigation follow -- d:" + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)))
 			stuck = myNavFollow.decide_status(xp, yp, ox, oy)
 
 		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
@@ -129,16 +134,22 @@ def main():
 		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave)
 
 		if nav_changed:
-			logging.debug("================= MAIN START =================")
-			logging.debug("decide_status() has chosen a new direction: " + str((dirx, diry)))
-			logging.debug("\tNew limit: " + str((limitx, limity)) + " | newnav: " + str(newnav) + " | navtype: " + str(nav_type))
-			logging.debug("================== MAIN END ==================")
+			logging.debug("<MAIN> -- decide_status() has chosen a new direction: " + str((dirx, diry)))
+			logging.debug("<MAIN> -- \tNew limit: " + str((limitx, limity)) + " | newnav: " + str(newnav) + " | navtype: " + str(nav_type))
 			nav = newnav
 			if nav == "follow":
 				myNavFollow.set_limit(limitx, limity)
 			if nav == "apf":
 				myNavigation.set_cur_pos(xp, yp)
 				myNavigation.set_motion_model(trap.reset_motion_model())
+			if limitx != org_gx or limity != org_gy:
+				secondary_goal = True
+				logging.debug("<MAIN> -- Secondary goal is True.")
+			else:
+				secondary_goal = False
+				logging.debug("<MAIN> -- Secondary goal is False.")
+			# We update navigation goal
+			gx, gy = limitx, limity
 
 		# if stuck and is_following_wall:
 		# 	aborted = True
@@ -155,12 +166,13 @@ def main():
 			print("APF navigation failed... Not much more to do.")
 			aborted = True
 
-		if (xp == 17 and yp == 25):
-			checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
-			limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-			myLimits.save_limit(xp, yp, limits, "limit_x35_y20.json")
-			aborted = True
+		#if (xp == 17 and yp == 25):
+		#	checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
+		#	limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
+		#	myLimits.save_limit(xp, yp, limits, "limit_x35_y20.json")
+		#	aborted = True
 
+	# Navigation has finished
 	if aborted:
 		checkMyLimits = Lidar(grid_size, vision_limit, 36)
 		limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")

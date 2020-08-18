@@ -410,6 +410,7 @@ class DeliverativeNavigation:
 		newdirx, newdiry = self.get_best_possible_path()
 
 		if btype == 1:
+			blocked_distance = 0
 			new_ang = math.atan2(newdiry, newdirx)
 			logging.debug("get_unblock_direction() | btype == 1 | newdir: " + str((newdirx,newdiry)) + "| newang: " + str(math.degrees(new_ang)))
 
@@ -427,12 +428,14 @@ class DeliverativeNavigation:
 
 			if dirVals1['pmap'] < dirVals2['pmap']:
 				bang = new_ang+ang1/2
+				blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
 			else:
 				bang = new_ang+ang2/2
+				blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
 
 			x = int(round(math.cos(bang)))
 			y = int(round(math.sin(bang)))
-			logging.debug("\tEscape dir | direction: " + str((x, y)) + " | bang: " + str(bang))
+			logging.debug("\tEscape dir | direction: " + str((x, y)) + " | blocked Angle: " + str(math.degrees(bang)))
 
 		elif btype == 2:
 			logging.debug("get_unblock_direction() | btype == 2")
@@ -461,22 +464,30 @@ class DeliverativeNavigation:
 				if known1 < known2:
 					x = x1
 					y = y1
+					blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
 				else:
 					x = x2
 					y = y2
+					blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
 			elif dirVals1['pmap'] < dirVals2['pmap']:
 				x = x1
 				y = y1
+				blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
 			else:
 				x = x2
 				y = y2
+				blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
 
 		else:
 			logging.error("Wrong type given: " + str(btype))
 
 		dirVals = navData.get_value(x,y)
-		logging.debug("\tEscape dirVals | direction: " + str((x, y)) + " | PMAP: " + str(dirVals2['pmap']) + " | Blocked: " + str(dirVals2['blocked']) + " | limit_pos: " + str(dirVals2['limit_pos']))
-		d = np.hypot(xp - dirVals['limit_pos'][0], yp - dirVals['limit_pos'][1])
+		logging.debug("\tEscape direction: " + str((x, y)) + " | dir navData: " + str(dirVals))
+		if dirVals['blocked']:
+			d = np.hypot(xp - dirVals['limit_pos'][0], yp - dirVals['limit_pos'][1])
+		else:
+			d = (blocked_distance + 1) * math.sqrt(2)
+
 		return (x,y), (newdirx, newdiry), d
 
 	def decide_status(self, bMap, stuck):
@@ -551,10 +562,22 @@ class DeliverativeNavigation:
 		if stuck:
 			# APF failed!
 			if cur_nav == "apf":
-				logging.debug("Stuck, two Possible APF paths...")
+				logging.debug("Stuck between two Possible APF paths...")
 			else:
 				logging.debug("Follow got into a wall...")
-			nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type = self.get_unknown_direction_stuck(bMap)
+			self.avoiding_trap = True
+			self.avoiding_trap_type = 1
+			self.wall_overcome = False
+			self.blocked_direction_to_overcome, newdir, self.last_dist_to_obstacle = self.get_unblock_direction(bMap, self.avoiding_trap_type)
+			self.before_trap_pos = (xp, yp)
+			curdirx, curdiry = newdir
+			cur_nav = "follow"
+			self.new_goal = self.get_new_limits(curdirx, curdiry)
+			newgx, newgy = self.new_goal
+			decision_made = True
+			nav_changed = True
+			nav_type = "deliverative"
+			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
 

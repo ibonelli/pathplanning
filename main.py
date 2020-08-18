@@ -118,11 +118,11 @@ def main():
 			else:
 				d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(xp, yp, gx, gy, ox, oy, True)
 				apf_reset = False
-			logging.debug("<MAIN> -- Navigation APF -- d:" + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)))
+			logging.debug("<MAIN> -- Navigation APF -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)))
 			stuck = myNavigation.decide_status(rd)
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
-			logging.debug("<MAIN> -- Navigation follow -- d:" + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)))
+			logging.debug("<MAIN> -- Navigation follow -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)))
 			stuck = myNavFollow.decide_status(xp, yp, ox, oy)
 
 		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")

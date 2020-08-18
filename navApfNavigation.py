@@ -108,10 +108,9 @@ class ApfNavigation:
 	def reset_motion_model(self):
 		self.motion = config.general['robot_motion_model']
 
-	def decide_status(self, rd):
+	def decide_status_v2(self, rd):
 		## Checking if we get stuck...
 		dif = rd[-2] - rd[-1]
-		#logging.debug("decide_status() | dif: " + str(dif))
 		# Si aumento la distancia al objetivo
 		if dif < 0 and self.indecision == True:
 			self.stuck = True
@@ -119,27 +118,27 @@ class ApfNavigation:
 			self.stuck = False
 		return self.stuck
 
-	def decide_status_v2(self, rd):
+	def decide_status(self, rd):
 		## Checking if we get stuck...
 		dif = rd[-2] - rd[-1]
-		#logging.debug("decide_status() | dif: " + str(dif))
+		logging.debug("<APF> -- decide_status() | dif: " + str(dif) + " | Indecision: " + str(self.indecision))
 		# Si aumento la distancia al objetivo
 		if dif < 0 and self.scount == 0:
 			self.scount = 1
 			self.rcheck = rd[-2]
-			logging.debug("Stuck? : " + str(self.rcheck))
+			logging.debug("<APF> -- Stuck? : " + str(self.rcheck))
 		elif self.scount != 0:
 			if (self.rcheck - rd[-1]) <= self.reso and self.scount <= self.scount_limit:
 				self.scount += 1
-				logging.debug("Still stuck... scount: " + str(self.scount))
+				logging.debug("<APF> -- Still stuck... scount: " + str(self.scount))
 			elif (self.rcheck - rd[-1]) <= self.reso and self.scount > self.scount_limit:
-				logging.info("Now we are really stuck!!!")
+				logging.debug("<APF> -- Now we are really stuck!!!")
 				self.stuck = True
 			elif (self.rcheck - rd[-1]) > self.reso:
-				logging.debug("We got out of rcheck+reso area")
+				logging.debug("<APF> -- We got out of rcheck+reso area")
 				self.scount = 0
 			else:
-				logging.error("How did we get here? (scount!=0)")
+				logging.error("<APF> -- How did we get here? (scount!=0)")
 		else:
 			self.scount = 0
 

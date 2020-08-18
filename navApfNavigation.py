@@ -41,6 +41,7 @@ class ApfNavigation:
 		self.curdirx = None
 		self.curdiry = None
 		self.pvec = []
+		self.indecision = False
 
 	def set_cur_pos(self, xp, yp):
 		self.ix = xp
@@ -107,7 +108,18 @@ class ApfNavigation:
 	def reset_motion_model(self):
 		self.motion = config.general['robot_motion_model']
 
-	def decide_status(self,rd):
+	def decide_status(self, rd):
+		## Checking if we get stuck...
+		dif = rd[-2] - rd[-1]
+		#logging.debug("decide_status() | dif: " + str(dif))
+		# Si aumento la distancia al objetivo
+		if dif < 0 and self.indecision == True:
+			self.stuck = True
+		else:
+			self.stuck = False
+		return self.stuck
+
+	def decide_status_v2(self, rd):
 		## Checking if we get stuck...
 		dif = rd[-2] - rd[-1]
 		#logging.debug("decide_status() | dif: " + str(dif))
@@ -162,6 +174,7 @@ class ApfNavigation:
 
 		minp = float("inf")
 		self.pvec = []
+		local_pvec = []
 
 		self.minix, self.miniy = -1, -1
 		for i in range(len(motion)):
@@ -172,15 +185,22 @@ class ApfNavigation:
 			else:
 				p = self.pmap[inx][iny]
 				self.pvec.append((p, motion[i][0], motion[i][1]))
-			if minp > p:
-				minp = p
-				self.minix = inx
-				self.miniy = iny
-				self.curdirx = motion[i][0]
-				self.curdiry = motion[i][1]
+				local_pvec.append((p, (motion[i][0], motion[i][1]), (inx, iny)))
 
-		self.ix = self.minix
-		self.iy = self.miniy
+		local_pvec = sorted(local_pvec, key=lambda pvec: pvec[0])
+
+		if local_pvec[0][0] == local_pvec[1][0]:
+			# Two directions with same potential, need a better way to decide
+			self.indecision = True
+		else:
+			# Only one best direction, we can go with that one
+			self.indecision = False
+
+		self.curdirx = local_pvec[0][1][0]
+		self.curdiry = local_pvec[0][1][1]
+		self.ix = local_pvec[0][2][0]
+		self.iy = local_pvec[0][2][1]
+
 		xp = self.ix * self.reso + self.minx
 		yp = self.iy * self.reso + self.miny
 		d = np.hypot(gx - xp, gy - yp)

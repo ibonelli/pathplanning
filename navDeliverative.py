@@ -47,7 +47,7 @@ class DeliverativeNavigation:
 		self.blocked_direction_to_overcome = None
 		self.last_dist_to_obstacle = None
 		self.wall_overcome = False
-		self.before_trap_pos = False
+		self.before_trap_pos = None
 		self.avoiding_trap = False
 		self.avoiding_trap_type = 0
 		self.finding_unknown = False
@@ -344,6 +344,65 @@ class DeliverativeNavigation:
 	#
 	#	return neighbors
 
+	def get_unknown_direction(self, bMap):
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		known_level = bMap.known_point(xp, yp, 5)
+		got_dir, curdir = self.explore_unknown()
+		logging.debug("Known level: " + str(known_level) + " | got_dir: " + str(got_dir) + " | curdir: " + str(curdir))
+		if (known_level < known_limit) and got_dir:
+			logging.debug("Current exploring path has failed us!")
+			nav_changed = True
+			curdirx, curdiry = curdir
+			cur_nav = "follow"
+			nav_type = "deliverative"
+			self.new_goal = self.get_new_limits(curdirx, curdiry)
+			newgx, newgy = self.new_goal
+			self.finding_unknown = True
+			logging.debug("\tLeast known direction found... | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
+		else:
+			logging.debug("All known! Need new strategy...")
+			self.new_goal = self.get_next_unknown_goal(bMap)
+			newgx, newgy = self.new_goal
+			nav_changed = True
+			curdirx, curdiry = None, None
+			decision_made = True
+			trap_detected = 0
+			self.avoiding_trap = False
+			cur_nav = "apf"
+			nav_type = "deliverative"
+		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
+
+	def get_unknown_direction_stuck(self, bMap):
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
+		nav_type = self.nav_type[-1]
+		known_level = bMap.known_point(xp, yp, 5)
+		got_dir, curdir = self.explore_unknown()
+		logging.debug("Known level: " + str(known_level) + " | got_dir: " + str(got_dir) + " | curdir: " + str(curdir))
+		if nav_type == "apf" and got_dir:
+			logging.debug("Current exploring path has failed us!")
+			nav_changed = True
+			curdirx, curdiry = curdir
+			cur_nav = "follow"
+			nav_type = "deliverative"
+			self.new_goal = self.get_new_limits(curdirx, curdiry)
+			newgx, newgy = self.new_goal
+			self.finding_unknown = True
+			logging.debug("\tLeast known direction found... | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
+		else:
+			logging.debug("All known! Need new strategy...")
+			self.new_goal = self.get_next_unknown_goal(bMap)
+			newgx, newgy = self.new_goal
+			nav_changed = True
+			curdirx, curdiry = None, None
+			decision_made = True
+			trap_detected = 0
+			self.avoiding_trap = False
+			cur_nav = "apf"
+			nav_type = "deliverative"
+		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
+
 	def get_unblock_direction(self, bMap, btype):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
@@ -420,7 +479,7 @@ class DeliverativeNavigation:
 		d = np.hypot(xp - dirVals['limit_pos'][0], yp - dirVals['limit_pos'][1])
 		return (x,y), (newdirx, newdiry), d
 
-	def decide_status(self, bMap):
+	def decide_status(self, bMap, stuck):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
 		newgx = self.org_goal[0]
@@ -453,30 +512,7 @@ class DeliverativeNavigation:
 					self.new_goal = (newgx, newgy)
 				else:
 					if path_blocked:
-						known_level = bMap.known_point(xp, yp, 5)
-						got_dir, curdir = self.explore_unknown()
-						logging.debug("Known level: " + str(known_level) + " | got_dir: " + str(got_dir) + " | curdir: " + str(curdir))
-						if (known_level < known_limit) and got_dir:
-							logging.debug("Current exploring path has failed us!")
-							nav_changed = True
-							curdirx, curdiry = curdir
-							cur_nav = "follow"
-							nav_type = "deliverative"
-							self.new_goal = self.get_new_limits(curdirx, curdiry)
-							newgx, newgy = self.new_goal
-							self.finding_unknown = True
-							logging.debug("\tLeast known direction found... | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
-						else:
-							logging.debug("All known! Need new strategy...")
-							self.new_goal = self.get_next_unknown_goal(bMap)
-							newgx, newgy = self.new_goal
-							nav_changed = True
-							curdirx, curdiry = None, None
-							decision_made = True
-							trap_detected = 0
-							self.avoiding_trap = False
-							cur_nav = "apf"
-							nav_type = "deliverative"
+						nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type = self.get_unknown_direction(bMap)
 					else:
 						# If we are following and there is no block, we update the goal
 						nav_changed = True
@@ -510,6 +546,15 @@ class DeliverativeNavigation:
 			nav_changed = True
 			nav_type = "deliverative"
 			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
+
+		# Either APF or Follow has failed and returned stuck=True on decide_status() call
+		if stuck:
+			# APF failed!
+			if cur_nav == "apf":
+				logging.debug("Stuck, two Possible APF paths...")
+			else:
+				logging.debug("Follow got into a wall...")
+			nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type = self.get_unknown_direction_stuck(bMap)
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
 

@@ -136,7 +136,7 @@ def main():
 			if brushfire_map_debug:
 				myNavWave.show_map(xp, yp, "debug")
 
-		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave)
+		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave, stuck)
 
 		if nav_changed:
 			logging.debug("<MAIN> -- decide_status() has chosen a new direction: " + str((dirx, diry)))
@@ -158,20 +158,11 @@ def main():
 			# We update navigation goal
 			gx, gy = limitx, limity
 
-		# if stuck and is_following_wall:
-		# 	aborted = True
-
 		rd.append(d)
 		rx.append(xp)
 		ry.append(yp)
 		if show_animation:
 			MyGraf.step(xp, yp, graf_delay)
-
-		if stuck:
-			# APF failed!
-			print("Step xp: " + str(xp) + " | yp: " + str(yp))
-			print("APF navigation failed... Not much more to do.")
-			aborted = True
 
 		#if (xp == 17 and yp == 25):
 		#	checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)

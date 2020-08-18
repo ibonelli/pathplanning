@@ -59,6 +59,7 @@ class AStarPlanner:
 		# New goal to follow
 		self.last_x = None
 		self.last_y = None
+		self.last_node = None
 
 	class Node:
 		def __init__(self, x, y, cost, parent_index):
@@ -131,6 +132,7 @@ class AStarPlanner:
 				goal_node.cost = current.cost
 				self.last_x = current.x
 				self.last_y = current.y
+				self.last_node = current
 				break
 
 			# Remove the item from the open set
@@ -161,7 +163,7 @@ class AStarPlanner:
 						open_set[n_id] = node
 
 		# Once finished, we calculate the path
-		rx, ry = self.calc_final_path(goal_node, closed_set)
+		rx, ry = self.calc_final_path(self.last_node, closed_set)
 
 		return rx, ry, self.last_x, self.last_y, known
 

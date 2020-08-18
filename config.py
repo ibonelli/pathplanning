@@ -22,6 +22,7 @@ general = dict(
 	robot_motion_model = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]],
 	known_limit = 0.8,
 	block_size = 4,
+	trap_limit_distance = 5,
 	astar_known_explore_range = 3,
 	astar_known_limit = 0.2,
 	show_Astar_animation = False,

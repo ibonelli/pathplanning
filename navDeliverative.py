@@ -15,13 +15,14 @@ from navData import NavigationData
 from navAstar import AStarPlanner
 
 lidar_steps = config.general['lidar_steps']
+vision_limit = config.general['vision_limit']
 wall_detection_threshold = config.general['wall_detection_threshold']
 brushfire_radius_explore = config.general['brushfire_radius_explore']
 brushfire_radius_to_evaluate = config.general['brushfire_radius_to_evaluate']
 brushfire_neighbors_limit = config.general['brushfire_neighbors_limit']
 known_limit = config.general['known_limit']
 block_size = config.general['block_size']
-vision_limit = config.general['vision_limit']
+trap_limit_distance = config.general['trap_limit_distance']
 navData_debug = config.general['navData_debug']
 show_Astar_animation = config.general['show_Astar_animation']
 
@@ -244,13 +245,17 @@ class DeliverativeNavigation:
 		return trap
 
 	def direction_status(self, cur_dir, ang, navData):
+		xp = self.path[-1][0]
+		yp = self.path[-1][1]
 		cur_ang = math.atan2(cur_dir[1], cur_dir[0])
 		x = int(round(math.cos(cur_ang+ang)))
 		y = int(round(math.sin(cur_ang+ang)))
 		dirVals = navData.get_value(x,y)
 		status = False
 		if dirVals['blocked'] and dirVals['known'] > known_limit and dirVals['block_size'] > block_size:
-			status = True
+			d = np.hypot(xp - dirVals['limit_pos'][0], yp - dirVals['limit_pos'][1])
+			if d < trap_limit_distance:
+				status = True
 		return status
 
 	def explore_unknown(self):
@@ -284,7 +289,8 @@ class DeliverativeNavigation:
 
 	def get_next_unknown_goal(self, bMap):
 		# start and goal position
-		sx, sy = self.before_trap_pos
+		#sx, sy = self.path[-1][0], self.path[-1][1] # Current position
+		sx, sy = self.before_trap_pos # Last traped position
 		gx, gy = self.org_goal
 		grid_size = self.grid_size
 		robot_radius = self.rr
@@ -522,7 +528,7 @@ class DeliverativeNavigation:
 					self.avoiding_trap = False
 					self.new_goal = (newgx, newgy)
 				else:
-					if path_blocked:
+					if path_blocked and dist_to_obstacle < trap_limit_distance:
 						nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type = self.get_unknown_direction(bMap)
 					else:
 						# If we are following and there is no block, we update the goal

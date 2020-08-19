@@ -289,8 +289,8 @@ class DeliverativeNavigation:
 
 	def get_next_unknown_goal(self, bMap):
 		# start and goal position
-		#sx, sy = self.path[-1][0], self.path[-1][1] # Current position
-		sx, sy = self.before_trap_pos # Last traped position
+		sx, sy = self.path[-1][0], self.path[-1][1] # Current position
+		#sx, sy = self.before_trap_pos # Last traped position
 		gx, gy = self.org_goal
 		grid_size = self.grid_size
 		robot_radius = self.rr
@@ -325,9 +325,11 @@ class DeliverativeNavigation:
 			if dirVals['blocked'] == False:
 				possible_path.append((x,y,dirVals['pmap'],dirVals['known']))
 		possible_path = sorted(possible_path, key=lambda mypath: mypath[2])
+		possible_path_count = len(possible_path)
 		for path in possible_path:
 			logging.debug("\t(" + str(path[0]) + "," + str(path[1]) + ") | pot: " + str(path[2]) + " | known: " + str(path[3]))
-		return (possible_path[0][0], possible_path[0][1])
+		logging.debug("\tA total of " + str(possible_path_count) + " paths were found.")
+		return possible_path[0][0], possible_path[0][1], possible_path
 
 	#def get_blocked_direction_to_overcome(self, bMap):
 	#	xp = self.path[-1][0]
@@ -413,7 +415,7 @@ class DeliverativeNavigation:
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
 		navData = self.nav_data[-1]
-		newdirx, newdiry = self.get_best_possible_path()
+		newdirx, newdiry, count = self.get_best_possible_path()
 
 		if btype == 1:
 			blocked_distance = 0
@@ -434,10 +436,12 @@ class DeliverativeNavigation:
 
 			if dirVals1['pmap'] < dirVals2['pmap']:
 				bang = new_ang+ang1/2
-				blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
+				if dirVals1['blocked']:
+					blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
 			else:
 				bang = new_ang+ang2/2
-				blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
+				if dirVals2['blocked']:
+					blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
 
 			x = int(round(math.cos(bang)))
 			y = int(round(math.sin(bang)))
@@ -470,19 +474,23 @@ class DeliverativeNavigation:
 				if known1 < known2:
 					x = x1
 					y = y1
-					blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
+					if dirVals1['blocked']:
+						blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
 				else:
 					x = x2
 					y = y2
-					blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
+					if dirVals2['blocked']:
+						blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
 			elif dirVals1['pmap'] < dirVals2['pmap']:
 				x = x1
 				y = y1
-				blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
+				if dirVals1['blocked']:
+					blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
 			else:
 				x = x2
 				y = y2
-				blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
+				if dirVals2['blocked']:
+					blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
 
 		else:
 			logging.error("Wrong type given: " + str(btype))
@@ -492,7 +500,12 @@ class DeliverativeNavigation:
 		if dirVals['blocked']:
 			d = np.hypot(xp - dirVals['limit_pos'][0], yp - dirVals['limit_pos'][1])
 		else:
-			d = (blocked_distance + 1) * math.sqrt(2)
+			if blocked_distance != 0:
+				d = (blocked_distance + 1) * math.sqrt(2)
+			else:
+				logging.info("\tThere is non-blocked direction, and no distance to overcome.")
+				logging.info("\tSetting a distance 2 to simply avoid the situation.")
+				d = 1
 
 		return (x,y), (newdirx, newdiry), d
 

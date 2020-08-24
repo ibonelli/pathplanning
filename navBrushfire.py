@@ -226,6 +226,8 @@ class BrushfireNavigation:
 		return self.known_point_from_limits(xinf, xsup, yinf, ysup)
 
 	def known_point_direction(self, xp, yp, dirx, diry, limit):
+		max_potential = 0
+		max_potential_point = (0, 0)
 		if known_point_direction_debug:
 			logging.debug("known_point_direction()")
 		if known_point_direction_debug:
@@ -235,17 +237,20 @@ class BrushfireNavigation:
 			known_point = 1
 			if known_point_direction_debug:
 				logging.debug("\t\t(0) Position " + str((xp,yp)) + " is known.")
+			if max_potential < self.map[xp][yp]:
+				max_potential = self.map[xp][yp]
+				max_potential_point = (xp, yp)
 		else:
 			known_point = 0
 			if known_point_direction_debug:
 				logging.debug("\t\t(0) Position " + str((xp,yp)) + " not known.")
-		known_points, total = self.known_point_direction_ang(xp, yp, dirx, diry, limit, 1)
+		known_points, total, max_potential, max_potential_point = self.known_point_direction_ang(xp, yp, dirx, diry, limit, 1, max_potential, max_potential_point)
 		known = (known_point+known_points)/total
 		if known_point_direction_debug:
 			logging.debug("\tknown points: " + str(known_point+known_points) + " | total: " + str(total) + " | known: " + str(known))
-		return known
+		return known, max_potential, max_potential_point
 
-	def known_point_direction_ang(self, xp, yp, dirx, diry, limit, total, ang=0, level=0):
+	def known_point_direction_ang(self, xp, yp, dirx, diry, limit, total, max_potential, max_potential_point, ang=0, level=0):
 		self.recursion+=1
 		known_points = 0
 		own_level = level+1
@@ -262,6 +267,9 @@ class BrushfireNavigation:
 					known_points += 1
 					if known_point_direction_debug:
 						logging.debug("\t\t(" + str(own_level) + ") Position " + str((xi,yi)) + " is known | Total: " + str(total))
+					if max_potential < self.map[xp][yp]:
+						max_potential = self.map[xp][yp]
+						max_potential_point = (xp, yp)
 				else:
 					if known_point_direction_debug:
 						logging.debug("\t\t(" + str(own_level) + ") Position " + str((xi,yi)) + " not known | Total: " + str(total))
@@ -269,14 +277,14 @@ class BrushfireNavigation:
 				# Shall we continue?
 				if val != 1:
 					if ang == 0:
-						known_points_ret, total = self.known_point_direction_ang(xi, yi, dirx, diry, limit, total, 0, own_level)
+						known_points_ret, total, max_potential, max_potential_point = self.known_point_direction_ang(xi, yi, dirx, diry, limit, total, max_potential, max_potential_point, 0, own_level)
 						known_points += known_points_ret
-						known_points_ret, total = self.known_point_direction_ang(xp, yp, dirx, diry, limit, total, math.pi/4, level)
+						known_points_ret, total, max_potential, max_potential_point = self.known_point_direction_ang(xp, yp, dirx, diry, limit, total, max_potential, max_potential_point, math.pi/4, level)
 						known_points += known_points_ret
-						known_points_ret, total = self.known_point_direction_ang(xp, yp, dirx, diry, limit, total, -math.pi/4, level)
+						known_points_ret, total, max_potential, max_potential_point = self.known_point_direction_ang(xp, yp, dirx, diry, limit, total, max_potential, max_potential_point, -math.pi/4, level)
 						known_points += known_points_ret
 					else:
-						known_points_ret, total = self.known_point_direction_ang(xi, yi, dirx, diry, limit, total, ang, own_level)
+						known_points_ret, total, max_potential, max_potential_point = self.known_point_direction_ang(xi, yi, dirx, diry, limit, total, max_potential, max_potential_point, ang, own_level)
 						known_points += known_points_ret
 				else:
 					if known_point_direction_debug:
@@ -286,7 +294,7 @@ class BrushfireNavigation:
 		else:
 			if known_point_direction_debug:
 				logging.debug("\t\t\t(" + str(own_level) + ") Limit reached!")
-		return known_points, total
+		return known_points, total, max_potential, max_potential_point
 
 	def known_limit(self, xp, yp, xl, yl):
 		# If we are in vertical or horizontal lines

@@ -75,6 +75,8 @@ class NavigationData:
 				"pmap": None,
 				"known": None,
 				"known_dir": None,
+				"max_potential": None,
+				"max_potential_point": None,
 				"block_size": None,
 				}
 		if datafield == "blocked":
@@ -87,6 +89,10 @@ class NavigationData:
 			previous["known"] = data
 		if datafield == "known_dir":
 			previous["known_dir"] = data
+		if datafield == "max_potential":
+			previous["max_potential"] = data
+		if datafield == "max_potential_point":
+			previous["max_potential_point"] = data
 		if datafield == "block_size":
 			previous["block_size"] = data
 		return previous

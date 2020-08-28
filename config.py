@@ -9,9 +9,8 @@ general = dict(
 	lidar_steps = 8,
 	wall_detection_threshold = 3,
 	grid_size = 1,       # potential grid size [m]
-	# TODO - This should be flexible. Some functions are, others are not.
-	# Now working with 5 for APF, BurshFire and Deliverative.
-	robot_radius = 5.0,  # robot radius [m]
+	robot_radius = 1.0,  # robot radius [m]
+	#robot_radius = 5.0,  # robot radius [m]
 	vision_limit = 15,   # Lidar vision limit
 	brushfire_radius_explore = 15,
 	brushfire_radius_to_evaluate = 5,

@@ -6,6 +6,9 @@ import json
 from navLidarPoint import LidarPoint
 from navLidarLimit import LidarLimit
 
+lidar_debug = False
+lidar_intersection_debug = False
+
 # START Class Lidar ----------------------------------------------
 class Lidar:
 	def __init__(self, grid_size, radius, steps):
@@ -60,19 +63,21 @@ class Lidar:
 		self.robot_position_x = x
 		self.robot_position_y = y
 
-		#self.print("Start Lidar ------------------", "debug")
+		if lidar_debug:
+			self.print("Start Lidar ------------------", "debug")
 		for i in range(self.sensor_angle_steps):
 			p = LidarPoint()
 			p.angle = self.angle_step * i
 			rx = x + self.sensor_radius * math.cos(p.angle)
 			ry = y + self.sensor_radius * math.sin(p.angle)
 			r = np.array([rx, ry])
-			#logging.debug("lidar_limits() Call | x: " + str(x) + " | y: " + str(y) + " | r " + str(r) + " | mode: " + mode)
+			if lidar_debug:
+				logging.debug("\tlidar_limits() Call | x: " + str(x) + " | y: " + str(y) + " | r " + str(r) + " | mode: " + mode)
 			p.col,p.r = self.lidar_limits(x, y, r, ox, oy, mode)
 			p.dist = math.sqrt(math.pow(p.r[0]-x,2)+math.pow(p.r[1]-y,2))
-			#self.print("p: " + str(p.angle) + " | x: " + str(p.r[0]-x) + " | y " + str(p.r[1]-y) + " | d: " + str(p.dist), "debug")
+			if lidar_debug:
+				self.print("\t\tcol: " + str(p.col) + " | r: " + str(p.r) + " | ang: " + str(math.degrees(p.angle)) + " | x: " + str(p.r[0]-x) + " | y: " + str(p.r[1]-y) + " | d: " + str(p.dist), "debug")
 			limit.append(p)
-		#self.print("-------------------------------", "debug")
 
 		return limit
 
@@ -109,24 +114,38 @@ class Lidar:
 				logging.error("Not proper mode: " + str(mode))
 				exit(-1)
 			if (intersects):
-				#logging.debug("lidar_limits() | Intersection at " + str(limit))
+				if lidar_intersection_debug:
+					logging.debug("lidar_limits() -------------------------------")
+					logging.debug("\tIntersection at " + str(limit))
 				oi.append(limit)
 		if (len(oi) == 0):
 			# No collision found
+			if lidar_intersection_debug:
+				logging.debug("\t\tNo collision found")
+				logging.debug("---------------------------------------------")
 			return False, r
 		elif (len(oi) == 1):
 			# Found only one collision
+			if lidar_intersection_debug:
+				logging.debug("\t\tOnly one collision found")
+				logging.debug("---------------------------------------------")
 			return True, oi[0]
 		else:
 			# Found multiple collisions, returning closest one
+			if lidar_intersection_debug:
+				logging.debug("\t\tFound multiple collisions: " + str(oi))
 			min_val = float("inf")
 			val_to_return = None
 			for p in oi:
 				h = np.linalg.norm(p)
+				if lidar_intersection_debug:
+					logging.debug("\t\tCollisions: " + str(p) + " | min_val: " + str(min_val) + " | h: " + str(h))
 				if (h < min_val):
 					min_val = h
 					val_to_return = p
-			return True, p
+			if lidar_intersection_debug:
+				logging.debug("---------------------------------------------")
+			return True, val_to_return
 
 	# We get the limit for an specific angle and return collision point.
 	#   Builds a map with limits instead of objects (wich looks bad and leads to errors)

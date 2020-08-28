@@ -99,7 +99,7 @@ def main():
 	# We save the step
 	myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
 	if brushfire_map_debug:
-		myNavWave.show_map(xp, yp, "debug")
+		myNavWave.show_map(xp, yp, "debug", curdirx, curdiry)
 	rd.append(d)
 	rx.append(xp)
 	ry.append(yp)
@@ -134,7 +134,7 @@ def main():
 			myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
 			if brushfire_map_debug:
-				myNavWave.show_map(xp, yp, "debug")
+				myNavWave.show_map(xp, yp, "debug", curdirx, curdiry)
 
 		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave, stuck)
 
@@ -164,10 +164,10 @@ def main():
 		if show_animation:
 			MyGraf.step(xp, yp, graf_delay)
 
-		#if (xp == 17 and yp == 25):
+		#if (xp == 19 and yp == 23):
 		#	checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
 		#	limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-		#	myLimits.save_limit(xp, yp, limits, "limit_x35_y20.json")
+		#	myLimits.save_limit(xp, yp, limits, "limit_x19_y23.json")
 		#	aborted = True
 
 	# Navigation has finished

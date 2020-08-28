@@ -8,8 +8,23 @@ from navMap import Map
 from navData import NavigationData
 
 known_point_direction_debug = False
+update_map_debug = False
 
-# START Class Map ------------------------------------------------
+# Built using UTF8 Arrows
+#		https://www.toptal.com/designers/htmlarrows/arrows/
+
+navigation_to_arrow = [
+	(1,0,"\u2192","0"),
+	(1,1,"\u2197","45"),
+	(0,1,"\u2191","90"),
+	(-1,1,"\u2196","135"),
+	(-1,0,"\u2190","180"),
+	(-1,-1,"\u2199","225"),
+	(0,-1,"\u2193","270"),
+	(1,-1,"\u2198","315"),
+	]
+
+# START Class BrushfireNavigation ------------------------------------------------
 class BrushfireNavigation:
 	def __init__(self):
 		self.reso = None
@@ -75,7 +90,8 @@ class BrushfireNavigation:
 	def set_yw(self, yw):
 		self.yw = yw
 
-	def show_map(self, xp, yp, mode="debug"):
+	def show_map(self, xp, yp, mode="debug", dirx=-2, diry=-2):
+		arrow = "*"
 		self.print("Map+--------------------------------------", mode)
 		msg_xruler = "    "
 		for i in range(self.xw):
@@ -88,7 +104,8 @@ class BrushfireNavigation:
 				try:
 					yi = int(self.maxy)-j
 					if i == xp and yi == yp:
-						msg = msg + " **"
+						arrow = self.get_arrow_from_direction(dirx, diry)
+						msg = msg + " " + arrow + arrow
 					else:
 						msg = msg + " " + str('{0:02d}').format(int(self.map[i][yi]))
 				except:
@@ -98,11 +115,26 @@ class BrushfireNavigation:
 		self.print("   +----------------------------------------", mode)
 		self.print(msg_xruler, mode)
 
+	def get_arrow_from_direction(self, dirx, diry):
+		arrow = "*"
+		for x, y, a, ang in navigation_to_arrow:
+			if x == dirx and y == diry:
+				arrow = a
+		return arrow
+
+	def get_angle_from_direction(self, dirx, diry):
+		angle = -1
+		for x, y, a, ang in navigation_to_arrow:
+			if x == dirx and y == diry:
+				angle = ang
+		return angle
+
 	def update_map(self, myMap, xp, yp, limits):
 		# Indices must be integers, not numpy.float64
 		xp = int(round(xp,0))
 		yp = int(round(yp,0))
-		#self.print("Brushfire limits -------------------", "debug")
+		if update_map_debug:
+			self.print("Brushfire limits -------------------", "debug")
 		dir_steps = []
 		for p in limits:
 			# We build direction (as 1s instead of angles)
@@ -126,7 +158,9 @@ class BrushfireNavigation:
 			dir_steps.append((xi,yi,steps,p["col"]))
 		dir_steps = sorted(dir_steps, key=lambda mystep: mystep[2])
 		for r in dir_steps:
-			#self.print("col: " + str(r[3]) + " | xi: " + str(r[0]) + " | yi " + str(r[1]) + " | steps: " + str(r[2]), "debug")
+			if update_map_debug:
+				angle = self.get_angle_from_direction(r[0], r[1])
+				self.print("\tcol: " + str(r[3]) + " | xi,yi: " + str((r[0],r[1])) + " | ang " + str(angle) + " | steps: " + str(r[2]), "debug")
 			# We use the increments to calculate the path to record the "wave"
 			for s in range(r[2]):
 				x = xp + r[0]*s

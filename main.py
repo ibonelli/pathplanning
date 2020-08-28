@@ -44,8 +44,8 @@ def main():
 	fly = ob[:, 1]  # file y position list [m]
 	sx = flx[0]	 # start x position [m]
 	sy = fly[0]	 # start y positon [m]
-	gx = flx[1]	 # goal x position [m]
-	gy = fly[1]	 # goal y position [m]
+	globalgx = gx = flx[1]	 # goal x position [m]
+	globalgy = gy = fly[1]	 # goal y position [m]
 	ox = flx[2:]   # obstacle x position list [m]
 	oy = fly[2:]   # obstacle y position list [m]
 
@@ -118,12 +118,14 @@ def main():
 			else:
 				d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(xp, yp, gx, gy, ox, oy, True)
 				apf_reset = False
-			logging.debug("<MAIN> -- Navigation APF -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)))
-			stuck = myNavigation.decide_status(rd)
+			logging.debug("<MAIN> -- Navigation APF -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
+			# decide_status() should be done by deliverative as it has more information
+			#stuck = myNavigation.decide_status(rd)
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
-			logging.debug("<MAIN> -- Navigation follow -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)))
-			stuck = myNavFollow.decide_status(xp, yp, ox, oy)
+			logging.debug("<MAIN> -- Navigation follow -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
+			# decide_status() should be done by deliverative as it has more information
+			#stuck = myNavFollow.decide_status(xp, yp, ox, oy)
 
 		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
 
@@ -136,7 +138,7 @@ def main():
 			if brushfire_map_debug:
 				myNavWave.show_map(xp, yp, "debug", curdirx, curdiry)
 
-		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave, stuck)
+		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave)
 
 		if nav_changed:
 			logging.debug("<MAIN> -- decide_status() has chosen a new direction: " + str((dirx, diry)))
@@ -157,6 +159,8 @@ def main():
 				logging.debug("<MAIN> -- Secondary goal is False.")
 			# We update navigation goal
 			gx, gy = limitx, limity
+
+		d = np.hypot(globalgx - xp, globalgy - yp)
 
 		rd.append(d)
 		rx.append(xp)

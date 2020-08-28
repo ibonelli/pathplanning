@@ -118,7 +118,8 @@ class ApfNavigation:
 			self.stuck = False
 		return self.stuck
 
-	def decide_status(self, rd):
+	# decide_status() is not working whith local goals
+	def decide_status_v1(self, rd):
 		## Checking if we get stuck...
 		dif = rd[-2] - rd[-1]
 		logging.debug("<APF> -- decide_status() | dif: " + str(dif) + " | Indecision: " + str(self.indecision))

@@ -44,7 +44,8 @@ class FollowPath:
 
 		return d, xs, ys, curdirx, curdiry, self.limit
 
-	def decide_status(self, xp, yp, ox, oy):
+	# This was a workaround... Should decide deliverative instead!
+	def decide_status_v1(self, xp, yp, ox, oy):
 		stuck = False
 		for obx,oby in np.nditer([ox, oy]):
 			if obx == xp and oby == yp:

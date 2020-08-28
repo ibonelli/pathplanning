@@ -511,7 +511,7 @@ class DeliverativeNavigation:
 
 		return (x,y), (newdirx, newdiry), d
 
-	def decide_status(self, bMap, stuck):
+	def decide_status(self, bMap):
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
 		newgx = self.org_goal[0]
@@ -552,16 +552,20 @@ class DeliverativeNavigation:
 						newgx, newgy = self.new_goal
 						cur_nav = "follow"
 						nav_type = "deliverative"
+
+		# If we are navigating with a secondary/local goal
+		if self.new_goal is not None:
+			if xp == self.new_goal[0] and yp == self.new_goal[1]:
+				logging.debug("We reached secondary/local goal. We need to fall back to global/original goal.")
+				nav_changed = True
+				self.new_goal = None
+				curdirx, curdiry = None, None
+				newgx, newgy = self.org_goal
+				decision_made = True
+				cur_nav = "apf"
+				nav_type = "reactive"
 			else:
-				logging.debug("Checking if we reached new goal...")
-				if xp == self.new_goal[0] and yp == self.new_goal[1]:
-					nav_changed = True
-					self.new_goal = None
-					curdirx, curdiry = None, None
-					newgx, newgy = self.org_goal
-					decision_made = True
-					cur_nav = "apf"
-					nav_type = "reactive"
+				logging.debug("Still navigating to the secondary/local goal.")
 
 		# If we find a trap -------------------------------------
 		if path_blocked and cur_nav == "apf" and (trap_detected == 1 or trap_detected == 2) and goal_unreachable:
@@ -579,6 +583,7 @@ class DeliverativeNavigation:
 			nav_type = "deliverative"
 			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 
+		stuck = self.decide_navigation_status()
 		# Either APF or Follow has failed and returned stuck=True on decide_status() call
 		if stuck:
 			# APF failed!
@@ -601,6 +606,15 @@ class DeliverativeNavigation:
 			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
+
+	def decide_navigation_status(self):
+		cur_nav = self.nav[-1]
+		# TODO - Needs to check navigation status for APF and Follow
+		if cur_nav == "apf":
+			logging.debug("Check APF status...")
+		else:
+			logging.debug("Check Follow status...")
+		return False
 
 	def block_check(self):
 		ox, oy = self.map.get_objects()

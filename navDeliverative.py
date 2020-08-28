@@ -13,6 +13,7 @@ from navLidarLimit import LidarLimit
 from navBrushfire import BrushfireNavigation
 from navData import NavigationData
 from navAstar import AStarPlanner
+from navApfNavigation import ApfNavigation
 
 lidar_steps = config.general['lidar_steps']
 vision_limit = config.general['vision_limit']
@@ -25,6 +26,7 @@ block_size = config.general['block_size']
 trap_limit_distance = config.general['trap_limit_distance']
 navData_debug = config.general['navData_debug']
 show_Astar_animation = config.general['show_Astar_animation']
+robot_motion_model = config.general['robot_motion_model']
 
 # START Class DelivNavigation --------------------------------------------
 class DeliverativeNavigation:
@@ -556,14 +558,26 @@ class DeliverativeNavigation:
 		# If we are navigating with a secondary/local goal
 		if self.new_goal is not None:
 			if xp == self.new_goal[0] and yp == self.new_goal[1]:
-				logging.debug("We reached secondary/local goal. We need to fall back to global/original goal.")
-				nav_changed = True
-				self.new_goal = None
-				curdirx, curdiry = None, None
-				newgx, newgy = self.org_goal
-				decision_made = True
 				cur_nav = "apf"
-				nav_type = "reactive"
+				decision_made = True
+				logging.debug("We reached secondary/local goal.")
+				need_astar = self.check_next_apf_step(bMap)
+				if need_astar:
+					logging.debug("All known! Need new strategy...")
+					self.new_goal = self.get_next_unknown_goal(bMap)
+					newgx, newgy = self.new_goal
+					nav_changed = True
+					curdirx, curdiry = None, None
+					trap_detected = 0
+					self.avoiding_trap = False
+					nav_type = "deliverative"
+				else:
+					logging.debug("We need to fall back to global/original goal.")
+					nav_changed = True
+					self.new_goal = None
+					curdirx, curdiry = None, None
+					newgx, newgy = self.org_goal
+					nav_type = "reactive"
 			else:
 				logging.debug("Still navigating to the secondary/local goal.")
 
@@ -606,6 +620,28 @@ class DeliverativeNavigation:
 			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
+
+	def check_next_apf_step(self, navWave):
+		xp, yp = self.path[-1]
+		gx, gy = self.org_goal
+		ox, oy = self.map.get_objects()
+
+		# Importing information from bMap
+		limits = navWave.get_limits()
+		# Making sure limits are withing obstacle points
+		ox.append(limits['minx'])
+		oy.append(limits['miny'])
+		ox.append(limits['maxx'])
+		oy.append(limits['maxy'])
+
+		myNavigation = ApfNavigation(self.grid_size, self.rr)
+		myNavigation.set_motion_model(robot_motion_model)
+		d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(xp, yp, gx, gy, ox, oy, True)
+		known_dir, max_potential, max_potential_point = navWave.known_point_direction(xp, yp, curdirx, curdiry, 7)
+		if known_dir >= 0.95:
+			return True
+		else:
+			return False
 
 	def decide_navigation_status(self):
 		cur_nav = self.nav[-1]

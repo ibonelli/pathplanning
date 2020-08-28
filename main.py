@@ -113,11 +113,11 @@ def main():
 	while (d >= grid_size or secondary_goal) and not aborted:
 		logging.debug("====================================== NEXT STEP ======================================")
 		if nav == "apf":
-			if not apf_reset:
-				d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
-			else:
+			if apf_reset:
 				d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(xp, yp, gx, gy, ox, oy, True)
 				apf_reset = False
+			else:
+				d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
 			logging.debug("<MAIN> -- Navigation APF -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
 			# decide_status() should be done by deliverative as it has more information
 			#stuck = myNavigation.decide_status(rd)

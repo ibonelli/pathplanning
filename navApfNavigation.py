@@ -108,18 +108,20 @@ class ApfNavigation:
 	def reset_motion_model(self):
 		self.motion = config.general['robot_motion_model']
 
-	def decide_status_v2(self, rd):
-		## Checking if we get stuck...
-		dif = rd[-2] - rd[-1]
-		# Si aumento la distancia al objetivo
-		if dif < 0 and self.indecision == True:
-			self.stuck = True
-		else:
-			self.stuck = False
+	def decide_status(self, rx, ry, xp, yp):
+		self.stuck = False
+		# Checking if we get stuck...
+		if len(rx) > 1:
+			logging.debug("<APF> -- decide_status() | rx,ry [-2]: " + str((rx[-2],ry[-2])) + " | xp,yp: " + str((xp,yp)))
+			if rx[-2] == xp:
+				if ry[-2] == yp:
+					logging.debug("<APF> -- decide_status() | WE ARE STUCK!")
+					# If we are taking same step again
+					self.stuck = True
 		return self.stuck
 
 	# decide_status() is not working whith local goals
-	def decide_status_v1(self, rd):
+	def decide_status_v2(self, rd):
 		## Checking if we get stuck...
 		dif = rd[-2] - rd[-1]
 		logging.debug("<APF> -- decide_status() | dif: " + str(dif) + " | Indecision: " + str(self.indecision))

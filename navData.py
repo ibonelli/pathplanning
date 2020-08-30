@@ -78,6 +78,7 @@ class NavigationData:
 				"max_potential": None,
 				"max_potential_point": None,
 				"block_size": None,
+				"dist_to_goal": None,
 				}
 		if datafield == "blocked":
 			previous["blocked"] = data
@@ -95,6 +96,8 @@ class NavigationData:
 			previous["max_potential_point"] = data
 		if datafield == "block_size":
 			previous["block_size"] = data
+		if datafield == "dist_to_goal":
+			previous["dist_to_goal"] = data
 		return previous
 
 	def print(self):

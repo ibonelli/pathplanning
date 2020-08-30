@@ -93,7 +93,6 @@ def main():
 	limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
 	myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 	pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
-	aborted = myDeliverative.check_limits(xp, yp)
 	nav_type = "reactive"
 
 	# We save the step
@@ -119,26 +118,27 @@ def main():
 			else:
 				d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
 			logging.debug("<MAIN> -- Navigation APF -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
-			# decide_status() should be done by deliverative as it has more information
-			#stuck = myNavigation.decide_status(rd)
+			stuck = myNavigation.decide_status(rx, ry, xp, yp)
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
 			logging.debug("<MAIN> -- Navigation follow -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
-			# decide_status() should be done by deliverative as it has more information
-			#stuck = myNavFollow.decide_status(xp, yp, ox, oy)
+			stuck = myNavFollow.decide_status(xp, yp, ox, oy)
 
-		limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
+		# If not stuck but we reached a limit
+		if not stuck:
+			stuck = myDeliverative.check_limits(xp, yp)
 
-		if myDeliverative.check_limits(xp, yp):
-			aborted = True
+		if stuck:
+			nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.propose_new_aproach((xp, yp), (curdirx, curdiry), myNavWave)
 		else:
+			limits = myLidar.fetch_all(xp, yp, ox, oy, "object")
 			pot = myNavWave.update_map(myNavWave.get_map(), xp, yp, limits)
 			myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
 			if brushfire_map_debug:
 				myNavWave.show_map(xp, yp, "debug", curdirx, curdiry)
-
-		nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.decide_status(myNavWave)
+			# Shall we continue with the same approach?
+			nav_changed, dirx, diry, limitx, limity, newnav, nav_type, aborted = myDeliverative.decide_status(myNavWave)
 
 		if nav_changed:
 			logging.debug("<MAIN> -- decide_status() has chosen a new direction: " + str((dirx, diry)))
@@ -160,19 +160,21 @@ def main():
 			# We update navigation goal
 			gx, gy = limitx, limity
 
-		d = np.hypot(globalgx - xp, globalgy - yp)
+		# If we are stuck we did not accept the step
+		if not stuck:
+			d = np.hypot(globalgx - xp, globalgy - yp)
 
-		rd.append(d)
-		rx.append(xp)
-		ry.append(yp)
-		if show_animation:
-			MyGraf.step(xp, yp, graf_delay)
+			rd.append(d)
+			rx.append(xp)
+			ry.append(yp)
+			if show_animation:
+				MyGraf.step(xp, yp, graf_delay)
 
-		#if (xp == 19 and yp == 23):
-		#	checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
-		#	limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
-		#	myLimits.save_limit(xp, yp, limits, "limit_x19_y23.json")
-		#	aborted = True
+			#if (xp == 19 and yp == 23):
+			#	checkMyLimits = Lidar(grid_size, vision_limit, lidar_steps)
+			#	limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
+			#	myLimits.save_limit(xp, yp, limits, "limit_x19_y23.json")
+			#	aborted = True
 
 	# Navigation has finished
 	if aborted:

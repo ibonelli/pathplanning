@@ -84,6 +84,7 @@ class DeliverativeNavigation:
 			navData=NavigationData()
 		stepx = int(round(step[0],0))
 		stepy = int(round(step[1],0))
+		gx, gy = self.org_goal
 		self.path.append((stepx, stepy))
 		self.dir.append(direction)
 		self.nav.append(nav)
@@ -107,6 +108,8 @@ class DeliverativeNavigation:
 			navdataval = navData.build_info("known_dir", known_dir, navData.get_value(apf_dirx, apf_diry))
 			navdataval = navData.build_info("max_potential", max_potential, navData.get_value(apf_dirx, apf_diry))
 			navdataval = navData.build_info("max_potential_point", max_potential_point, navData.get_value(apf_dirx, apf_diry))
+			dist_to_goal = np.hypot(gx - stepx + apf_dirx, gy - stepy + apf_diry)
+			navdataval = navData.build_info("dist_to_goal", dist_to_goal, navData.get_value(apf_dirx, apf_diry))
 			navData.set_value(apf_dirx, apf_diry, navdataval)
 		# Building brushfire information
 		navData = navWave.known_areas(stepx, stepy, brushfire_radius_explore, brushfire_radius_to_evaluate, brushfire_neighbors_limit, navData)
@@ -331,7 +334,7 @@ class DeliverativeNavigation:
 		possible_path = sorted(possible_path, key=lambda mypath: mypath[2])
 		possible_path_count = len(possible_path)
 		for path in possible_path:
-			logging.debug("\t(" + str(path[0]) + "," + str(path[1]) + ") | pot: " + str(path[2]) + " | known: " + str(path[3]))
+			logging.debug("\tpath: " + str((path[0],path[1])) + " | ang: " + str(math.degrees(math.atan2(path[1],path[0]))) + " | pot: " + str(path[2]) + " | known: " + str(path[3]))
 		logging.debug("\tA total of " + str(possible_path_count) + " paths were found.")
 		return possible_path[0][0], possible_path[0][1], possible_path
 
@@ -438,7 +441,7 @@ class DeliverativeNavigation:
 			dirVals2 = navData.get_value(x2,y2)
 			logging.debug("\tEscape dir2 | direction: " + str((x2, y2)) + " | PMAP: " + str(dirVals2['pmap']) + " | Blocked: " + str(dirVals2['blocked']))
 
-			if dirVals1['pmap'] < dirVals2['pmap']:
+			if dirVals1['dist_to_goal'] > dirVals2['dist_to_goal']:
 				bang = new_ang+ang1/2
 				if dirVals1['blocked']:
 					blocked_distance = np.hypot(xp - dirVals1['limit_pos'][0], yp - dirVals1['limit_pos'][1])
@@ -466,7 +469,7 @@ class DeliverativeNavigation:
 			dirVals2 = navData.get_value(x2,y2)
 			logging.debug("\tEscape dir2 | direction: " + str((x2, y2)) + " | PMAP: " + str(dirVals2['pmap']))
 
-			if round(dirVals1['pmap'],2) == round(dirVals2['pmap'],2):
+			if round(dirVals1['dist_to_goal'],2) == round(dirVals2['dist_to_goal'],2):
 				xk1 = xp + x1 * self.vision_limit
 				yk1 = yp + y1 * self.vision_limit
 				known1 = bMap.known_point(xk1, yk1, 3)
@@ -485,7 +488,7 @@ class DeliverativeNavigation:
 					y = y2
 					if dirVals2['blocked']:
 						blocked_distance = np.hypot(xp - dirVals2['limit_pos'][0], yp - dirVals2['limit_pos'][1])
-			elif dirVals1['pmap'] < dirVals2['pmap']:
+			elif dirVals1['dist_to_goal'] > dirVals2['dist_to_goal']:
 				x = x1
 				y = y1
 				if dirVals1['blocked']:
@@ -514,6 +517,9 @@ class DeliverativeNavigation:
 		return (x,y), (newdirx, newdiry), d
 
 	def decide_status(self, bMap):
+		# TODO - Need to detect navigation dead ends!!!
+		aborted = False
+		# TODO ^ Need to detect navigation dead ends!!!
 		xp = self.path[-1][0]
 		yp = self.path[-1][1]
 		newgx = self.org_goal[0]
@@ -597,27 +603,31 @@ class DeliverativeNavigation:
 			nav_type = "deliverative"
 			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 
-		stuck = self.decide_navigation_status()
+		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type, aborted
+
+	def propose_new_aproach(self, step, curdir, bMap):
+		cur_nav = self.nav[-1]
+		xp, yp = step
+		curdirx, curdiry = curdir
+
 		# Either APF or Follow has failed and returned stuck=True on decide_status() call
-		if stuck:
-			# APF failed!
-			if cur_nav == "apf":
-				logging.debug("Stuck between two Possible APF paths...")
-			else:
-				logging.debug("Follow got into a wall...")
-			self.avoiding_trap = True
-			self.avoiding_trap_type = 1
-			self.wall_overcome = False
-			self.blocked_direction_to_overcome, newdir, self.last_dist_to_obstacle = self.get_unblock_direction(bMap, self.avoiding_trap_type)
-			self.before_trap_pos = (xp, yp)
-			curdirx, curdiry = newdir
-			cur_nav = "follow"
-			self.new_goal = self.get_new_limits(curdirx, curdiry)
-			newgx, newgy = self.new_goal
-			decision_made = True
-			nav_changed = True
-			nav_type = "deliverative"
-			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
+		if cur_nav == "apf":
+			logging.debug("Stuck between two Possible APF paths...")
+		else:
+			logging.debug("Follow got into a wall...")
+		self.avoiding_trap = True
+		self.avoiding_trap_type = 1
+		self.wall_overcome = False
+		self.blocked_direction_to_overcome, newdir, self.last_dist_to_obstacle = self.get_unblock_direction(bMap, self.avoiding_trap_type)
+		self.before_trap_pos = (xp, yp)
+		curdirx, curdiry = newdir
+		cur_nav = "follow"
+		self.new_goal = self.get_new_limits(curdirx, curdiry)
+		newgx, newgy = self.new_goal
+		decision_made = True
+		nav_changed = True
+		nav_type = "deliverative"
+		logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
 
@@ -666,6 +676,11 @@ class DeliverativeNavigation:
 		dirVals = navData.get_value(dirx,diry)
 
 		if dirVals['blocked'] == True:
+			dist = np.hypot(dirVals['limit_pos'][0] - xp, dirVals['limit_pos'][1] - yp)
+			logging.debug("block_check() path unblock seems False | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle) + " | dist: " + str(dist))
+
+		# It has to be unblocked or the block must be further away
+		if dirVals['blocked'] == True and dist <= self.last_dist_to_obstacle:
 			logging.debug("block_check() path unblock: False")
 			unblock = False
 			rx, ry = dirVals['limit_pos']

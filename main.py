@@ -129,6 +129,8 @@ def main():
 			stuck = myDeliverative.check_limits(xp, yp)
 
 		if stuck:
+			xp = rx[-1]
+			yp = ry[-1]
 			nav_changed, dirx, diry, limitx, limity, newnav, nav_type = myDeliverative.propose_new_aproach((xp, yp), (curdirx, curdiry), myNavWave)
 		else:
 			limits = myLidar.fetch_all(xp, yp, ox, oy, "object")

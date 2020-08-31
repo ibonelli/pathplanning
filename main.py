@@ -123,6 +123,10 @@ def main():
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
 			logging.debug("<MAIN> -- Navigation follow -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
 			stuck = myNavFollow.decide_status(xp, yp, ox, oy)
+		elif nav == "follow_steps":
+			d, xp, yp, curdirx, curdiry = myNavFollow.follow_steps(xp, yp, myDeliverative.get_astar_path())
+			logging.debug("<MAIN> -- Navigation follow_steps -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
+			stuck = myNavFollow.decide_status(xp, yp, ox, oy)
 
 		# If not stuck but we reached a limit
 		if not stuck:

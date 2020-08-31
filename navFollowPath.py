@@ -44,6 +44,26 @@ class FollowPath:
 
 		return d, xs, ys, curdirx, curdiry, self.limit
 
+	def follow_steps(self, xp, yp, astar_path):
+		idx = astar_path.index((xp, yp))
+		if idx == 0:
+			logging.error("Already reached goal...")
+			logging.error("\tAstar path: " + str(astar_path))
+			logging.error("\tCurrent step: " + str((xp,yp)))
+		else:
+			newx, newy = astar_path[idx-1]
+
+		dirx = newx - xp
+		diry = newy - yp
+		d = np.hypot(self.gx - newx, self.gy - newy)
+
+		logging.debug("Following Astar steps...")
+		logging.error("\tAstar path: " + str(astar_path))
+		logging.debug("\txp,yp: " + str((newx, newy)) + " | curdir: " + str((dirx, diry)) + " | d: " + str(d))
+
+		return d, newx, newy, dirx, diry
+
+
 	def decide_status(self, xp, yp, ox, oy):
 		stuck = False
 		for obx,oby in np.nditer([ox, oy]):

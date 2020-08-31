@@ -54,6 +54,7 @@ class DeliverativeNavigation:
 		self.avoiding_trap = False
 		self.avoiding_trap_type = 0
 		self.finding_unknown = False
+		self.astar_steps = None
 
 	def set_map(self, Map):
 		self.map.set_map(Map)
@@ -78,6 +79,9 @@ class DeliverativeNavigation:
 		else:
 			xl, yl = navdataval['limit_pos']
 		return (xl, yl)
+
+	def get_astar_path(self):
+		return self.astar_steps
 
 	def set_step(self, step, direction, nav, nav_type, pot, pvec, limits, navWave, navData=None):
 		if navData==None:
@@ -321,7 +325,7 @@ class DeliverativeNavigation:
 			plt.pause(0.001)
 			plt.show()
 
-		return newgx, newgy
+		return newgx, newgy, rx, ry
 
 	def get_best_possible_path(self):
 		navData = self.nav_data[-1]
@@ -377,8 +381,12 @@ class DeliverativeNavigation:
 			logging.debug("\tLeast known direction found... | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
 		else:
 			logging.debug("All known! Need new strategy...")
-			self.new_goal = self.get_next_unknown_goal(bMap)
-			newgx, newgy = self.new_goal
+			newgx, newgy, rx, ry = self.get_next_unknown_goal(bMap)
+			logging.debug("\tProposed path by Astar | new_goal: " + str((newgx, newgy)))
+			logging.debug("\t\trx: " + str(rx))
+			logging.debug("\t\try: " + str(ry))
+			self.astar_steps = list(zip(rx, ry))
+			self.new_goal = (newgx, newgy)
 			nav_changed = True
 			curdirx, curdiry = None, None
 			decision_made = True
@@ -407,8 +415,12 @@ class DeliverativeNavigation:
 			logging.debug("\tLeast known direction found... | direction: " + str((curdirx, curdiry)) + " | new goal: " + str((newgx, newgy)))
 		else:
 			logging.debug("All known! Need new strategy...")
-			self.new_goal = self.get_next_unknown_goal(bMap)
-			newgx, newgy = self.new_goal
+			newgx, newgy, rx, ry = self.get_next_unknown_goal(bMap)
+			logging.debug("\tProposed path by Astar | new_goal: " + str((newgx, newgy)))
+			logging.debug("\t\trx: " + str(rx))
+			logging.debug("\t\try: " + str(ry))
+			self.astar_steps = list(zip(rx, ry))
+			self.new_goal = (newgx, newgy)
 			nav_changed = True
 			curdirx, curdiry = None, None
 			decision_made = True
@@ -570,8 +582,12 @@ class DeliverativeNavigation:
 				need_astar = self.check_next_apf_step(bMap)
 				if need_astar:
 					logging.debug("All known! Need new strategy...")
-					self.new_goal = self.get_next_unknown_goal(bMap)
-					newgx, newgy = self.new_goal
+					newgx, newgy, rx, ry = self.get_next_unknown_goal(bMap)
+					logging.debug("\tProposed path by Astar | new_goal: " + str((newgx, newgy)))
+					logging.debug("\t\trx: " + str(rx))
+					logging.debug("\t\try: " + str(ry))
+					self.astar_steps = list(zip(rx, ry))
+					self.new_goal = (newgx, newgy)
 					nav_changed = True
 					curdirx, curdiry = None, None
 					trap_detected = 0
@@ -595,15 +611,44 @@ class DeliverativeNavigation:
 			self.blocked_direction_to_overcome, newdir, self.last_dist_to_obstacle = self.get_unblock_direction(bMap, trap_detected)
 			self.before_trap_pos = (xp, yp)
 			curdirx, curdiry = newdir
-			cur_nav = "follow"
 			self.new_goal = self.get_new_limits(curdirx, curdiry)
 			newgx, newgy = self.new_goal
 			decision_made = True
 			nav_changed = True
+			cur_nav = "follow"
 			nav_type = "deliverative"
 			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 
+		# If we find ourselves into a completely known space -----------
+		if self.check_all_known():
+			logging.debug("All known! Need new strategy... We will use Astar.")
+			newgx, newgy, rx, ry = self.get_next_unknown_goal(bMap)
+			logging.debug("\tProposed path by Astar | new_goal: " + str((newgx, newgy)))
+			logging.debug("\t\trx: " + str(rx))
+			logging.debug("\t\try: " + str(ry))
+			self.astar_steps = list(zip(rx, ry))
+			self.new_goal = (newgx, newgy)
+			curdirx, curdiry = None, None
+			trap_detected = 0
+			self.avoiding_trap = False
+			decision_made = True
+			nav_changed = True
+			cur_nav = "follow_steps"
+			nav_type = "deliverative"
+			logging.debug("\tstep: " + str((xp,yp)) + ") | new_goal: " + str((newgx, newgy)))
+
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type, aborted
+
+	def check_all_known(self):
+		navData = self.nav_data[-1]
+		all_known = True
+
+		for x,y in navData.get_iterative():
+			dirVals = navData.get_value(x,y)
+			if dirVals['known_dir'] <= 0.95:
+				all_known = False
+
+		return all_known
 
 	def propose_new_aproach(self, step, curdir, bMap):
 		cur_nav = self.nav[-1]
@@ -613,21 +658,36 @@ class DeliverativeNavigation:
 		# Either APF or Follow has failed and returned stuck=True on decide_status() call
 		if cur_nav == "apf":
 			logging.debug("Stuck between two Possible APF paths...")
+			self.avoiding_trap = True
+			self.avoiding_trap_type = 1
+			self.wall_overcome = False
+			self.blocked_direction_to_overcome, newdir, self.last_dist_to_obstacle = self.get_unblock_direction(bMap, self.avoiding_trap_type)
+			self.before_trap_pos = (xp, yp)
+			curdirx, curdiry = newdir
+			cur_nav = "follow"
+			self.new_goal = self.get_new_limits(curdirx, curdiry)
+			newgx, newgy = self.new_goal
+			decision_made = True
+			nav_changed = True
+			nav_type = "deliverative"
+			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 		else:
 			logging.debug("Follow got into a wall...")
-		self.avoiding_trap = True
-		self.avoiding_trap_type = 1
-		self.wall_overcome = False
-		self.blocked_direction_to_overcome, newdir, self.last_dist_to_obstacle = self.get_unblock_direction(bMap, self.avoiding_trap_type)
-		self.before_trap_pos = (xp, yp)
-		curdirx, curdiry = newdir
-		cur_nav = "follow"
-		self.new_goal = self.get_new_limits(curdirx, curdiry)
-		newgx, newgy = self.new_goal
-		decision_made = True
-		nav_changed = True
-		nav_type = "deliverative"
-		logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
+			newgx, newgy, rx, ry = self.get_next_unknown_goal(bMap)
+			logging.debug("\tProposed path by Astar | new_goal: " + str((newgx, newgy)))
+			logging.debug("\t\trx: " + str(rx))
+			logging.debug("\t\try: " + str(ry))
+			self.astar_steps = list(zip(rx, ry))
+			self.new_goal = (newgx, newgy)
+			curdirx, curdiry = None, None
+			trap_detected = 0
+			self.avoiding_trap = False
+			decision_made = True
+			nav_changed = True
+			cur_nav = "follow_steps"
+			nav_type = "deliverative"
+			logging.debug("\tstep: " + str((xp,yp)) + ") | new_goal: " + str((newgx, newgy)))
+
 
 		return nav_changed, curdirx, curdiry, newgx, newgy, cur_nav, nav_type
 

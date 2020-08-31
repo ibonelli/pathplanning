@@ -142,6 +142,7 @@ def main():
 			myDeliverative.set_map(LidarLimit.limit2map(myDeliverative.get_map(), myLidar.get_blocked_path(limits)))
 			myDeliverative.set_step((xp, yp), (curdirx, curdiry), nav, nav_type, pot, myNavigation.get_pvec(), limits, myNavWave)
 			if brushfire_map_debug:
+				print("Step: " + str((xp,yp)))
 				myNavWave.show_map(xp, yp, "debug", curdirx, curdiry)
 			# Shall we continue with the same approach?
 			nav_changed, dirx, diry, limitx, limity, newnav, nav_type, aborted = myDeliverative.decide_status(myNavWave)
@@ -199,8 +200,8 @@ def main():
 		MyGraf.save(fbase)
 		myMap.draw(fbase + "_objs.png")
 
-	if brushfire_map_debug:
-		myNavWave.show_map(xp, yp, "console")
+	#if brushfire_map_debug:
+	#	myNavWave.show_map(xp, yp, "console")
 
 if __name__ == '__main__':
 	print(__file__ + " start!!")

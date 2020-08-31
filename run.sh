@@ -1,30 +1,74 @@
-echo "Running world01.csv ================"
-python3 main.py world01.csv
-echo "Running world02.csv ================"
-python3 main.py world02.csv
-echo "Running world03.csv ================"
-python3 main.py world03.csv
-echo "Running world04.csv ================"
-python3 main.py world04.csv
-echo "Running world11.csv ================"
-python3 main.py world11.csv
-echo "Running world12.csv ================"
-python3 main.py world12.csv
-echo "Running world13.csv ================"
-python3 main.py world13.csv
-echo "Running world14.csv ================"
-python3 main.py world14.csv
-echo "Running world21.csv ================"
-python3 main.py world21.csv
-echo "Running world22.csv ================"
-python3 main.py world22.csv
-echo "Running world23.csv ================"
-python3 main.py world23.csv
-echo "Running world24.csv ================"
-python3 main.py world24.csv
-echo "Running world31.csv ================"
-python3 main.py world31.csv
-echo "Running world32.csv ================"
-python3 main.py world32.csv
-echo "Running world33.csv ================"
-python3 main.py world33.csv
+FILE="world01"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world02"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world03"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world04"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world11"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world12"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world13"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world14"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world21"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world22"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world23"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world24"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world31"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world32"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world33"
+echo "Running "${FILE}" ================"
+python3 main.py ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log

@@ -620,7 +620,7 @@ class DeliverativeNavigation:
 			logging.debug("\tstep: " + str((xp,yp)) + ") | new_dir: " + str((newgx, newgy)) + " | trap_type: " + str(trap_detected) + " | blocked_direction_to_overcome: " + str(self.blocked_direction_to_overcome) + " | last_dist_to_obstacle: " + str(self.last_dist_to_obstacle))
 
 		# If we find ourselves into a completely known space -----------
-		if self.check_all_known():
+		if self.check_all_known() and path_blocked:
 			logging.debug("All known! Need new strategy... We will use Astar.")
 			newgx, newgy, rx, ry = self.get_next_unknown_goal(bMap)
 			logging.debug("\tProposed path by Astar | new_goal: " + str((newgx, newgy)))

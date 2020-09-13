@@ -10,7 +10,6 @@ import config
 from navApfNavigation import ApfNavigation
 from navLidar import Lidar
 from navLidarPoint import LidarPoint
-from navTrapNavigation import TrapNavigation
 from navMap import Map
 from navGraf import ShowNavigation
 from navLidarLimit import LidarLimit
@@ -21,13 +20,14 @@ from navData import NavigationData
 
 show_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
-motion_model_limit = config.general['motion_model_limit']
 lidar_steps = config.general['lidar_steps']
 grid_size = config.general['grid_size']
 robot_radius = config.general['robot_radius']
 vision_limit = config.general['vision_limit']
 brushfire_map_debug = config.general['brushfire_map_debug']
 saveResults = config.general['saveResults']
+saveReport = config.general['saveReport']
+robot_motion_model = config.general['robot_motion_model']
 
 def main():
 	# Cargando el archivo de descripcion del mundo a recorrer
@@ -69,7 +69,6 @@ def main():
 	myNavWave.set_params(grid_size, gx, gy, ox, oy, vision_limit)
 	myNavWave.set_map(myMap.get_map())
 	pot = myNavWave.update_map(myNavWave.get_map(), sx, sy, limits)
-	trap = TrapNavigation(grid_size, robot_radius, vision_limit)
 	myDeliverative = DeliverativeNavigation(robot_radius, vision_limit, grid_size, gx, gy, myMap)
 	myDeliverative.set_map(LidarLimit.limit2map(myMap.get_map(), myLidar.get_blocked_path(limits)))
 	myNavFollow = FollowPath(grid_size, gx, gy)
@@ -77,9 +76,7 @@ def main():
 		myNavWave.show_map(sx, sy, "debug")
 
 	# Start with a clean motion model
-	motion_model_count = 0
-	motion_model = trap.reset_motion_model()
-	myNavigation.set_motion_model(motion_model)
+	myNavigation.set_motion_model(robot_motion_model)
 
 	# Navigation 1st step
 	stuck = False
@@ -156,7 +153,6 @@ def main():
 			if nav == "apf":
 				logging.debug("<MAIN> -- We require an APF reset.")
 				myNavigation.set_cur_pos(xp, yp)
-				myNavigation.set_motion_model(trap.reset_motion_model())
 				apf_reset = True
 			if limitx != org_gx or limity != org_gy:
 				secondary_goal = True
@@ -190,6 +186,8 @@ def main():
 		myLimits.save_limit(xp, yp, limits, "limit.json")
 		print("Navigation aborted...")
 	else:
+		goal_reached = True
+		steps_to_goal = len(rd)
 		print("Goal!!")
 
 	if saveResults:
@@ -199,6 +197,19 @@ def main():
 		myMap.save_map(fbase + "_map.json")
 		MyGraf.save(fbase)
 		myMap.draw(fbase + "_objs.png")
+
+	if saveReport:
+		fbase=fname[0:-4] # We cut the extension
+		filename = fbase + "_report.txt"
+		freport = open(filename, 'w')
+		freport.write("== World: " + str(fname) + " ==\n")
+		freport.write("Method: Full Deliverative\n")
+		if goal_reached:
+			freport.write("Result: Found Goal\n")
+		else:
+			freport.write("Result: Failed\n")
+		freport.write("Steps: " + str(steps_to_goal) + "\n\n")
+		freport.close()
 
 	#if brushfire_map_debug:
 	#	myNavWave.show_map(xp, yp, "console")

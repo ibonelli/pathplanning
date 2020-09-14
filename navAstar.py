@@ -21,7 +21,7 @@ astar_known_explore_range = config.general['astar_known_explore_range']
 astar_known_limit = config.general['astar_known_limit']
 
 class AStarPlanner:
-	def __init__(self, ox, oy, resolution, rr, bMap):
+	def __init__(self, ox, oy, resolution, rr, bMap=None):
 		"""
 		Initialize grid map for a star planning
 
@@ -39,21 +39,28 @@ class AStarPlanner:
 		self.obstacle_map = None
 		self.motion = self.get_motion_model()
 
-		# Importing information from bMap
-		self.bMap = bMap
-		limits = bMap.get_limits()
-		self.min_x = limits['minx']
-		self.min_y = limits['miny']
-		self.max_x = limits['maxx']
-		self.max_y = limits['maxy']
+		if bMap is not None:
+			# Importing information from bMap
+			self.bMap = bMap
+			limits = bMap.get_limits()
+			self.min_x = limits['minx']
+			self.min_y = limits['miny']
+			self.max_x = limits['maxx']
+			self.max_y = limits['maxy']
+			# Making sure limits are withing obstacle points
+			ox.append(limits['minx'])
+			oy.append(limits['miny'])
+			ox.append(limits['maxx'])
+			oy.append(limits['maxy'])
+		else:
+			self.bMap = None
+			self.min_x = int(round(min(ox),0))
+			self.min_y = int(round(min(oy),0))
+			self.max_x = int(round(max(ox),0))
+			self.max_y = int(round(max(oy),0))
+
 		self.x_width = round((self.max_x - self.min_x) / self.resolution)
 		self.y_width = round((self.max_y - self.min_y) / self.resolution)
-
-		# Making sure limits are withing obstacle points
-		ox.append(limits['minx'])
-		oy.append(limits['miny'])
-		ox.append(limits['maxx'])
-		oy.append(limits['maxy'])
 		self.calc_obstacle_map(ox, oy)
 
 		# New goal to follow
@@ -89,6 +96,7 @@ class AStarPlanner:
 
 		start_node = self.Node(self.calc_xy_index(sx, self.min_x),
 							self.calc_xy_index(sy, self.min_y), 0.0, -1)
+
 		goal_node = self.Node(self.calc_xy_index(gx, self.min_x),
 							self.calc_xy_index(gy, self.min_y), 0.0, -1)
 
@@ -119,21 +127,26 @@ class AStarPlanner:
 
 			# Originally it ends when it finds the goal
 			if current.x == goal_node.x and current.y == goal_node.y:
-				print("Find goal")
-				goal_node.parent_index = current.parent_index
-				goal_node.cost = current.cost
-				break
-
-			# In my usecase it is also useful to finish when it got to an unknown spot
-			#print("current.x : " + str(current.x) + " | current.y : " + str(current.y))
-			known = self.bMap.known_point(current.x, current.y, astar_known_explore_range)
-			if known < astar_known_limit:
+				print("Found goal")
 				goal_node.parent_index = current.parent_index
 				goal_node.cost = current.cost
 				self.last_x = current.x
 				self.last_y = current.y
 				self.last_node = current
+				known = 0
 				break
+
+			# In my usecase it is also useful to finish when it got to an unknown spot
+			if self.bMap is not None:
+				#print("current.x : " + str(current.x) + " | current.y : " + str(current.y))
+				known = self.bMap.known_point(current.x, current.y, astar_known_explore_range)
+				if known < astar_known_limit:
+					goal_node.parent_index = current.parent_index
+					goal_node.cost = current.cost
+					self.last_x = current.x
+					self.last_y = current.y
+					self.last_node = current
+					break
 
 			# Remove the item from the open set
 			del open_set[c_id]

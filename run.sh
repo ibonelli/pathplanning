@@ -1,3 +1,6 @@
+#PYRUN="main.py"
+PYRUN="main_astar.py"
+
 FILE="world01"
 echo "Running "${FILE}" ================"
 python3 main.py ${FILE}.csv

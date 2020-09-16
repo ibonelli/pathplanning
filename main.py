@@ -18,7 +18,7 @@ from navFollowPath import FollowPath
 from navBrushfire import BrushfireNavigation
 from navData import NavigationData
 
-show_animation = config.general['animation']
+create_animation = config.general['animation']
 graf_delay = config.general['grafDelay']
 lidar_steps = config.general['lidar_steps']
 grid_size = config.general['grid_size']
@@ -52,7 +52,7 @@ def main():
 	secondary_goal = False
 	org_gx, org_gy = gx, gy
 
-	if show_animation:
+	if create_animation:
 		MyGraf = ShowNavigation()
 
 	# Map generation
@@ -99,7 +99,7 @@ def main():
 	rd.append(d)
 	rx.append(xp)
 	ry.append(yp)
-	if show_animation:
+	if create_animation:
 		MyGraf.draw_heatmap(myNavigation.get_pmap())
 		MyGraf.show(sx, sy, gx, gy)
 		MyGraf.step(xp, yp, graf_delay)
@@ -170,7 +170,7 @@ def main():
 			rd.append(d)
 			rx.append(xp)
 			ry.append(yp)
-			if show_animation:
+			if create_animation:
 				MyGraf.step(xp, yp, graf_delay)
 
 			#if (xp == 19 and yp == 23):
@@ -202,7 +202,7 @@ def main():
 		fbase=fname[0:-4] # We cut the extension
 		filename = fbase + "_report.txt"
 		freport = open(filename, 'w')
-		freport.write("== World: " + str(fname) + " ==\n")
+		freport.write("World: " + str(fbase) + "\n")
 		freport.write("Method: Full Deliverative\n")
 		if goal_reached:
 			freport.write("Result: Found Goal\n")

@@ -2,10 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 
+# Modules
+import config
+
+showGrafs = config.general['showGrafs']
+
 # START Class ShowNavigation ----------------------------------------------
 class ShowNavigation:
 	def __init__(self):
 		plt.cla()
+		if not showGrafs:
+			plt.ioff()
 		plt.grid(True)
 		plt.axis("equal")
 		self.heatmap = None
@@ -27,7 +34,8 @@ class ShowNavigation:
 	def step(self, xp, yp, delay):
 		self.path.append([xp,yp])
 		plt.plot(xp, yp, ".r")
-		plt.pause(delay)
+		if showGrafs:
+			plt.pause(delay)
 
 	def save(self, fname):
 		navdata = {

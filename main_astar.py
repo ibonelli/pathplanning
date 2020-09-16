@@ -3,22 +3,16 @@ import sys
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-import logging
 
 # Modules
 import config
 from navAstar import AStarPlanner
 
-show_animation = config.general['animation']
-graf_delay = config.general['grafDelay']
-lidar_steps = config.general['lidar_steps']
 grid_size = config.general['grid_size']
 robot_radius = config.general['robot_radius']
-vision_limit = config.general['vision_limit']
-brushfire_map_debug = config.general['brushfire_map_debug']
 saveResults = config.general['saveResults']
 saveReport = config.general['saveReport']
-robot_motion_model = config.general['robot_motion_model']
+showGrafs = config.general['showGrafs']
 
 def main():
 	# Cargando el archivo de descripcion del mundo a recorrer
@@ -50,7 +44,8 @@ def main():
 
 	# Preparing Animation
 	plt.cla()
-	plt.ioff()
+	if not showGrafs:
+		plt.ioff()
 	plt.plot(ox, oy, ".k")
 	plt.plot(sx, sy, "og")
 	plt.plot(gx, gy, "xb")
@@ -63,6 +58,8 @@ def main():
 
 	# Showing Animation
 	plt.plot(rx, ry, "-r")
+	if showGrafs:
+		plt.show()
 
 	if newgx == gx and newgy == gy:
 		goal_reached = True
@@ -78,7 +75,7 @@ def main():
 		fbase=fname[0:-4] # We cut the extension
 		filename = fbase + "_astar_report.txt"
 		freport = open(filename, 'w')
-		freport.write("== World: " + str(fname) + " ==\n")
+		freport.write("World: " + str(fbase) + "\n")
 		freport.write("Method: Astar\n")
 		if goal_reached:
 			freport.write("Result: Found Goal\n")
@@ -86,9 +83,6 @@ def main():
 			freport.write("Result: Failed\n")
 		freport.write("Steps: " + str(steps_to_goal) + "\n\n")
 		freport.close()
-
-	#if brushfire_map_debug:
-	#	myNavWave.show_map(xp, yp, "console")
 
 if __name__ == '__main__':
 	print(__file__ + " start!!")

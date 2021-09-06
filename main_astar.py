@@ -56,6 +56,11 @@ def main():
 	a_star = AStarPlanner(ox, oy, grid_size, robot_radius)
 	rx, ry, newgx, newgy, known = a_star.planning(sx, sy, gx, gy)
 
+	# We first make sure a path could be found
+	if rx == 0 and ry == 0:
+		print("No path could be found")
+		return
+
 	# Showing Animation
 	plt.plot(rx, ry, "-r")
 	if showGrafs:

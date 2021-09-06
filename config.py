@@ -2,7 +2,7 @@ import logging
 
 general = dict(
 	animation = True,
-	showGrafs = False,
+	showGrafs = True,
 	logLevel = logging.DEBUG,
 	logFile = "navigation.log",
 	grafDelay = 0.01,
@@ -11,7 +11,7 @@ general = dict(
 	grid_size = 1,       # potential grid size [m]
 	robot_radius = 2.0,  # robot radius [m]
 	#robot_radius = 5.0,  # robot radius [m]
-	vision_limit = 15,   # Lidar vision limit
+	vision_limit = 10,   # Lidar vision limit
 	brushfire_radius_explore = 15,
 	brushfire_radius_to_evaluate = 5,
 	brushfire_neighbors_limit = 5,

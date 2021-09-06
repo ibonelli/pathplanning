@@ -1,5 +1,5 @@
-#PYRUN="main.py"
-PYRUN="main_astar.py"
+PYRUN="main.py"
+#PYRUN="main_astar.py"
 
 FILE="world01"
 echo "Running "${FILE}" ================"
@@ -37,6 +37,11 @@ python3 ${PYRUN} ${FILE}.csv
 mv navigation.log ${FILE}_navigation.log
 
 FILE="world14"
+echo "Running "${FILE}" ================"
+python3 ${PYRUN} ${FILE}.csv
+mv navigation.log ${FILE}_navigation.log
+
+FILE="world15"
 echo "Running "${FILE}" ================"
 python3 ${PYRUN} ${FILE}.csv
 mv navigation.log ${FILE}_navigation.log

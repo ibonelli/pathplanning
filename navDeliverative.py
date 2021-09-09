@@ -252,6 +252,8 @@ class DeliverativeNavigation:
 
 		if trap !=0:
 			logging.debug("\tTrap type " + str(trap) + " detected.")
+			#logging.debug("\t\tTrap dirs => st_p45: " + str(st_p45) + " | st_n45: " + str(st_n45))
+			#logging.debug("\t\tTrap dirs => st_p90: " + str(st_p90) + " | st_n90: " + str(st_n90))
 
 		return trap
 
@@ -605,6 +607,11 @@ class DeliverativeNavigation:
 
 		# If we find a trap -------------------------------------
 		if path_blocked and cur_nav == "apf" and (trap_detected == 1 or trap_detected == 2) and goal_unreachable:
+			if (trap_detected == 2):
+				newgx, newgy, rx, ry = self.get_next_unknown_goal(bMap)
+				if (rx == 0) and (ry == 0):
+					logging.debug("We faced a trap type 2 and we have explored everything.")
+					aborted = True
 			self.avoiding_trap = True
 			self.avoiding_trap_type = trap_detected
 			self.wall_overcome = False

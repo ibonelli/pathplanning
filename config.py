@@ -6,7 +6,9 @@ general = dict(
 	logLevel = logging.DEBUG,
 	logFile = "navigation.log",
 	grafDelay = 0.01,
-	lidar_steps = 8,
+	#lidar_steps = 8,
+	# Nota: Parece que para que no falle deben ser multiplos de 8
+	lidar_steps = 64,
 	wall_detection_threshold = 3,
 	grid_size = 1,       # potential grid size [m]
 	robot_radius = 2.0,  # robot radius [m]
@@ -20,9 +22,14 @@ general = dict(
 	saveResults = True,
 	saveReport = True,
 	robot_motion_model = [[1, 0],[0, 1],[-1, 0],[0, -1],[-1, -1],[-1, 1],[1, -1],[1, 1]],
+	#  [-1, 1]   [0, 1]    [1, 1]
+	#          \    |    /
+	#  [-1, 0] -----+----- [1, 0]
+	#          /    |    \
+	# [-1, -1]   [0, -1]   [1, -1]
 	known_limit = 0.8,
 	block_size = 4,
-	trap_limit_distance = 5,
+	trap_limit_distance = 7,
 	astar_known_explore_range = 3,
 	astar_known_limit = 0.2,
 	show_Astar_animation = False,

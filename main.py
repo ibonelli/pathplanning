@@ -105,6 +105,8 @@ def main():
 		MyGraf.step(xp, yp, graf_delay)
 
 	apf_reset = False
+	steps_count = 0
+
 	# Main navigation loop
 	while (d >= grid_size or secondary_goal) and not aborted:
 		logging.debug("====================================== NEXT STEP ======================================")
@@ -114,15 +116,15 @@ def main():
 				apf_reset = False
 			else:
 				d, xp, yp, curdirx, curdiry = myNavigation.potential_field_planning(sx, sy, gx, gy, ox, oy, False)
-			logging.debug("<MAIN> -- Navigation APF -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
+			logging.debug("<MAIN> -- Navigation APF -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal) + " | steps count: " + str(steps_count))
 			stuck = myNavigation.decide_status(rx, ry, xp, yp)
 		elif nav == "follow":
 			d, xp, yp, curdirx, curdiry, wlimit = myNavFollow.follow(xp, yp, dirx, diry)
-			logging.debug("<MAIN> -- Navigation follow -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
+			logging.debug("<MAIN> -- Navigation follow -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal) + " | steps count: " + str(steps_count))
 			stuck = myNavFollow.decide_status(xp, yp, ox, oy)
 		elif nav == "follow_steps":
 			d, xp, yp, curdirx, curdiry = myNavFollow.follow_steps(xp, yp, myDeliverative.get_astar_path())
-			logging.debug("<MAIN> -- Navigation follow_steps -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal))
+			logging.debug("<MAIN> -- Navigation follow_steps -- d: " + str(d) + " | xp,yp: " + str((xp,yp)) + " | dir: " + str((curdirx, curdiry)) + " | goal: " + str((gx, gy)) + " | secondary goal: " + str(secondary_goal) + " | steps count: " + str(steps_count))
 			stuck = myNavFollow.decide_status(xp, yp, ox, oy)
 
 		# If not stuck but we reached a limit
@@ -163,6 +165,8 @@ def main():
 			# We update navigation goal
 			gx, gy = limitx, limity
 
+		steps_count += 1
+
 		# If we are stuck we did not accept the step
 		if not stuck:
 			d = np.hypot(globalgx - xp, globalgy - yp)
@@ -179,8 +183,18 @@ def main():
 			#	myLimits.save_limit(xp, yp, limits, "limit_x19_y23.json")
 			#	aborted = True
 
+			#if (steps_count>=68):
+			#	aborted = True
+			#	print("Navigation aborted...")
+			#	newgx, newgy, rx, ry = myDeliverative.get_next_unknown_goal(myNavWave)
+			#	logging.debug("\tProposed path by Astar | new_goal: " + str((newgx, newgy)))
+			#	logging.debug("\t\trx: " + str(rx))
+			#	logging.debug("\t\try: " + str(ry))
+
 	# Navigation has finished
 	if aborted:
+		goal_reached = False
+		steps_to_goal = float('inf')
 		checkMyLimits = Lidar(grid_size, vision_limit, 36)
 		limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
 		myLimits.save_limit(xp, yp, limits, "limit.json")

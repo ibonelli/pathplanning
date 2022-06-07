@@ -23,7 +23,6 @@ graf_delay = config.general['grafDelay']
 lidar_steps = config.general['lidar_steps']
 grid_size = config.general['grid_size']
 robot_radius = config.general['robot_radius']
-vision_limit = config.general['vision_limit']
 brushfire_map_debug = config.general['brushfire_map_debug']
 saveResults = config.general['saveResults']
 saveReport = config.general['saveReport']
@@ -36,6 +35,12 @@ def main():
 		exit(-1)
 	else:
 		fname = sys.argv[1]
+		if(len(sys.argv) == 3):
+			vision_limit = int(sys.argv[2])
+			print('Usando vision_limit por argumento: ' + str(vision_limit))
+		else:
+			vision_limit = config.general['vision_limit']
+			print('Usando vision_limit por configuración: ' + str(vision_limit))
 
 	print("potential_field_planning start")
 

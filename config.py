@@ -1,8 +1,8 @@
 import logging
 
 general = dict(
-	animation = True,
-	showGrafs = True,
+	animation = True, # Build animation
+	showGrafs = False, # Show animation
 	logLevel = logging.DEBUG,
 	logFile = "navigation.log",
 	grafDelay = 0.01,

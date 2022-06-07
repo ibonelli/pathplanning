@@ -1,5 +1,0 @@
-World: world97
-Method: Full Deliverative
-Result: Failed
-Steps: inf
-

@@ -6,9 +6,12 @@ general = dict(
 	logLevel = logging.DEBUG,
 	logFile = "navigation.log",
 	grafDelay = 0.01,
-	#lidar_steps = 8,
-	# Nota: Parece que para que no falle deben ser multiplos de 8
-	lidar_steps = 64,
+	# Debe ser multiplo de 8
+	lidar_steps = 8,
+	#lidar_steps = 16,
+	#lidar_steps = 32,
+	#lidar_steps = 64,
+	#lidar_steps = 128,
 	wall_detection_threshold = 3,
 	grid_size = 1,       # potential grid size [m]
 	robot_radius = 2.0,  # robot radius [m]

@@ -130,37 +130,43 @@ class BrushfireNavigation:
 		return angle
 
 	def update_map(self, myMap, xp, yp, limits):
-		# Indices must be integers, not numpy.float64
+		# Index must be integers, not numpy.float64
 		xp = int(round(xp,0))
 		yp = int(round(yp,0))
 		if update_map_debug:
 			self.print("Brushfire limits -------------------", "debug")
 		dir_steps = []
+		# We can only store 8 direction limits, so if we are using more we need to filter
 		for p in limits:
-			# We build direction (as 1s instead of angles)
-			xi = int(round(math.cos(p["angle"])))
-			yi = int(round(math.sin(p["angle"])))
-			if abs(xi) == abs(yi):
-				# We move in diagonal, steps are not the same as distance
-				rx = int(round(p["rx"],0))
-				ry = int(round(p["ry"],0))
-				distx = abs(rx-xp)
-				disty = abs(ry-yp)
-				if distx > disty:
-					steps = distx
+			angle_diff = (p["angle"]/(math.pi/4))%1
+			# We only process the limits within the 8 basic directions
+			if (angle_diff<0.01):
+				if update_map_debug:
+					self.print("\t\t8limits | angle: " + str(p["angle"]) + " | diff: " + str(angle_diff), "debug")
+				# We build direction (as 1s instead of angles)
+				xi = int(round(math.cos(p["angle"])))
+				yi = int(round(math.sin(p["angle"])))
+				if abs(xi) == abs(yi):
+					# We move in diagonal, steps are not the same as distance
+					rx = int(round(p["rx"],0))
+					ry = int(round(p["ry"],0))
+					distx = abs(rx-xp)
+					disty = abs(ry-yp)
+					if distx > disty:
+						steps = distx
+					else:
+						steps = disty
 				else:
-					steps = disty
-			else:
-				# We move in horizontal or vertical, steps are distance
-				steps = int(round(p["dist"],0))
-			# Need to adjust this as we start from zero
-			steps = steps + 1
-			dir_steps.append((xi,yi,steps,p["col"]))
+					# We move in horizontal or vertical, steps are distance
+					steps = int(round(p["dist"],0))
+				# Need to adjust this as we start from zero
+				steps = steps + 1
+				dir_steps.append((xi,yi,steps,p["col"]))
 		dir_steps = sorted(dir_steps, key=lambda mystep: mystep[2])
 		for r in dir_steps:
 			if update_map_debug:
 				angle = self.get_angle_from_direction(r[0], r[1])
-				self.print("\tcol: " + str(r[3]) + " | xi,yi: " + str((r[0],r[1])) + " | ang " + str(angle) + " | steps: " + str(r[2]), "debug")
+				self.print("\t\tcol: " + str(r[3]) + " | xi,yi: " + str((r[0],r[1])) + " | ang " + str(angle) + " | steps: " + str(r[2]), "debug")
 			# We use the increments to calculate the path to record the "wave"
 			for s in range(r[2]):
 				x = xp + r[0]*s

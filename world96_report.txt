@@ -1,2 +1,0 @@
-World: world96
-Method: Full Deliverative

@@ -4,6 +4,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
+import argparse
 
 # Modules
 import config
@@ -29,20 +30,30 @@ saveReport = config.general['saveReport']
 robot_motion_model = config.general['robot_motion_model']
 
 def main():
-	# Cargando el archivo de descripcion del mundo a recorrer
-	if(len(sys.argv) < 2):
-		print('Ingresar el mundo a recorrer. Por ejemplo world1.csv')
-		exit(-1)
-	else:
-		fname = sys.argv[1]
-		if(len(sys.argv) == 3):
-			vision_limit = int(sys.argv[2])
-			print('Usando vision_limit por argumento: ' + str(vision_limit))
-		else:
-			vision_limit = config.general['vision_limit']
-			print('Usando vision_limit por configuración: ' + str(vision_limit))
+	parser = argparse.ArgumentParser()
+	parser.add_argument("world", help="World filename, ie. world11.csv")
+	parser.add_argument('-vl', '--vision_limit', type=int, action='store', dest='vision_limit', help="How far the robot can see.")
+	parser.add_argument('-ls', '--lidar_steps', type=int, action='store', dest='lidar_steps', help="How many steps does the LIDAR have.")
+	parser.add_argument('-rn', '--run_name', action='store', dest='run_name', help="String to append to certain output files.")
+	options=parser.parse_args()
 
-	print("potential_field_planning start")
+	fname=options.world
+
+	if options.vision_limit:
+		vision_limit = options.vision_limit
+		print('Usando vision_limit por argumento: ' + str(vision_limit))
+	else:
+		vision_limit = config.general['vision_limit']
+		print('Usando vision_limit por configuración: ' + str(vision_limit))
+
+	if options.lidar_steps:
+		lidar_steps = options.lidar_steps
+		print('Usando lidar_steps por argumento: ' + str(lidar_steps))
+	else:
+		lidar_steps = config.general['lidar_steps']
+		print('Usando lidar_steps por configuración: ' + str(lidar_steps))
+
+	print("Navigation starting...")
 
 	ob = np.loadtxt(fname)
 	flx = ob[:, 0]  # file x position list [m]
@@ -209,25 +220,49 @@ def main():
 		steps_to_goal = len(rd)
 		print("Goal!!")
 
+	# We save navigation data files
 	if saveResults:
-		# We save navigation data files
 		fbase=fname[0:-4] # We cut the extension
+		if options.run_name:
+			MyGraf.save(fbase+"_"+options.run_name)
+		else:
+			MyGraf.save(fbase)
 		myMap.set_map(myDeliverative.get_map())
-		myMap.save_map(fbase + "_map.json")
-		MyGraf.save(fbase)
-		myMap.draw(fbase + "_objs.png")
+		if options.run_name:
+			sfname=fbase+"_"+options.run_name+"_map.json"
+			myMap.save_map(sfname)
+			sfname=fbase+"_"+options.run_name+"_objs.png"
+			myMap.draw(sfname)
+		else:
+			myMap.save_map(fbase + "_map.json")
+			myMap.draw(fbase + "_objs.png")
 
 	if saveReport:
 		fbase=fname[0:-4] # We cut the extension
-		filename = fbase + "_report.txt"
-		freport = open(filename, 'w')
-		freport.write("World: " + str(fbase) + "\n")
-		freport.write("Method: Full Deliverative\n")
-		if goal_reached:
-			freport.write("Result: Found Goal\n")
+		objs_world=str(len(ob)-2)
+		ox,oy = myMap.get_objects()
+		objs_found=str(len(ox))
+		if options.run_name:
+			filename = fbase + "_"+options.run_name+"_report.txt"
+			if goal_reached:
+				goal="Found"
+			else:
+				goal="Failed"
+			freport = open(filename, 'w')
+			# Headers: world,goal_reached,steps_to_goal,objs_world,objs_found
+			freport.write(str(fbase)+","+goal+","+str(steps_to_goal)+","+objs_world+","+objs_found+"\n")
 		else:
-			freport.write("Result: Failed\n")
-		freport.write("Steps: " + str(steps_to_goal) + "\n\n")
+			filename = fbase + "_report.txt"
+			freport = open(filename, 'w')
+			freport.write("World: " + str(fbase) + "\n")
+			freport.write("Method: Full Deliverative\n")
+			if goal_reached:
+				freport.write("Result: Found Goal\n")
+			else:
+				freport.write("Result: Failed\n")
+			freport.write("Steps: " + str(steps_to_goal) + "\n")
+			freport.write("#objs world: " + objs_world + "\n")
+			freport.write("#objs found: " + objs_found + "\n\n")
 		freport.close()
 
 	#if brushfire_map_debug:

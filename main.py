@@ -34,14 +34,17 @@ def main():
 	parser.add_argument("world", help="World filename, ie. world11.csv")
 	parser.add_argument('-vl', '--vision_limit', type=int, action='store', dest='vision_limit', help="How far the robot can see.")
 	parser.add_argument('-ls', '--lidar_steps', type=int, action='store', dest='lidar_steps', help="How many steps does the LIDAR have.")
-	parser.add_argument('-rn', '--run_name', action='store', dest='run_name', help="String to append to certain output files.")
 	options=parser.parse_args()
 
 	fname=options.world
+	run_name_config=False
 
 	if options.vision_limit:
 		vision_limit = options.vision_limit
 		print('Usando vision_limit por argumento: ' + str(vision_limit))
+		run_name_config=True
+		run_name="vision_limit"
+		run_name_value=str(vision_limit)
 	else:
 		vision_limit = config.general['vision_limit']
 		print('Usando vision_limit por configuración: ' + str(vision_limit))
@@ -49,6 +52,9 @@ def main():
 	if options.lidar_steps:
 		lidar_steps = options.lidar_steps
 		print('Usando lidar_steps por argumento: ' + str(lidar_steps))
+		run_name_config=True
+		run_name="lidar_steps"
+		run_name_value=str(lidar_steps)
 	else:
 		lidar_steps = config.general['lidar_steps']
 		print('Usando lidar_steps por configuración: ' + str(lidar_steps))
@@ -223,15 +229,15 @@ def main():
 	# We save navigation data files
 	if saveResults:
 		fbase=fname[0:-4] # We cut the extension
-		if options.run_name:
-			MyGraf.save(fbase+"_"+options.run_name)
+		if run_name_config:
+			MyGraf.save(fbase+"_"+run_name+"_"+run_name_value)
 		else:
 			MyGraf.save(fbase)
 		myMap.set_map(myDeliverative.get_map())
-		if options.run_name:
-			sfname=fbase+"_"+options.run_name+"_map.json"
+		if run_name_config:
+			sfname=fbase+"_"+run_name+"_"+run_name_value+"_map.json"
 			myMap.save_map(sfname)
-			sfname=fbase+"_"+options.run_name+"_objs.png"
+			sfname=fbase+"_"+run_name+"_"+run_name_value+"_objs.png"
 			myMap.draw(sfname)
 		else:
 			myMap.save_map(fbase + "_map.json")
@@ -242,15 +248,15 @@ def main():
 		objs_world=str(len(ob)-2)
 		ox,oy = myMap.get_objects()
 		objs_found=str(len(ox))
-		if options.run_name:
-			filename = fbase + "_"+options.run_name+"_report.txt"
+		if run_name_config:
+			filename = fbase + "_"+run_name+"_"+run_name_value+"_report.txt"
 			if goal_reached:
 				goal="Found"
 			else:
 				goal="Failed"
 			freport = open(filename, 'w')
-			# Headers: world,goal_reached,steps_to_goal,objs_world,objs_found
-			freport.write(str(fbase)+","+goal+","+str(steps_to_goal)+","+objs_world+","+objs_found+"\n")
+			# Headers: world,goal_reached,steps_to_goal,objs_world,objs_found,run_name,run_name_value
+			freport.write(str(fbase)+","+goal+","+str(steps_to_goal)+","+objs_world+","+objs_found+","+run_name+","+run_name_value+"\n")
 		else:
 			filename = fbase + "_report.txt"
 			freport = open(filename, 'w')

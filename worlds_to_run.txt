@@ -11,6 +11,3 @@ world21
 world22
 world23
 world24
-world31
-world32
-world33

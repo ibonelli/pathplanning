@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 import argparse
+import time
 
 # Modules
 import config
@@ -61,6 +62,7 @@ def main():
 
 	print("Navigation starting...")
 
+	tnav0=time.time()
 	ob = np.loadtxt(fname)
 	flx = ob[:, 0]  # file x position list [m]
 	fly = ob[:, 1]  # file y position list [m]
@@ -227,6 +229,7 @@ def main():
 		print("Goal!!")
 
 	# We save navigation data files
+	tnav1 = time.time()
 	if saveResults:
 		fbase=fname[0:-4] # We cut the extension
 		if run_name_config:
@@ -248,6 +251,7 @@ def main():
 		objs_world=str(len(ob)-2)
 		ox,oy = myMap.get_objects()
 		objs_found=str(len(ox))
+		tnav=str(tnav1-tnav0)
 		if run_name_config:
 			filename = fbase + "_"+run_name+"_"+run_name_value+"_report.txt"
 			if goal_reached:
@@ -255,8 +259,8 @@ def main():
 			else:
 				goal="Failed"
 			freport = open(filename, 'w')
-			# Headers: world,goal_reached,steps_to_goal,objs_world,objs_found,run_name,run_name_value
-			freport.write(str(fbase)+","+goal+","+str(steps_to_goal)+","+objs_world+","+objs_found+","+run_name+","+run_name_value+"\n")
+			# Headers: world,goal_reached,steps_to_goal,objs_world,objs_found,run_name,run_name_value,time
+			freport.write(str(fbase)+","+goal+","+str(steps_to_goal)+","+objs_world+","+objs_found+","+run_name+","+run_name_value+","+tnav+"\n")
 		else:
 			filename = fbase + "_report.txt"
 			freport = open(filename, 'w')
@@ -267,6 +271,7 @@ def main():
 			else:
 				freport.write("Result: Failed\n")
 			freport.write("Steps: " + str(steps_to_goal) + "\n")
+			freport.write("Took: " + str(tnav) + " seconds\n")
 			freport.write("#objs world: " + objs_world + "\n")
 			freport.write("#objs found: " + objs_found + "\n\n")
 		freport.close()

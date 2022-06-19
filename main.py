@@ -218,7 +218,7 @@ def main():
 	# Navigation has finished
 	if aborted:
 		goal_reached = False
-		steps_to_goal = float('inf')
+		steps_to_goal = float("inf")
 		checkMyLimits = Lidar(grid_size, vision_limit, 36)
 		limits = checkMyLimits.lidar(xp, yp, ox, oy, "limit")
 		myLimits.save_limit(xp, yp, limits, "limit.json")

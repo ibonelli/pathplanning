@@ -1,6 +1,6 @@
 PYRUN="main.py"
 #PYRUN="main_astar.py"
-DIR="nopath_run"
+DIR="logs_and_support_files/nopath_run"
 
 function run_world {
 	echo "Running "${FILE}" ================"
@@ -13,18 +13,30 @@ function run_world {
 
 VL="10"
 LS="08"
-FILE="world96.csv"
+FILE="world96"
 run_world
 
 VL="30"
 LS="32"
-FILE="world96.csv"
+FILE="world96"
+run_world
 
 VL="10"
 LS="08"
-FILE="world99.csv"
+FILE="world97"
 run_world
 
 VL="30"
 LS="32"
-FILE="world99.csv"
+FILE="world97"
+run_world
+
+VL="10"
+LS="08"
+FILE="world99"
+run_world
+
+VL="30"
+LS="32"
+FILE="world99"
+run_world

@@ -1,6 +1,6 @@
 PYRUN="main.py"
 #PYRUN="main_astar.py"
-DIR="latest_run"
+DIR="logs_and_support_files/latest_run"
 
 function run_world {
 	echo "Running "${FILE}" ================"

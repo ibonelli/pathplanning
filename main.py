@@ -61,6 +61,8 @@ def main():
 		print('Usando lidar_steps por configuración: ' + str(lidar_steps))
 
 	print("Navigation starting...")
+	logging.debug("vision_limit: " + str(vision_limit))
+	logging.debug("lidar_steps: " + str(lidar_steps))
 
 	tnav0=time.time()
 	ob = np.loadtxt(fname)

@@ -240,14 +240,18 @@ class DeliverativeNavigation:
 		cur_dir = self.dir[-1]
 		trap = 0
 
+		logging.debug("\tTrap detection | cur_dir: " + str(cur_dir))
+
 		st_p45 = self.direction_status(cur_dir, math.pi/4, navData)
 		st_n45 = self.direction_status(cur_dir, -math.pi/4, navData)
+		logging.debug("\tTrap detection | st_p45: " + str(st_p45) + " | st_n45: " + str(st_n45))
 		# If we are blocked at front and 45 degree deviations
 		if st_p45 == True and st_n45 == True:
 			trap = 1
 			# If we are blocked at front, 45 degree deviations and 90 degree
 			st_p90 = self.direction_status(cur_dir, math.pi/2, navData)
 			st_n90 = self.direction_status(cur_dir, -math.pi/2, navData)
+			logging.debug("\tTrap detection | st_p90: " + str(st_p90) + " | st_n90: " + str(st_n90))
 			if st_p90 == True and st_n90 == True:
 				trap = 2
 
@@ -264,10 +268,16 @@ class DeliverativeNavigation:
 		cur_ang = math.atan2(cur_dir[1], cur_dir[0])
 		x = int(round(math.cos(cur_ang+ang)))
 		y = int(round(math.sin(cur_ang+ang)))
+		logging.debug("\tdirection_status() | Checking direction: " + str((x, y)))
 		dirVals = navData.get_value(x,y)
+		logging.debug("\tdirection_status() | dirVals: " + str(dirVals))
 		status = False
+		# -- Using known carries over the bug of seeing through walls. known_dir works a bit better in terms of wall blocking.
 		if dirVals['blocked'] and dirVals['known'] > known_limit and dirVals['block_size'] > block_size:
+		# -- Changing this will require significant effort, so I choose to keep current behavior.
+		#if dirVals['blocked'] and dirVals['known_dir'] > known_limit and dirVals['block_size'] > block_size:
 			d = np.hypot(xp - dirVals['limit_pos'][0], yp - dirVals['limit_pos'][1])
+			logging.debug("\tdirection_status() | d: " + str(d))
 			if d < trap_limit_distance:
 				status = True
 		return status

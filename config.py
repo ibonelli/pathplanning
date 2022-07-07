@@ -2,7 +2,7 @@ import logging
 
 general = dict(
 	animation = True, # Build animation
-	showGrafs = False, # Show animation
+	showGrafs = True, # Show animation
 	logLevel = logging.DEBUG,
 	logFile = "navigation.log",
 	grafDelay = 0.01,

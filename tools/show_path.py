@@ -1,7 +1,7 @@
 """
 
 Tool to:
-	Show a JSON encoded map
+	Show a JSON encoded path
 
 """
 

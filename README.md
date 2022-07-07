@@ -4,7 +4,7 @@ Thesis Path Planning Simulations
 
 Thanks to Atsushi Sakai (@Atsushi_twi) for publishing [PythonRobotics](https://github.com/AtsushiSakai/PythonRobotics)
 
-## Running
+## Proposed solution
 
 - run*.sh : Different scripts to run all worlds in batch
 - world*.csv : Different worlds which you can run

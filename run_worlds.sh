@@ -50,7 +50,7 @@ while read WFNAME; do
 	run_world_lidar
 done <worlds_to_run.txt
 
-cd ${DIR}"/"${FILE}
+cd ${DIR}"/"${FILE} ; cd ..
 # Name of the file and content as well
 #find ./ -iname "*report*" | xargs tail -n +1 > ${FILE}_report_full.txt
 # No name, only content

@@ -1,0 +1,8 @@
+World: world15
+Method: Full Deliverative
+Result: Found Goal
+Steps: 89
+Took: 11.986896276473999 seconds
+#objs world: 300
+#objs found: 102
+

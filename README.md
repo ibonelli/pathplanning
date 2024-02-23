@@ -17,7 +17,6 @@ Thanks to Atsushi Sakai (@Atsushi_twi) for publishing [PythonRobotics](https://g
 - navLidar*.py : LIDAR related processing
 - navData.py : Class that handles data storing
 
-
 ## Tools
 
 - WorldBuilder.ods : Spreadsheet where you create the world and export as CSV
@@ -25,3 +24,35 @@ Thanks to Atsushi Sakai (@Atsushi_twi) for publishing [PythonRobotics](https://g
 - show_limits.py : Show a JSON encoded limit
 - show_map.py : Show a JSON encoded map
 - show_path.py: Show a JSON encoded path
+
+## Usage example
+
+Download & install (in Linux):
+
+```
+git clone https://github.com/ibonelli/pathplanning.git
+apt install python3 python3-pip
+pip install numpy matplotlib
+```
+
+Single map run:
+
+```
+python3 main.py world15.csv
+less -S navigation.log
+python3 main_astar.py world15.csv
+pushd tools ; python3 show_path.py ../world15_path.json ; popd
+pushd tools ; python3 show_map.py ../world15_map.json ; popd
+```
+
+All maps:
+
+```
+run.sh
+```
+
+All maps with different escenarios for each world:
+
+```
+run_worlds.sh
+```
